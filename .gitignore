@@ -65,3 +65,11 @@ logs/
 # Misc
 *.tmp
 *.bak
+
+# Private keys / certificates
+*.pem
+*.key
+*.p12
+*.jks
+id_rsa
+id_ed25519
