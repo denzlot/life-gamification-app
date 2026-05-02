@@ -1,0 +1,19 @@
+CREATE TABLE user_game_stats (
+    id BIGSERIAL PRIMARY KEY ,
+
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(id),
+
+    xp INTEGER NOT NULL DEFAULT 0,
+    level INTEGER NOT NULL DEFAULT 1,
+
+    hp INTEGER NOT NULL DEFAULT 100,
+    max_hp INTEGER NOT NULL DEFAULT 100,
+
+    streak INTEGER NOT NULL DEFAULT 0,
+    streak_shield BOOLEAN NOT NULL DEFAULT FALSE,
+
+    last_productive_date DATE,
+
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);

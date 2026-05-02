@@ -5,18 +5,19 @@ import com.dcorp.flowvisior.dto.auth.LoginRequest;
 import com.dcorp.flowvisior.dto.auth.RegisterRequest;
 import com.dcorp.flowvisior.entity.User;
 import com.dcorp.flowvisior.repository.UserRepository;
+import com.dcorp.flowvisior.service.UserGameStatsService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,12 +28,16 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
+    private final SecurityContextRepository securityContextRepository;
+    private final UserGameStatsService userGameStatsService;
 
-    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository,
+                          PasswordEncoder passwordEncoder, SecurityContextRepository securityContextRepository, UserGameStatsService userGameStatsService) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.securityContextRepository = securityContextRepository;
+        this.userGameStatsService = userGameStatsService;
     }
 
     @PostMapping("/register")
@@ -44,6 +49,7 @@ public class AuthController {
     User user = new User(request.getUsername(), passwordEncoder.encode(request.getPassword()));
 
     User saved = userRepository.save(user);
+    userGameStatsService.createFor(saved);
     return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(new AuthResponse(saved.getId(), saved.getUsername(), saved.getRole().name()));
@@ -88,16 +94,15 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<AuthResponse> me() {
-        // Получаем текущего пользователя из контекста Spring Security
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String username = authentication.getName();
-        User user = userRepository.findByUsername(username).orElseThrow();
-
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
         return ResponseEntity.ok(
                 new AuthResponse(user.getId(), user.getUsername(), user.getRole().name())
         );

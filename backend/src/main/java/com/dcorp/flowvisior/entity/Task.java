@@ -27,6 +27,10 @@ public class Task {
     @Column(nullable = false, length = 20)
     private TaskStatus status;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @Column(name = "deadline_date")
     private LocalDate deadlineDate;
 
@@ -39,7 +43,8 @@ public class Task {
     protected Task() {
     }
 
-    public Task(String title, String description, Difficulty difficulty, LocalDate deadlineDate) {
+    public Task(User user, String title, String description, Difficulty difficulty, LocalDate deadlineDate) {
+        this.user = user;
         this.title = title;
         this.description = description;
         this.difficulty = difficulty;
@@ -65,6 +70,9 @@ public class Task {
 
     public Long getId() {
         return id;
+    }
+    public User getUser() {
+        return user;
     }
 
     public String getTitle() {

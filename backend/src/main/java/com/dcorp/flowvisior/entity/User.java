@@ -1,7 +1,6 @@
 package com.dcorp.flowvisior.entity;
 // кто пользователь в бд
 
-import com.dcorp.flowvisior.service.TaskService;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
