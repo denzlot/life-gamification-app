@@ -22,6 +22,7 @@ public class DailyPlanService {
     private final GameService gameService;
     private final UserGameStatsRepository userGameStatsRepository;
     private final ActivityLogRepository activityLogRepository;
+    private final QuestStepRepository questStepRepository;
 
     public DailyPlanService(
             DailyPlanRepository dailyPlanRepository,
@@ -29,7 +30,9 @@ public class DailyPlanService {
             HabitRepository habitRepository,
             AuthenticatedUserService authenticatedUserService,
             GameService gameService,
-            UserGameStatsRepository userGameStatsRepository, ActivityLogRepository activityLogRepository
+            UserGameStatsRepository userGameStatsRepository,
+            ActivityLogRepository activityLogRepository,
+            QuestStepRepository questStepRepository
     ) {
         this.dailyPlanRepository = dailyPlanRepository;
         this.dailyPlanItemRepository = dailyPlanItemRepository;
@@ -38,6 +41,7 @@ public class DailyPlanService {
         this.gameService = gameService;
         this.userGameStatsRepository = userGameStatsRepository;
         this.activityLogRepository = activityLogRepository;
+        this.questStepRepository = questStepRepository;
     }
 
     public DailyPlanResponse getTodayPlan() {
@@ -66,6 +70,8 @@ public class DailyPlanService {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Closed daily plan cannot be restarted");
             }
 
+            // День уже есть, но за это время могли появиться новые шаги квестов.
+            addDueQuestSteps(dailyPlan, user, today);
             List<DailyPlanItem> items = dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(dailyPlan);
             return new DailyPlanResponse(dailyPlan, items);
         }
@@ -89,6 +95,10 @@ public class DailyPlanService {
                 ))
                 .map(dailyPlanItemRepository::save)
                 .toList();
+
+        // После привычек добавляем квестовые шаги, которые должны попасть на сегодня.
+        addDueQuestSteps(savedPlan, user, today);
+        items = dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(savedPlan);
 
         return new DailyPlanResponse(savedPlan, items);
     }
@@ -297,6 +307,60 @@ public class DailyPlanService {
     }
 
     private int hpFailFor(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> -2;
+            case MEDIUM -> -5;
+            case HARD -> -10;
+        };
+    }
+
+    private void addDueQuestSteps(DailyPlan dailyPlan, User user, LocalDate planDate) {
+        // Берём всё, что уже пора делать: сегодня или раньше, если пользователь отстал.
+        List<QuestStep> dueQuestSteps = questStepRepository
+                .findByQuest_UserAndQuest_StatusAndStatusAndScheduledDateLessThanEqualOrderByScheduledDateAscStepNumberAsc(
+                        user,
+                        QuestStatus.ACTIVE,
+                        QuestStepStatus.PENDING,
+                        planDate
+                );
+
+        dueQuestSteps.stream()
+                // Повторный start не должен плодить один и тот же шаг в плане.
+                .filter(step -> !dailyPlanItemRepository.existsByDailyPlanAndSourceTypeAndSourceId(
+                        dailyPlan,
+                        ActivitySourceType.QUEST,
+                        step.getId()
+                ))
+                // В sourceId кладём id шага, а не id квеста: выполнять надо конкретный шаг.
+                .map(step -> new DailyPlanItem(
+                        dailyPlan,
+                        ActivitySourceType.QUEST,
+                        step.getId(),
+                        step.getTitle(),
+                        questStepXpRewardFor(step.getQuest().getDifficulty()),
+                        questStepHpCompleteFor(step.getQuest().getDifficulty()),
+                        questStepHpFailFor(step.getQuest().getDifficulty())
+                ))
+                .forEach(dailyPlanItemRepository::save);
+    }
+
+    private int questStepXpRewardFor(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> 25;
+            case MEDIUM -> 50;
+            case HARD -> 100;
+        };
+    }
+
+    private int questStepHpCompleteFor(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> 2;
+            case MEDIUM -> 4;
+            case HARD -> 7;
+        };
+    }
+
+    private int questStepHpFailFor(Difficulty difficulty) {
         return switch (difficulty) {
             case EASY -> -2;
             case MEDIUM -> -5;

@@ -93,6 +93,14 @@ public class Quest {
         this.status = status;
     }
 
+    public void complete() {
+        this.status = QuestStatus.COMPLETED;
+    }
+
+    public void activate() {
+        this.status = QuestStatus.ACTIVE;
+    }
+
     public Long getId() {
         return id;
     }
