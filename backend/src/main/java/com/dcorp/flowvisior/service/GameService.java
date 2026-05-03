@@ -138,7 +138,6 @@ public class GameService {
         // Ищем максимальный уровень при котором суммарный XP <= stats.xp
         int level = 1;
         while (true) {
-            int xpForNext = 500 * level;
             int xpRequired = 500 * level * (level + 1) / 2;
             if (stats.getXp() < xpRequired) break;
             level++;

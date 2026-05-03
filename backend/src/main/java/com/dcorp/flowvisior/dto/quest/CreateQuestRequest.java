@@ -1,10 +1,7 @@
 package com.dcorp.flowvisior.dto.quest;
 
 import com.dcorp.flowvisior.entity.Difficulty;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
@@ -26,10 +23,11 @@ public class CreateQuestRequest {
     private int durationDays;
 
     @Min(1)
+    @Max(365)
     private int totalSteps;
 
     @NotBlank
-    @Size(max = 160)
+    @Size(max = 150)
     private String baseStepTitle;
 
     private String baseStepDescription;
