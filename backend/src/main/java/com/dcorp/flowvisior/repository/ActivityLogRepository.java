@@ -10,6 +10,8 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
 
     List<ActivityLog> findByUserOrderByCreatedAtDesc(User user);
 
+    List<ActivityLog> findTop100ByUserOrderByCreatedAtDesc(User user);
+
     Optional<ActivityLog> findTopByDailyPlanItemAndActionNotOrderByCreatedAtDesc(
             DailyPlanItem item, ActivityAction action
     );

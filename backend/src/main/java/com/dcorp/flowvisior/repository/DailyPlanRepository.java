@@ -14,6 +14,8 @@ public interface DailyPlanRepository extends JpaRepository<DailyPlan, Long> {
 
     boolean existsByUserAndPlanDate(User user, LocalDate planDate);
 
+    List<DailyPlan> findByUserOrderByPlanDateAsc(User user);
+
     List<DailyPlan> findByUserAndPlanDateBetweenOrderByPlanDateAsc(
             User user, LocalDate startDate, LocalDate endDate);
 }
