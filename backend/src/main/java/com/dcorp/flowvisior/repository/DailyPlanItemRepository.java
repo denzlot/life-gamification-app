@@ -10,4 +10,6 @@ public interface DailyPlanItemRepository extends JpaRepository<DailyPlanItem, Lo
     List<DailyPlanItem> findByDailyPlanOrderByCreatedAtAsc(DailyPlan dailyPlan);
 
     int countByDailyPlan(DailyPlan dailyPlan);
+
+    List<DailyPlanItem> findByDailyPlanIn(List<DailyPlan> plans);
 }

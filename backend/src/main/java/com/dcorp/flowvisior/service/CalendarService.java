@@ -2,6 +2,8 @@ package com.dcorp.flowvisior.service;
 
 import com.dcorp.flowvisior.dto.calendar.CalendarDayResponse;
 import com.dcorp.flowvisior.entity.DailyPlan;
+import com.dcorp.flowvisior.entity.DailyPlanItem;
+import com.dcorp.flowvisior.entity.DailyPlanItemStatus;
 import com.dcorp.flowvisior.entity.User;
 import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
 import com.dcorp.flowvisior.repository.DailyPlanRepository;
@@ -45,11 +47,24 @@ public class CalendarService {
         List<DailyPlan> plans = dailyPlanRepository
                 .findByUserAndPlanDateBetweenOrderByPlanDateAsc(user, startDate, endDate);
 
-        // 3. Превращаем в Map дата → план для быстрого поиска
+        // 3. Загружаем все items для всех планов одним запросом
+        List<DailyPlanItem> allItems = plans.isEmpty()
+                ? List.of()
+                : dailyPlanItemRepository.findByDailyPlanIn(plans);
+
+        // 4. Предварительно считаем total и completed для каждого плана
+        Map<Long, Long> totalCountByPlanId = allItems.stream()
+                .collect(Collectors.groupingBy(item -> item.getDailyPlan().getId(), Collectors.counting()));
+
+        Map<Long, Long> completedCountByPlanId = allItems.stream()
+                .filter(i -> i.getStatus() == DailyPlanItemStatus.COMPLETED)
+                .collect(Collectors.groupingBy(item -> item.getDailyPlan().getId(), Collectors.counting()));
+
+        // 5. Превращаем в Map дата → план для быстрого поиска
         Map<LocalDate, DailyPlan> plansByDate = plans.stream()
                 .collect(Collectors.toMap(DailyPlan::getPlanDate, p -> p));
 
-        // 4. Проходим по каждому дню месяца
+        // 6. Проходим по каждому дню месяца
         List<CalendarDayResponse> result = new ArrayList<>();
         LocalDate current = startDate;
 
@@ -57,8 +72,11 @@ public class CalendarService {
             DailyPlan plan = plansByDate.get(current);
 
             if (plan != null) {
-                int totalCount = dailyPlanItemRepository.countByDailyPlan(plan);
-                result.add(new CalendarDayResponse(plan, totalCount));
+                int totalCount = totalCountByPlanId.getOrDefault(plan.getId(), 0L).intValue();
+                int completedCount = plan.isClosed()
+                        ? plan.getCompletedCount()
+                        : completedCountByPlanId.getOrDefault(plan.getId(), 0L).intValue();
+                result.add(new CalendarDayResponse(plan, completedCount, totalCount));
             } else {
                 result.add(new CalendarDayResponse(current));
             }

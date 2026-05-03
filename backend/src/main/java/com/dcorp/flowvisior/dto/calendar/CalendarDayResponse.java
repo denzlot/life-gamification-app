@@ -17,10 +17,10 @@ public class CalendarDayResponse {
     private final boolean shieldUsed;
 
     // Конструктор для дня с планом
-    public CalendarDayResponse(DailyPlan plan, int totalCount) {
+    public CalendarDayResponse(DailyPlan plan, int completedCount, int totalCount) {
         this.date = plan.getPlanDate();
         this.status = plan.getStatus().name();
-        this.completedCount = plan.getCompletedCount();
+        this.completedCount = completedCount;
         this.totalCount = totalCount;
         this.xpEarned = plan.getXpEarned();
         this.hpDelta = plan.getHpDelta();
