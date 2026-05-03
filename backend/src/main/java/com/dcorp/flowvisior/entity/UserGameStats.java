@@ -115,7 +115,7 @@ public class UserGameStats {
     }
 
     public void addXp(int amount) {
-        this.xp += amount; // при reset может стать отрицательным
+        this.xp = Math.max(0, this.xp + amount);
     }
 
     public void setHp(int hp) {
