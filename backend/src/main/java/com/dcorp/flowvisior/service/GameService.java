@@ -161,9 +161,17 @@ public class GameService {
     }
 
     public void applyStreakLogic(UserGameStats stats, boolean dayWasProductive) {
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+        LocalDate lastProductiveDate = stats.getLastProductiveDate();
+
         if (dayWasProductive) {
+            // Reset streak if the consecutive chain is broken (last productive day was not yesterday)
+            if (lastProductiveDate == null || !lastProductiveDate.equals(yesterday)) {
+                stats.setStreak(0);
+            }
             stats.setStreak(stats.getStreak() + 1);
-            stats.setLastProductiveDate(LocalDate.now());
+            stats.setLastProductiveDate(today);
 
             if (stats.getStreak() % 7 == 0) {
                 stats.setStreakShield(true);
@@ -171,6 +179,8 @@ public class GameService {
         } else {
             if (stats.isStreakShield()) {
                 stats.setStreakShield(false);
+                // Treat the shielded day as "counted" so the next productive day continues the streak
+                stats.setLastProductiveDate(today);
                 // streak НЕ обнуляется
             } else {
                 stats.setStreak(0);
