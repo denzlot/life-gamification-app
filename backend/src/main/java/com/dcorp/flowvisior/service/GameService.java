@@ -21,17 +21,19 @@ public class GameService {
     private final DailyPlanItemRepository dailyPlanItemRepository;
     private final ActivityLogRepository activityLogRepository;
     private final QuestStepRepository questStepRepository;
+    private final AchievementService achievementService;
 
     public GameService(
             UserGameStatsRepository userGameStatsRepository,
             DailyPlanItemRepository dailyPlanItemRepository,
             ActivityLogRepository activityLogRepository,
-            QuestStepRepository questStepRepository
+            QuestStepRepository questStepRepository, AchievementService achievementService
     ) {
         this.userGameStatsRepository = userGameStatsRepository;
         this.dailyPlanItemRepository = dailyPlanItemRepository;
         this.activityLogRepository = activityLogRepository;
         this.questStepRepository = questStepRepository;
+        this.achievementService = achievementService;
     }
 
     @Transactional
@@ -75,6 +77,8 @@ public class GameService {
                 stats.getXp(), stats.getHp(),
                 stats.getStreak(), stats.isStreakShield()
         ));
+
+        achievementService.checkAndGrant(user);
     }
 
     @Transactional
@@ -115,6 +119,8 @@ public class GameService {
                 stats.getXp(), stats.getHp(),
                 stats.getStreak(), stats.isStreakShield()
         ));
+
+        achievementService.checkAndGrant(user);
     }
 
     @Transactional
@@ -170,6 +176,8 @@ public class GameService {
                 stats.getXp(), stats.getHp(),
                 stats.getStreak(), stats.isStreakShield()
         ));
+
+        achievementService.checkAndGrant(user);
     }
 
     // --- вспомогательные методы ---
