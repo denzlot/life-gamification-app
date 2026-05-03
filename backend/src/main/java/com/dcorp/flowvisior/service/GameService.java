@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+
 @Service
 public class GameService {
 
@@ -142,6 +144,24 @@ public class GameService {
             level++;
         }
         stats.setLevel(level);
+    }
+
+    public void applyStreakLogic(UserGameStats stats, boolean dayWasProductive) {
+        if (dayWasProductive) {
+            stats.setStreak(stats.getStreak() + 1);
+            stats.setLastProductiveDate(LocalDate.now());
+
+            if (stats.getStreak() % 7 == 0) {
+                stats.setStreakShield(true);
+            }
+        } else {
+            if (stats.isStreakShield()) {
+                stats.setStreakShield(false);
+                // streak НЕ обнуляется
+            } else {
+                stats.setStreak(0);
+            }
+        }
     }
 
 }
