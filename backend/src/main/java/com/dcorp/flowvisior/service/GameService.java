@@ -3,6 +3,7 @@ package com.dcorp.flowvisior.service;
 import com.dcorp.flowvisior.entity.*;
 import com.dcorp.flowvisior.repository.ActivityLogRepository;
 import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
+import com.dcorp.flowvisior.repository.QuestStepRepository;
 import com.dcorp.flowvisior.repository.UserGameStatsRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,15 +20,18 @@ public class GameService {
     private final UserGameStatsRepository userGameStatsRepository;
     private final DailyPlanItemRepository dailyPlanItemRepository;
     private final ActivityLogRepository activityLogRepository;
+    private final QuestStepRepository questStepRepository;
 
     public GameService(
             UserGameStatsRepository userGameStatsRepository,
             DailyPlanItemRepository dailyPlanItemRepository,
-            ActivityLogRepository activityLogRepository
+            ActivityLogRepository activityLogRepository,
+            QuestStepRepository questStepRepository
     ) {
         this.userGameStatsRepository = userGameStatsRepository;
         this.dailyPlanItemRepository = dailyPlanItemRepository;
         this.activityLogRepository = activityLogRepository;
+        this.questStepRepository = questStepRepository;
     }
 
     @Transactional
@@ -45,6 +49,8 @@ public class GameService {
         }
 
         UserGameStats stats = getStats(user);
+        // Для привычек и manual-задач тут будет null, это нормально.
+        QuestStep questStep = getPendingQuestStepForItem(item, user);
 
         int xpDelta = item.getXpReward();
         int plannedHpDelta = item.getHpDeltaComplete();
@@ -60,6 +66,7 @@ public class GameService {
 
         recalculateLevel(stats);
         userGameStatsRepository.save(stats);
+        completeQuestStep(questStep);
 
         activityLogRepository.save(new ActivityLog(
                 user, item.getDailyPlan(), item,
@@ -85,6 +92,8 @@ public class GameService {
         }
 
         UserGameStats stats = getStats(user);
+        // Если шаг уже закрыт, второй раз его не трогаем.
+        QuestStep questStep = getPendingQuestStepForItem(item, user);
 
         int plannedHpDelta = item.getHpDeltaFail();
         int hpBefore = stats.getHp();
@@ -97,6 +106,7 @@ public class GameService {
         int actualHpDelta = stats.getHp() - hpBefore;
 
         userGameStatsRepository.save(stats);
+        skipQuestStep(questStep);
 
         activityLogRepository.save(new ActivityLog(
                 user, item.getDailyPlan(), item,
@@ -131,6 +141,8 @@ public class GameService {
                 ));
 
         UserGameStats stats = getStats(user);
+        // Reset должен откатить не только item дня, но и связанный шаг квеста.
+        QuestStep questStep = getQuestStepForItem(item, user);
 
         // Откатываем изменения обратными значениями
         int xpBefore = stats.getXp();
@@ -147,6 +159,7 @@ public class GameService {
 
         item.reset();
         dailyPlanItemRepository.save(item);
+        resetQuestStep(questStep);
 
         activityLogRepository.save(new ActivityLog(
                 user,
@@ -166,6 +179,69 @@ public class GameService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR, "Game stats not found"
                 ));
+    }
+
+    private QuestStep getPendingQuestStepForItem(DailyPlanItem item, User user) {
+        QuestStep questStep = getQuestStepForItem(item, user);
+
+        if (questStep != null && questStep.getStatus() != QuestStepStatus.PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Quest step is not in PENDING status"
+            );
+        }
+
+        return questStep;
+    }
+
+    private QuestStep getQuestStepForItem(DailyPlanItem item, User user) {
+        // Не каждый пункт дня связан с квестом.
+        if (item.getSourceType() != ActivitySourceType.QUEST || item.getSourceId() == null) {
+            return null;
+        }
+
+        return questStepRepository.findByIdAndQuest_User(item.getSourceId(), user)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Quest step not found"
+                ));
+    }
+
+    private void completeQuestStep(QuestStep questStep) {
+        if (questStep == null) {
+            return;
+        }
+
+        questStep.complete();
+
+        // Последний выполненный шаг автоматически закрывает весь квест.
+        boolean hasIncompleteSteps = questStepRepository.existsByQuestAndStatusNot(
+                questStep.getQuest(),
+                QuestStepStatus.COMPLETED
+        );
+
+        if (!hasIncompleteSteps) {
+            questStep.getQuest().complete();
+        }
+    }
+
+    private void skipQuestStep(QuestStep questStep) {
+        if (questStep == null) {
+            return;
+        }
+
+        questStep.skip();
+    }
+
+    private void resetQuestStep(QuestStep questStep) {
+        if (questStep == null) {
+            return;
+        }
+
+        questStep.reset();
+
+        // Если откатили шаг завершённого квеста, квест снова становится активным.
+        if (questStep.getQuest().getStatus() == QuestStatus.COMPLETED) {
+            questStep.getQuest().activate();
+        }
     }
 
     private void recalculateLevel(UserGameStats stats) {

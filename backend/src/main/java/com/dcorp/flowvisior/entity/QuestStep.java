@@ -83,6 +83,21 @@ public class QuestStep {
         this.scheduledDate = scheduledDate;
     }
 
+    public void complete() {
+        this.status = QuestStepStatus.COMPLETED;
+        this.completedAt = LocalDateTime.now();
+    }
+
+    public void skip() {
+        this.status = QuestStepStatus.SKIPPED;
+        this.completedAt = LocalDateTime.now();
+    }
+
+    public void reset() {
+        this.status = QuestStepStatus.PENDING;
+        this.completedAt = null;
+    }
+
     public Long getId() {
         return id;
     }
