@@ -118,8 +118,8 @@ public class UserGameStats {
         this.xp += amount; // при reset может стать отрицательным
     }
 
-    public void setHp(int amount) {
-        this.xp = Math.max(0, this.xp + amount);
+    public void setHp(int hp) {
+        this.hp = Math.max(0, Math.min(hp, this.maxHp));
     }
 
     public void addHp(int delta) {
