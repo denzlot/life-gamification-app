@@ -164,7 +164,6 @@ public class DailyPlanService {
 
         int xpEarned = dayLogs.stream()
                 .mapToInt(ActivityLog::getXpDelta)
-                .filter(delta -> delta > 0)
                 .sum();
 
         int hpDelta = dayLogs.stream()
