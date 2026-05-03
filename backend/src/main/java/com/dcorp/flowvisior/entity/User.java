@@ -48,6 +48,14 @@ public class User {
         this.updatedAt = now;
     }
 
+    public void ban() {
+        this.status = UserStatus.BANNED;
+    }
+
+    public void unban() {
+        this.status = UserStatus.ACTIVE;
+    }
+
     public Long getId() {return id;}
     public String getUsername() {return username;}
     public String getPassword() { return password; }
