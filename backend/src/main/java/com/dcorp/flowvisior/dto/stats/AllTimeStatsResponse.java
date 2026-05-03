@@ -10,7 +10,7 @@ public class AllTimeStatsResponse {
     private final int totalHabitsCompleted;
     private final int totalQuestsCompleted;
     private final int bestWeekXp;
-    private final LocalDate bestWeekDate;
+    private final LocalDate bestWeekStartDate;
 
     public AllTimeStatsResponse(
             int bestStreak,
@@ -19,7 +19,7 @@ public class AllTimeStatsResponse {
             int totalHabitsCompleted,
             int totalQuestsCompleted,
             int bestWeekXp,
-            LocalDate bestWeekDate
+            LocalDate bestWeekStartDate
     ) {
         this.bestStreak = bestStreak;
         this.totalXp = totalXp;
@@ -27,7 +27,7 @@ public class AllTimeStatsResponse {
         this.totalHabitsCompleted = totalHabitsCompleted;
         this.totalQuestsCompleted = totalQuestsCompleted;
         this.bestWeekXp = bestWeekXp;
-        this.bestWeekDate = bestWeekDate;
+        this.bestWeekStartDate = bestWeekStartDate;
     }
 
     public int getBestStreak() {
@@ -54,7 +54,7 @@ public class AllTimeStatsResponse {
         return bestWeekXp;
     }
 
-    public LocalDate getBestWeekDate() {
-        return bestWeekDate;
+    public LocalDate getBestWeekStartDate() {
+        return bestWeekStartDate;
     }
 }
