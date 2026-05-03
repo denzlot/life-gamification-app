@@ -14,6 +14,8 @@ import java.time.LocalDate;
 @Service
 public class GameService {
 
+    private static final String CLOSED_PLAN_ERROR = "Cannot modify items in a closed daily plan";
+
     private final UserGameStatsRepository userGameStatsRepository;
     private final DailyPlanItemRepository dailyPlanItemRepository;
     private final ActivityLogRepository activityLogRepository;
@@ -30,6 +32,12 @@ public class GameService {
 
     @Transactional
     public void complete(DailyPlanItem item, User user) {
+        if (item.getDailyPlan().isClosed()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
+            );
+        }
+
         if (item.getStatus() != DailyPlanItemStatus.PENDING) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Item is not in PENDING status"
@@ -64,6 +72,12 @@ public class GameService {
 
     @Transactional
     public void fail(DailyPlanItem item, User user) {
+        if (item.getDailyPlan().isClosed()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
+            );
+        }
+
         if (item.getStatus() != DailyPlanItemStatus.PENDING) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Item is not in PENDING status"
@@ -95,6 +109,12 @@ public class GameService {
 
     @Transactional
     public void reset(DailyPlanItem item, User user) {
+        if (item.getDailyPlan().isClosed()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
+            );
+        }
+
         if (item.getStatus() == DailyPlanItemStatus.PENDING) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Item is already in PENDING status"
