@@ -17,6 +17,15 @@ public interface QuestStepRepository extends JpaRepository<QuestStep, Long> {
 
     Optional<QuestStep> findByIdAndQuest_User(Long id, User user);
 
+    int countByQuest(Quest quest);
+
+    int countByQuestAndStatus(Quest quest, QuestStepStatus status);
+
+    Optional<QuestStep> findFirstByQuestAndStatusOrderByScheduledDateAscStepNumberAsc(
+            Quest quest,
+            QuestStepStatus status
+    );
+
     List<QuestStep> findByQuest_UserAndQuest_StatusAndStatusAndScheduledDateLessThanEqualOrderByScheduledDateAscStepNumberAsc(
             User user,
             QuestStatus questStatus,
