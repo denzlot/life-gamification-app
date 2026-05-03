@@ -14,5 +14,7 @@ public interface QuestRepository extends JpaRepository<Quest, Long> {
 
     List<Quest> findByUserAndStatusOrderByCreatedAtDesc(User user, QuestStatus status);
 
+    List<Quest> findTop5ByUserAndStatusOrderByTargetDateAsc(User user, QuestStatus status);
+
     Optional<Quest> findByIdAndUser(Long id, User user);
 }
