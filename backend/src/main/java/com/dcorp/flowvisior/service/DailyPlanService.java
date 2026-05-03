@@ -82,7 +82,7 @@ public class DailyPlanService {
                         hpFailFor(habit.getDifficulty())
                 ))
                 .map(dailyPlanItemRepository::save)
-                .toList();;
+                .toList();
 
         return new DailyPlanResponse(savedPlan, items);
     }

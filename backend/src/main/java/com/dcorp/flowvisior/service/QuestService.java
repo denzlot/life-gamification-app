@@ -163,7 +163,9 @@ public class QuestService {
             int stepNumber,
             int totalSteps
     ) {
-        int offsetDays = (int) (((long) (stepNumber - 1) * durationDays) / totalSteps);
+        int offsetDays = totalSteps == 1 ? 0 :
+                (int) Math.round((double)(stepNumber - 1) * (durationDays - 1) / (totalSteps - 1));
+
 
         return startDate.plusDays(offsetDays);
     }

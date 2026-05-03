@@ -38,9 +38,11 @@ public class Quest {
     private LocalDate targetDate;
 
     @Column(name = "duration_days", nullable = false)
+
     private int durationDays;
 
     @Column(name = "total_steps", nullable = false)
+
     private int totalSteps;
 
     @Column(name = "created_at", nullable = false)
