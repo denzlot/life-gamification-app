@@ -216,7 +216,68 @@ public class DailyPlanService {
 
         dailyPlanRepository.save(dailyPlan);
 
-        return new DailyPlanResponse(dailyPlan, items);
+        return new ClosedDailyPlanResponse(
+                dailyPlan,
+                items,
+                (int) completedCount,
+                (int) failedCount,
+                xpEarned,
+                hpDelta,
+                stats.getStreak(),
+                shieldUsed
+        );
+    }
+
+    private static final class ClosedDailyPlanResponse extends DailyPlanResponse {
+        private final int completedCount;
+        private final int failedCount;
+        private final int xpEarned;
+        private final int hpDelta;
+        private final int streakAfterClose;
+        private final boolean shieldUsed;
+
+        private ClosedDailyPlanResponse(
+                DailyPlan dailyPlan,
+                List<DailyPlanItem> items,
+                int completedCount,
+                int failedCount,
+                int xpEarned,
+                int hpDelta,
+                int streakAfterClose,
+                boolean shieldUsed
+        ) {
+            super(dailyPlan, items);
+            this.completedCount = completedCount;
+            this.failedCount = failedCount;
+            this.xpEarned = xpEarned;
+            this.hpDelta = hpDelta;
+            this.streakAfterClose = streakAfterClose;
+            this.shieldUsed = shieldUsed;
+        }
+
+        public int getCompletedCount() {
+            return completedCount;
+        }
+
+        public int getFailedCount() {
+            return failedCount;
+        }
+
+        public int getXpEarned() {
+            return xpEarned;
+        }
+
+        public int getHpDelta() {
+            return hpDelta;
+        }
+
+        public int getStreakAfterClose() {
+            return streakAfterClose;
+        }
+
+        public boolean isShieldUsed() {
+            return shieldUsed;
+        }
     }
 
     private int xpRewardFor(Difficulty difficulty) {
