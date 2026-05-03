@@ -51,8 +51,17 @@ public class DailyPlanService {
         User user = authenticatedUserService.getCurrentUser();
         LocalDate today = LocalDate.now();
 
-        if (dailyPlanRepository.existsByUserAndPlanDate(user, today)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Daily plan already exists");
+        var existingPlan = dailyPlanRepository.findByUserAndPlanDate(user, today);
+
+        if (existingPlan.isPresent()) {
+            DailyPlan dailyPlan = existingPlan.get();
+
+            if (dailyPlan.isClosed()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Closed daily plan cannot be restarted");
+            }
+
+            List<DailyPlanItem> items = dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(dailyPlan);
+            return new DailyPlanResponse(dailyPlan, items);
         }
 
         DailyPlan dailyPlan = new DailyPlan(user, today, DailyPlanStatus.ACTIVE);
