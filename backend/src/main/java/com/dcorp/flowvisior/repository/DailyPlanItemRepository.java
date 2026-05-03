@@ -8,4 +8,8 @@ import java.util.List;
 
 public interface DailyPlanItemRepository extends JpaRepository<DailyPlanItem, Long> {
     List<DailyPlanItem> findByDailyPlanOrderByCreatedAtAsc(DailyPlan dailyPlan);
+
+    int countByDailyPlan(DailyPlan dailyPlan);
+
+    List<DailyPlanItem> findByDailyPlanIn(List<DailyPlan> plans);
 }
