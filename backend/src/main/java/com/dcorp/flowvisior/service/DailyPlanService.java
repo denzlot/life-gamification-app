@@ -23,6 +23,7 @@ public class DailyPlanService {
     private final UserGameStatsRepository userGameStatsRepository;
     private final ActivityLogRepository activityLogRepository;
     private final QuestStepRepository questStepRepository;
+    private final AchievementService achievementService;
 
     public DailyPlanService(
             DailyPlanRepository dailyPlanRepository,
@@ -32,7 +33,7 @@ public class DailyPlanService {
             GameService gameService,
             UserGameStatsRepository userGameStatsRepository,
             ActivityLogRepository activityLogRepository,
-            QuestStepRepository questStepRepository
+            QuestStepRepository questStepRepository, AchievementService achievementService
     ) {
         this.dailyPlanRepository = dailyPlanRepository;
         this.dailyPlanItemRepository = dailyPlanItemRepository;
@@ -42,6 +43,7 @@ public class DailyPlanService {
         this.userGameStatsRepository = userGameStatsRepository;
         this.activityLogRepository = activityLogRepository;
         this.questStepRepository = questStepRepository;
+        this.achievementService = achievementService;
     }
 
     public DailyPlanResponse getTodayPlan() {
@@ -83,7 +85,7 @@ public class DailyPlanService {
 
         List<Habit> activeHabits = habitRepository.findByUserAndActiveTrueOrderByCreatedAtDesc(user);
 
-        List<DailyPlanItem> items = activeHabits.stream()
+        activeHabits.stream()
                 .map(habit -> new DailyPlanItem(
                         savedPlan,
                         ActivitySourceType.HABIT,
@@ -93,12 +95,10 @@ public class DailyPlanService {
                         hpCompleteFor(habit.getDifficulty()),
                         hpFailFor(habit.getDifficulty())
                 ))
-                .map(dailyPlanItemRepository::save)
-                .toList();
+                .forEach(dailyPlanItemRepository::save);
 
-        // После привычек добавляем квестовые шаги, которые должны попасть на сегодня.
         addDueQuestSteps(savedPlan, user, today);
-        items = dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(savedPlan);
+        List<DailyPlanItem> items = dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(savedPlan);
 
         return new DailyPlanResponse(savedPlan, items);
     }
@@ -204,6 +204,7 @@ public class DailyPlanService {
 
         // 11. Сохраняем игровую статистику
         userGameStatsRepository.save(stats);
+        achievementService.checkAndGrant(user);
 
         // 12. Записываем DAY_CLOSED в ActivityLog
         activityLogRepository.save(new ActivityLog(
