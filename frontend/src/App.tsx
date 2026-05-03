@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 import { createTask, getTasks } from './api/tasksApi'
 import type { Difficulty, Task } from './types/task'
 

@@ -39,20 +39,24 @@ public class GameService {
         UserGameStats stats = getStats(user);
 
         int xpDelta = item.getXpReward();
-        int hpDelta = item.getHpDeltaComplete();
+        int plannedHpDelta = item.getHpDeltaComplete();
+        int hpBefore = stats.getHp();
 
         item.complete();
         dailyPlanItemRepository.save(item);
 
         stats.addXp(xpDelta);
-        stats.addHp(hpDelta);
+        stats.addHp(plannedHpDelta);
+
+        int actualHpDelta = stats.getHp() - hpBefore;
+
         recalculateLevel(stats);
         userGameStatsRepository.save(stats);
 
         activityLogRepository.save(new ActivityLog(
                 user, item.getDailyPlan(), item,
                 ActivityAction.COMPLETED,
-                xpDelta, hpDelta,
+                xpDelta, actualHpDelta,
                 stats.getXp(), stats.getHp(),
                 stats.getStreak(), stats.isStreakShield()
         ));
@@ -68,18 +72,22 @@ public class GameService {
 
         UserGameStats stats = getStats(user);
 
-        int hpDelta = item.getHpDeltaFail();
+        int plannedHpDelta = item.getHpDeltaFail();
+        int hpBefore = stats.getHp();
 
         item.fail();
         dailyPlanItemRepository.save(item);
 
-        stats.addHp(hpDelta);
+        stats.addHp(plannedHpDelta);
+
+        int actualHpDelta = stats.getHp() - hpBefore;
+
         userGameStatsRepository.save(stats);
 
         activityLogRepository.save(new ActivityLog(
                 user, item.getDailyPlan(), item,
                 ActivityAction.FAILED,
-                0, hpDelta,
+                0, actualHpDelta,
                 stats.getXp(), stats.getHp(),
                 stats.getStreak(), stats.isStreakShield()
         ));
@@ -105,8 +113,15 @@ public class GameService {
         UserGameStats stats = getStats(user);
 
         // Откатываем изменения обратными значениями
+        int xpBefore = stats.getXp();
+        int hpBefore = stats.getHp();
+
         stats.addXp(-lastLog.getXpDelta());
         stats.addHp(-lastLog.getHpDelta());
+
+        int actualXpDelta = stats.getXp() - xpBefore;
+        int actualHpDelta = stats.getHp() - hpBefore;
+
         recalculateLevel(stats);
         userGameStatsRepository.save(stats);
 
@@ -118,7 +133,7 @@ public class GameService {
                 item.getDailyPlan(),
                 item,
                 ActivityAction.RESET,
-                -lastLog.getXpDelta(), -lastLog.getHpDelta(),
+                actualXpDelta, actualHpDelta,
                 stats.getXp(), stats.getHp(),
                 stats.getStreak(), stats.isStreakShield()
         ));
