@@ -1,9 +1,6 @@
 package com.dcorp.flowvisior.repository;
 
-import com.dcorp.flowvisior.entity.ActivityAction;
-import com.dcorp.flowvisior.entity.ActivityLog;
-import com.dcorp.flowvisior.entity.DailyPlanItem;
-import com.dcorp.flowvisior.entity.User;
+import com.dcorp.flowvisior.entity.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -16,4 +13,6 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     Optional<ActivityLog> findTopByDailyPlanItemAndActionNotOrderByCreatedAtDesc(
             DailyPlanItem item, ActivityAction action
     );
+
+    List<ActivityLog> findByDailyPlanOrderByCreatedAtAsc(DailyPlan dailyPlan);
 }

@@ -1,0 +1,7 @@
+ALTER TABLE daily_plans
+    ADD COLUMN completed_count    INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN failed_count       INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN xp_earned          INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN hp_delta           INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN streak_after_close INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN shield_used        BOOLEAN NOT NULL DEFAULT FALSE;

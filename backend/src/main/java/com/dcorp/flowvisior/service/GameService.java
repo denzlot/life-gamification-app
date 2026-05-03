@@ -14,6 +14,8 @@ import java.time.LocalDate;
 @Service
 public class GameService {
 
+    private static final String CLOSED_PLAN_ERROR = "Cannot modify items in a closed daily plan";
+
     private final UserGameStatsRepository userGameStatsRepository;
     private final DailyPlanItemRepository dailyPlanItemRepository;
     private final ActivityLogRepository activityLogRepository;
@@ -30,6 +32,12 @@ public class GameService {
 
     @Transactional
     public void complete(DailyPlanItem item, User user) {
+        if (item.getDailyPlan().isClosed()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
+            );
+        }
+
         if (item.getStatus() != DailyPlanItemStatus.PENDING) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Item is not in PENDING status"
@@ -64,6 +72,12 @@ public class GameService {
 
     @Transactional
     public void fail(DailyPlanItem item, User user) {
+        if (item.getDailyPlan().isClosed()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
+            );
+        }
+
         if (item.getStatus() != DailyPlanItemStatus.PENDING) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Item is not in PENDING status"
@@ -95,6 +109,12 @@ public class GameService {
 
     @Transactional
     public void reset(DailyPlanItem item, User user) {
+        if (item.getDailyPlan().isClosed()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
+            );
+        }
+
         if (item.getStatus() == DailyPlanItemStatus.PENDING) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Item is already in PENDING status"
@@ -161,9 +181,17 @@ public class GameService {
     }
 
     public void applyStreakLogic(UserGameStats stats, boolean dayWasProductive) {
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+        LocalDate lastProductiveDate = stats.getLastProductiveDate();
+
         if (dayWasProductive) {
+            // Reset streak if the consecutive chain is broken (last productive day was not yesterday)
+            if (lastProductiveDate == null || !lastProductiveDate.equals(yesterday)) {
+                stats.setStreak(0);
+            }
             stats.setStreak(stats.getStreak() + 1);
-            stats.setLastProductiveDate(LocalDate.now());
+            stats.setLastProductiveDate(today);
 
             if (stats.getStreak() % 7 == 0) {
                 stats.setStreakShield(true);
@@ -171,6 +199,8 @@ public class GameService {
         } else {
             if (stats.isStreakShield()) {
                 stats.setStreakShield(false);
+                // Treat the shielded day as "counted" so the next productive day continues the streak
+                stats.setLastProductiveDate(today);
                 // streak НЕ обнуляется
             } else {
                 stats.setStreak(0);
