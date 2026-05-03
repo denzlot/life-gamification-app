@@ -77,12 +77,12 @@ public class DailyPlanService {
                         ActivitySourceType.HABIT,
                         habit.getId(),
                         habit.getTitle(),
-                        0,
-                        0,
-                        0
+                        xpRewardFor(habit.getDifficulty()),
+                        hpCompleteFor(habit.getDifficulty()),
+                        hpFailFor(habit.getDifficulty())
                 ))
                 .map(dailyPlanItemRepository::save)
-                .toList();
+                .toList();;
 
         return new DailyPlanResponse(savedPlan, items);
     }
@@ -117,5 +117,29 @@ public class DailyPlanService {
         List<DailyPlanItem> items = dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(dailyPlan);
 
         return new DailyPlanResponse(dailyPlan, items);
+    }
+
+    private int xpRewardFor(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> 10;
+            case MEDIUM -> 25;
+            case HARD -> 50;
+        };
+    }
+
+    private int hpCompleteFor(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> 1;
+            case MEDIUM -> 3;
+            case HARD -> 5;
+        };
+    }
+
+    private int hpFailFor(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> -2;
+            case MEDIUM -> -5;
+            case HARD -> -10;
+        };
     }
 }

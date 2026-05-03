@@ -113,4 +113,32 @@ public class UserGameStats {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public void addXp(int amount) {
+        this.xp += amount;
+    }
+
+    public void setHp(int hp) {
+        this.hp = Math.max(0, Math.min(hp, this.maxHp));
+    }
+
+    public void addHp(int delta) {
+        setHp(this.hp + delta);
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+    public void setStreak(int streak) {
+        this.streak = streak;
+    }
+
+    public void setStreakShield(boolean streakShield) {
+        this.streakShield = streakShield;
+    }
+
+    public void setLastProductiveDate(LocalDate date) {
+        this.lastProductiveDate = date;
+    }
 }
