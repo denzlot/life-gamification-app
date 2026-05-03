@@ -38,6 +38,25 @@ public class DailyPlan {
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
 
+    @Column(name = "completed_count", nullable = false)
+    private int completedCount;
+
+    @Column(name = "failed_count", nullable = false)
+    private int failedCount;
+
+    @Column(name = "xp_earned", nullable = false)
+    private int xpEarned;
+
+    @Column(name = "hp_delta", nullable = false)
+    private int hpDelta;
+
+    @Column(name = "streak_after_close", nullable = false)
+    private int streakAfterClose;
+
+    @Column(name = "shield_used", nullable = false)
+    private boolean shieldUsed;
+
+
     protected DailyPlan() {
     }
 
@@ -57,10 +76,20 @@ public class DailyPlan {
         this.startedAt = LocalDateTime.now();
     }
 
-    public void close() {
+    public void close(int completedCount, int failedCount,
+                      int xpEarned, int hpDelta,
+                      int streakAfterClose, boolean shieldUsed) {
         this.status = DailyPlanStatus.CLOSED;
         this.closedAt = LocalDateTime.now();
+        this.completedCount = completedCount;
+        this.failedCount = failedCount;
+        this.xpEarned = xpEarned;
+        this.hpDelta = hpDelta;
+        this.streakAfterClose = streakAfterClose;
+        this.shieldUsed = shieldUsed;
     }
+
+
 
     public boolean isClosed() {
         return this.status == DailyPlanStatus.CLOSED;
@@ -93,4 +122,16 @@ public class DailyPlan {
     public LocalDateTime getClosedAt() {
         return closedAt;
     }
+
+    public int getCompletedCount() { return completedCount; }
+
+    public int getFailedCount() { return failedCount; }
+
+    public int getXpEarned() { return xpEarned; }
+
+    public int getHpDelta() { return hpDelta; }
+
+    public int getStreakAfterClose() { return streakAfterClose; }
+
+    public boolean isShieldUsed() { return shieldUsed; }
 }

@@ -36,4 +36,9 @@ public class DailyPlanController {
     ) {
         return dailyPlanService.addManualItem(planId, request);
     }
+
+    @PostMapping("/today/close")
+    public DailyPlanResponse closeTodayPlan() {
+        return dailyPlanService.closeTodayPlan();
+    }
 }
