@@ -16,8 +16,18 @@ export function formatDateTime(value?: string | null) {
   }).format(new Date(value));
 }
 
+export function formatTime(value?: string | null) {
+  if (!value) return "—";
+  return value.slice(0, 5);
+}
+
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0");
+}
+
 export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  return `${now.getFullYear()}-${padDatePart(now.getMonth() + 1)}-${padDatePart(now.getDate())}`;
 }
 
 export function monthLabel(date: Date) {

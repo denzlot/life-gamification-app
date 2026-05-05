@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "./Button";
+import { ThemeSwitchButton } from "./ThemeSwitchButton";
 import { useAuth } from "../context/AuthContext";
 
 const leftNav = [
-  { to: "/dashboard", label: "Обзор" },
   { to: "/habits", label: "Привычки" },
   { to: "/quests", label: "Квесты" }
 ];
 
 const rightNav = [
-  { to: "/tasks", label: "Задачи" },
   { to: "/calendar", label: "Календарь" },
   { to: "/profile", label: "Профиль" }
 ];
@@ -41,12 +40,19 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
-      <header className="top-bar">
+      <header className="top-bar centered-top-bar">
         <NavLink to="/today" className="brand" aria-label="Flowvisior">
-          <span className="brand-mark">FV</span>
+          <span className="brand-mark brand-mark-svg" aria-hidden="true">
+            <svg className="brand-logo" viewBox="0 0 48 48" role="img" focusable="false">
+              <path className="brand-logo-ground" d="M8 35.8c5.1-4.9 11.2-7.3 18.4-7.3 5.4 0 9.9 1.3 13.6 3.9-3.3 5.1-8.9 8.1-16.4 8.1-6.7 0-12-1.6-15.6-4.7Z" />
+              <path className="brand-logo-trail" d="M14.3 33.5c7.7-7.8 15.1-13.2 22.4-16.5" />
+              <path className="brand-logo-spark" d="M35.9 6.7 38.4 13l6.4 2.3-6.4 2.4-2.5 6.2-2.4-6.2-6.3-2.4 6.3-2.3 2.4-6.3Z" />
+              <path className="brand-logo-seed" d="M23.7 30.8c.9-5.6 3.2-9.4 6.8-11.6" />
+              <circle className="brand-logo-dot" cx="13.2" cy="36" r="1.8" />
+            </svg>
+          </span>
           <span>
             <strong>Flowvisior</strong>
-            <small>тихая RPG</small>
           </span>
         </NavLink>
 
@@ -81,6 +87,7 @@ export function AppShell() {
       <main className="main-view">
         <Outlet />
       </main>
+      <ThemeSwitchButton />
     </div>
   );
 }

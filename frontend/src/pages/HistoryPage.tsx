@@ -57,9 +57,9 @@ export function HistoryPage() {
                 </p>
               </div>
               <div className="history-deltas">
-                <span>XP {signed(item.xpDelta)}</span>
-                <span>HP {signed(item.hpDelta)}</span>
-                <span>после: {item.xpAfter} XP / {item.hpAfter} HP</span>
+                <span className="xp-token">XP {signed(item.xpDelta)}</span>
+                <span className="hp-token">HP {signed(item.hpDelta)}</span>
+                <span>после: <span className="xp-token">{item.xpAfter} XP</span> / <span className="hp-token">{item.hpAfter} HP</span></span>
                 <span>стрик {item.streakAfter} · щит {item.streakShieldAfter ? "есть" : "нет"}</span>
               </div>
             </article>

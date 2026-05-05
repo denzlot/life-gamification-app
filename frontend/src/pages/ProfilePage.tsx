@@ -78,7 +78,7 @@ export function ProfilePage() {
               <div>
                 <strong>{achievement.title}</strong>
                 <p className="muted">{achievement.description}</p>
-                <small>{achievement.category} · +{achievement.xpReward} XP · {formatDateTime(achievement.unlockedAt)}</small>
+                <small>{achievement.category} · <span className="xp-token">+{achievement.xpReward} XP</span> · {formatDateTime(achievement.unlockedAt)}</small>
               </div>
             </article>
           ))}

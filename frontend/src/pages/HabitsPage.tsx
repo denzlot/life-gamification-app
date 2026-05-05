@@ -3,16 +3,38 @@ import { api } from "../api/http";
 import type { CreateHabitRequest, HabitResponse } from "../api/types";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
-import { Field, TextArea, TextInput } from "../components/FormFields";
+import { Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useToast } from "../context/ToastContext";
 import { useAsync } from "../hooks/useAsync";
+import { formatTime } from "../utils/format";
+
+const allDays = [1, 2, 3, 4, 5, 6, 7];
+const dayLabels: Record<number, string> = { 1: "Пн", 2: "Вт", 3: "Ср", 4: "Чт", 5: "Пт", 6: "Сб", 7: "Вс" };
 
 const emptyForm: CreateHabitRequest = {
   title: "",
   description: "",
-  difficulty: "MEDIUM"
+  plannedTime: "",
+  deadlineTime: "",
+  scheduleDays: allDays
 };
+
+function OptionButton({ active, children, onClick }: { active?: boolean; children: string; onClick: () => void }) {
+  return <button type="button" className={`option-chip ${active ? "active" : ""}`} onClick={onClick}>{children}</button>;
+}
+
+function formatSchedule(days?: number[]) {
+  const normalized = days?.length ? days : allDays;
+  if (normalized.length === 7) return "каждый день";
+  return normalized.map((day) => dayLabels[day]).join(", ");
+}
+
+function toggleDay(days: number[] | undefined, day: number) {
+  const current = days?.length ? days : allDays;
+  const next = current.includes(day) ? current.filter((item) => item !== day) : [...current, day].sort((a, b) => a - b);
+  return next.length ? next : [day];
+}
 
 export function HabitsPage() {
   const { data: habits, loading, error, reload } = useAsync(() => api.habits.list(), []);
@@ -21,16 +43,40 @@ export function HabitsPage() {
   const [editing, setEditing] = useState<HabitResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [options, setOptions] = useState({ time: false, deadline: false, description: false });
+  const [formOpen, setFormOpen] = useState(false);
 
   function edit(habit: HabitResponse) {
     setEditing(habit);
-    setForm({ title: habit.title, description: habit.description ?? "", difficulty: "MEDIUM" });
+    setFormOpen(true);
+    setForm({
+      title: habit.title,
+      description: habit.description ?? "",
+      plannedTime: habit.plannedTime ?? "",
+      deadlineTime: habit.deadlineTime ?? "",
+      scheduleDays: habit.scheduleDays?.length ? habit.scheduleDays : allDays
+    });
+    setOptions({ time: Boolean(habit.plannedTime), deadline: Boolean(habit.deadlineTime), description: Boolean(habit.description) });
   }
 
   function resetForm() {
     setEditing(null);
     setForm(emptyForm);
     setFormError(null);
+    setOptions({ time: false, deadline: false, description: false });
+    setFormOpen(false);
+  }
+
+  function openNewHabitForm() {
+    if (formOpen && !editing) {
+      resetForm();
+      return;
+    }
+    setEditing(null);
+    setForm(emptyForm);
+    setFormError(null);
+    setOptions({ time: false, deadline: false, description: false });
+    setFormOpen(true);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -40,7 +86,9 @@ export function HabitsPage() {
     const payload = {
       title: form.title.trim(),
       description: form.description?.trim() || null,
-      difficulty: "MEDIUM"
+      plannedTime: form.plannedTime || null,
+      deadlineTime: form.deadlineTime || null,
+      scheduleDays: form.scheduleDays?.length ? form.scheduleDays : allDays
     };
     try {
       if (editing) await api.habits.update(editing.id, payload);
@@ -57,7 +105,7 @@ export function HabitsPage() {
 
   async function toggle(habit: HabitResponse) {
     await api.habits.toggleActive(habit.id);
-    notify({ tone: "info", title: habit.active ? "Привычка поставлена на паузу" : "Привычка активирована" });
+    notify({ tone: "info", title: habit.active ? "Привычка на паузе" : "Привычка активна" });
     await reload();
   }
 
@@ -69,51 +117,76 @@ export function HabitsPage() {
   }
 
   return (
-    <section className="page">
-      <header className="page-header split-header compact-header">
-        <div>
-          <p className="eyebrow">повторяемые действия</p>
-          <h1>Привычки</h1>
-          <p className="muted">Активные привычки попадают в Today при запуске дня.</p>
-        </div>
-        <Button variant="ghost" onClick={() => reload()}>Обновить</Button>
+    <section className="page centered-page">
+      <header className="page-header centered-title-header">
+        <p className="eyebrow">привычки</p>
+        <h1>Автоматические ритуалы</h1>
       </header>
 
-      <section className="section-line">
-        <p className="eyebrow">{editing ? "редактирование" : "новая привычка"}</p>
-        <form className="form-grid" onSubmit={submit}>
-          <Field label="Название">
-            <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} />
-          </Field>
-          <Field label="Описание">
-            <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
-          </Field>
-          <ErrorLine error={formError} />
-          <div className="form-actions">
-            <Button disabled={busy}>{busy ? "Сохраняем" : editing ? "Сохранить" : "Создать привычку"}</Button>
-            {editing ? <Button type="button" variant="ghost" onClick={resetForm}>Отмена</Button> : null}
-          </div>
-        </form>
+      <section className="section-line entity-form-panel habit-designer-panel clean-section create-drawer-section">
+        <div className="center-add-actions">
+          <Button type="button" onClick={openNewHabitForm} aria-expanded={formOpen}>
+            {formOpen && !editing ? "Скрыть привычку" : "Добавить привычку"}
+          </Button>
+        </div>
+
+        {formOpen ? (
+          <form className="form-grid unified-form compact-create-form create-drawer-form" onSubmit={submit}>
+            <p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новая привычка"}</p>
+            <Field label="Название">
+              <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} placeholder="Например: выпить витамины" />
+            </Field>
+
+            <div className="weekday-picker" aria-label="Дни привычки">
+              {allDays.map((day) => (
+                <button
+                  type="button"
+                  key={day}
+                  className={form.scheduleDays?.includes(day) ? "active" : ""}
+                  onClick={() => setForm({ ...form, scheduleDays: toggleDay(form.scheduleDays, day) })}
+                >
+                  {dayLabels[day]}
+                </button>
+              ))}
+            </div>
+
+            <div className="optional-toolbar">
+              <OptionButton active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>{form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}</OptionButton>
+              <OptionButton active={options.deadline || Boolean(form.deadlineTime)} onClick={() => setOptions((state) => ({ ...state, deadline: !state.deadline }))}>{form.deadlineTime ? `Дедлайн: ${formatTime(form.deadlineTime)}` : "Дедлайн"}</OptionButton>
+              <OptionButton active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionButton>
+            </div>
+
+            {options.time ? <Field label="Плановое время"><TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} /></Field> : null}
+            {options.deadline ? <Field label="Дедлайн"><TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field> : null}
+            {options.description ? <Field label="Описание"><TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Field> : null}
+
+            <ErrorLine error={formError} />
+            <div className="form-actions">
+              <Button disabled={busy}>{busy ? "Сохраняем" : editing ? "Сохранить" : "Создать"}</Button>
+              {editing ? <Button type="button" variant="ghost" onClick={resetForm}>Отмена</Button> : null}
+            </div>
+          </form>
+        ) : null}
       </section>
 
-      <section className="section-line">
-        <div className="section-title-row">
-          <div>
-            <p className="eyebrow">список</p>
-            <h2>{habits?.filter((habit) => habit.active).length ?? 0} активных</h2>
-          </div>
-        </div>
+      <section className="section-line clean-section">
+        <div className="section-title-row"><h2>{habits?.filter((habit) => habit.active).length ?? 0} активных</h2></div>
         {loading ? <Loader /> : <ErrorLine error={error} />}
-        {!loading && habits?.length === 0 ? <EmptyState title="Привычек пока нет" text="Создай привычку и запусти день, чтобы увидеть её в Today." /> : null}
-        <div className="line-list">
+        {!loading && habits?.length === 0 ? <EmptyState title="Привычек пока нет" text="Создай привычку и открой день." /> : null}
+        <div className="line-list typed-list clean-list">
           {habits?.map((habit) => (
-            <article className={`line-item ${habit.active ? "status-active" : "status-paused"}`} key={habit.id}>
-              <div>
-                <strong>{habit.title}</strong>
-                <p className="muted">{habit.description || "Без описания"}</p>
+            <article className={`line-item status-row ${habit.active ? "status-active" : "status-paused"}`} key={habit.id}>
+              <div className="habit-row-main">
+                <div className="item-title-line">
+                  <strong>{habit.title}</strong>
+                  <span className="item-type-badge">привычка</span>
+                </div>
+                <p className="muted compact-meta">
+                  {formatSchedule(habit.scheduleDays)}{habit.plannedTime ? ` · ${formatTime(habit.plannedTime)}` : ""}{habit.deadlineTime ? ` · дедлайн ${formatTime(habit.deadlineTime)}` : ""}
+                </p>
               </div>
               <div className="item-tail wide-tail">
-                <small>{habit.active ? "активна" : "на паузе"}</small>
+                <small>{habit.active ? "активна" : "пауза"}</small>
                 <Button variant="thin" onClick={() => edit(habit)}>Изменить</Button>
                 <Button variant="thin" onClick={() => toggle(habit)}>{habit.active ? "Пауза" : "Активировать"}</Button>
                 <Button variant="danger" onClick={() => remove(habit)}>Удалить</Button>

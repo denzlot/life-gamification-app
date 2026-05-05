@@ -1,38 +1,73 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, ApiError } from "../api/http";
-import type { CreateTaskRequest, DailyPlanItemResponse, DailyPlanItemStatus, DailyPlanResponse, DashboardResponse, SourceType, TaskResponse } from "../api/types";
+import type {
+  CreateTaskRequest,
+  DailyPlanItemResponse,
+  DailyPlanItemStatus,
+  DailyPlanResponse,
+  SourceType
+} from "../api/types";
 import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
-import { Field, TextArea, TextInput } from "../components/FormFields";
+import { Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { GameHud } from "../components/GameHud";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useAchievementWatcher } from "../context/AchievementContext";
 import { useGame } from "../context/GameContext";
 import { useToast } from "../context/ToastContext";
-import { formatDate, itemStatusLabel, pct, planStatusLabel, signed, sourceLabel, taskStatusLabel } from "../utils/format";
+import { formatTime, itemStatusLabel, pct, planStatusLabel, signed, sourceLabel, todayISO } from "../utils/format";
 
 const sourceFilters: Array<{ value: SourceType | "ALL"; label: string }> = [
-  { value: "ALL", label: "Все источники" },
+  { value: "ALL", label: "Все" },
   { value: "TASK", label: "Задачи" },
   { value: "HABIT", label: "Привычки" },
   { value: "QUEST", label: "Квесты" },
-  { value: "MANUAL", label: "Вручную" }
+  { value: "MANUAL", label: "Пункты" }
 ];
 
 const statusFilters: Array<{ value: DailyPlanItemStatus | "ALL"; label: string }> = [
-  { value: "ALL", label: "Все статусы" },
+  { value: "ALL", label: "Все" },
   { value: "PENDING", label: "В плане" },
   { value: "COMPLETED", label: "Выполненные" },
   { value: "FAILED", label: "Не выполненные" }
 ];
 
-const initialTaskForm: CreateTaskRequest = {
-  title: "",
-  description: "",
-  difficulty: "MEDIUM",
-  deadlineDate: ""
-};
+
+function todayPlanCacheKey(date: string) {
+  return `flowvisior:today-plan:${date}`;
+}
+
+function readCachedTodayPlan(date: string): DailyPlanResponse | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(todayPlanCacheKey(date));
+    return raw ? JSON.parse(raw) as DailyPlanResponse : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedTodayPlan(date: string, plan: DailyPlanResponse | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (plan) window.sessionStorage.setItem(todayPlanCacheKey(date), JSON.stringify(plan));
+    else window.sessionStorage.removeItem(todayPlanCacheKey(date));
+  } catch {
+    // Cache is only for instant navigation; ignore storage limits/private mode.
+  }
+}
+
+function createInitialTaskForm(date = todayISO()): CreateTaskRequest {
+  return {
+    title: "",
+    description: "",
+    deadlineDate: date,
+    plannedTime: "",
+    deadlineTime: ""
+  };
+}
 
 function countStatuses(items: DailyPlanItemResponse[]) {
   return items.reduce<Record<DailyPlanItemStatus, number>>(
@@ -44,74 +79,114 @@ function countStatuses(items: DailyPlanItemResponse[]) {
   );
 }
 
-function nextActionFor(item: DailyPlanItemResponse): "complete" | "fail" | "reset" {
-  if (item.status === "PENDING") return "complete";
-  if (item.status === "COMPLETED") return "fail";
-  return "reset";
+function addDays(date: string, delta: number) {
+  const next = new Date(`${date}T12:00:00`);
+  next.setDate(next.getDate() + delta);
+  return next.toISOString().slice(0, 10);
+}
+
+function monthDayLabel(date: string) {
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${date}T12:00:00`));
+}
+
+function weekdayLabel(date: string) {
+  return new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(new Date(`${date}T12:00:00`));
 }
 
 function cycleLabel(status: DailyPlanItemStatus) {
   if (status === "PENDING") return "Отметить как выполненную";
   if (status === "COMPLETED") return "Отметить как не выполненную";
-  return "Вернуть в нейтральный статус";
+  return "Вернуть в план";
+}
+
+function OptionButton({ active, children, onClick }: { active?: boolean; children: string; onClick: () => void }) {
+  return <button type="button" className={`option-chip ${active ? "active" : ""}`} onClick={onClick}>{children}</button>;
+}
+
+function sortByPlannedTime(items: DailyPlanItemResponse[]) {
+  return [...items].sort((a, b) => {
+    const left = a.plannedTime || "99:99";
+    const right = b.plannedTime || "99:99";
+    return left.localeCompare(right) || a.title.localeCompare(b.title, "ru");
+  });
+}
+
+
+function HpXpLine({ xp, hp }: { xp: number; hp: number }) {
+  return (
+    <span className="reward-line">
+      <span className="xp-token">XP {signed(xp)}</span>
+      <span className="hp-token">HP {signed(hp)}</span>
+    </span>
+  );
+}
+
+function StatusIcon({ status }: { status: DailyPlanItemStatus }) {
+  if (status === "COMPLETED") {
+    return (
+      <svg className="status-cycle-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M4.1 8.3 6.8 11 12.2 5" />
+      </svg>
+    );
+  }
+  if (status === "FAILED") {
+    return (
+      <svg className="status-cycle-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M4 8h8" />
+      </svg>
+    );
+  }
+  return null;
 }
 
 export function TodayPage() {
+  const today = todayISO();
+  const cachedPlan = useMemo(() => readCachedTodayPlan(today), [today]);
   const { profile, refreshProfile } = useGame();
   const { notify } = useToast();
   const { syncAchievements } = useAchievementWatcher();
-  const [plan, setPlan] = useState<DailyPlanResponse | null>(null);
-  const [tasks, setTasks] = useState<TaskResponse[]>([]);
-  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [tasksLoading, setTasksLoading] = useState(true);
+  const [plan, setPlan] = useState<DailyPlanResponse | null>(cachedPlan);
+  const [loading, setLoading] = useState(!cachedPlan);
   const [error, setError] = useState<string | null>(null);
-  const [manualTitle, setManualTitle] = useState("");
-  const [taskForm, setTaskForm] = useState<CreateTaskRequest>(initialTaskForm);
-  const [addTaskToToday, setAddTaskToToday] = useState(true);
+  const [taskForm, setTaskForm] = useState<CreateTaskRequest>(() => createInitialTaskForm(today));
   const [sourceFilter, setSourceFilter] = useState<SourceType | "ALL">("ALL");
   const [statusFilter, setStatusFilter] = useState<DailyPlanItemStatus | "ALL">("ALL");
   const [search, setSearch] = useState("");
-  const [avatarIndex, setAvatarIndex] = useState(1);
+  const [sortByTime, setSortByTime] = useState(false);
   const [busy, setBusy] = useState(false);
   const [busyItemId, setBusyItemId] = useState<number | null>(null);
   const [taskError, setTaskError] = useState<string | null>(null);
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
-  const [manualDrawerOpen, setManualDrawerOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [taskOptions, setTaskOptions] = useState({ deadline: false, time: false, description: false });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [openDescriptionId, setOpenDescriptionId] = useState<number | null>(null);
 
-  const loadPlan = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadPlan = useCallback(async (showLoader = true) => {
+    if (showLoader) {
+      setLoading(true);
+      setError(null);
+    }
     try {
-      const today = await api.dailyPlans.today();
-      setPlan(today);
+      const data = await api.dailyPlans.byDate(today);
+      setPlan(data);
+      writeCachedTodayPlan(today, data);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 404) setPlan(null);
-      else setError(err instanceof Error ? err.message : "Не удалось загрузить план дня");
+      if (err instanceof ApiError && err.status === 404) {
+        setPlan(null);
+        writeCachedTodayPlan(today, null);
+      } else setError(err instanceof Error ? err.message : "Не удалось загрузить день");
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
-  }, []);
+  }, [today]);
 
-  const loadAux = useCallback(async () => {
-    setTasksLoading(true);
-    try {
-      const [taskList, dash] = await Promise.all([
-        api.tasks.list().catch(() => [] as TaskResponse[]),
-        api.dashboard.get().catch(() => null)
-      ]);
-      setTasks(taskList);
-      setDashboard(dash);
-    } finally {
-      setTasksLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     loadPlan();
-    loadAux();
-  }, [loadPlan, loadAux]);
+  }, [loadPlan]);
+
 
   const items = plan?.items ?? [];
   const counts = useMemo(() => countStatuses(items), [items]);
@@ -120,52 +195,43 @@ export function TodayPage() {
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return items.filter((item) => {
+    const filtered = items.filter((item) => {
       const bySource = sourceFilter === "ALL" || item.sourceType === sourceFilter;
       const byStatus = statusFilter === "ALL" || item.status === statusFilter;
       const byText = !q || item.title.toLowerCase().includes(q);
       return bySource && byStatus && byText;
     });
-  }, [items, search, sourceFilter, statusFilter]);
-
-  const nearestDeadlines = useMemo(() => {
-    if (dashboard?.nearestDeadlines?.length) return dashboard.nearestDeadlines;
-    return tasks
-      .filter((task) => task.deadlineDate)
-      .sort((a, b) => String(a.deadlineDate).localeCompare(String(b.deadlineDate)))
-      .slice(0, 5);
-  }, [dashboard, tasks]);
+    return sortByTime ? sortByPlannedTime(filtered) : filtered;
+  }, [items, search, sourceFilter, statusFilter, sortByTime]);
 
   async function startDay() {
     setBusy(true);
     setError(null);
     try {
-      const next = await api.dailyPlans.startToday();
+      const next = await api.dailyPlans.startByDate(today);
       setPlan(next);
-      notify({ tone: "success", title: "День начат" });
-      await loadAux();
+      writeCachedTodayPlan(today, next);
+      notify({ tone: "success", title: "День открыт" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось начать день");
+      setError(err instanceof Error ? err.message : "Не удалось открыть день");
     } finally {
       setBusy(false);
     }
   }
 
-  async function addManual(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!plan || isClosed) return;
-    const title = manualTitle.trim();
-    if (!title) return;
+  async function reopenDay() {
+    if (!window.confirm("Открыть закрытый день? После 03:00 следующего дня на это может тратиться щит.")) return;
     setBusy(true);
     setError(null);
     try {
-      const next = await api.dailyPlans.addManualItem(plan.id, { title });
+      const next = await api.dailyPlans.reopenByDate(today);
       setPlan(next);
-      setManualTitle("");
-      setManualDrawerOpen(false);
-      notify({ tone: "success", title: "Пункт добавлен в Today" });
+      writeCachedTodayPlan(today, next);
+      notify({ tone: "success", title: "День снова открыт" });
+      refreshProfile().catch(() => undefined);
+      await loadPlan(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось добавить пункт");
+      setError(err instanceof Error ? err.message : "Не удалось открыть день заново");
     } finally {
       setBusy(false);
     }
@@ -178,19 +244,17 @@ export function TodayPage() {
     const payload = {
       title: taskForm.title.trim(),
       description: taskForm.description?.trim() || null,
-      difficulty: "MEDIUM" as const,
-      deadlineDate: taskForm.deadlineDate || null
+      deadlineDate: today,
+      plannedTime: taskForm.plannedTime || null,
+      deadlineTime: taskForm.deadlineTime || null
     };
     try {
       await api.tasks.create(payload);
-      if (addTaskToToday && plan && !isClosed) {
-        const next = await api.dailyPlans.addManualItem(plan.id, { title: payload.title });
-        setPlan(next);
-      }
-      setTaskForm(initialTaskForm);
+      setTaskForm(createInitialTaskForm(today));
       setTaskDrawerOpen(false);
-      notify({ tone: "success", title: addTaskToToday && plan && !isClosed ? "Задача создана и добавлена в Today" : "Задача создана" });
-      await loadAux();
+      setTaskOptions({ deadline: false, time: false, description: false });
+      notify({ tone: "success", title: "Задача создана" });
+      await loadPlan(false);
     } catch (err) {
       setTaskError(err instanceof Error ? err.message : "Не удалось создать задачу");
     } finally {
@@ -199,16 +263,16 @@ export function TodayPage() {
   }
 
   async function closeDay() {
-    if (!window.confirm("Закрыть сегодняшний план? После закрытия день нельзя редактировать.")) return;
+    if (!window.confirm("Закрыть сегодняшний день?")) return;
     setBusy(true);
     setError(null);
     try {
-      const next = await api.dailyPlans.closeToday();
+      const next = await api.dailyPlans.closeByDate(today);
       setPlan(next);
+      writeCachedTodayPlan(today, next);
       notify({ tone: "success", title: "День закрыт" });
       refreshProfile().catch(() => undefined);
       syncAchievements(false).catch(() => undefined);
-      loadAux().catch(() => undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось закрыть день");
     } finally {
@@ -216,147 +280,178 @@ export function TodayPage() {
     }
   }
 
-  async function act(item: DailyPlanItemResponse, action: "complete" | "fail" | "reset") {
+  async function runAction(item: DailyPlanItemResponse, action: "complete" | "fail" | "reset") {
+    if (action === "fail" && item.status === "COMPLETED") {
+      await api.dailyPlanItems.reset(item.id);
+      await api.dailyPlanItems.fail(item.id);
+      return;
+    }
+    await api.dailyPlanItems[action](item.id);
+  }
+
+  async function cycleItem(item: DailyPlanItemResponse) {
+    if (isClosed || busyItemId === item.id) return;
     const previous = item.status;
+    const action: "complete" | "fail" | "reset" = item.status === "PENDING" ? "complete" : item.status === "COMPLETED" ? "fail" : "reset";
     const nextStatus: DailyPlanItemStatus = action === "complete" ? "COMPLETED" : action === "fail" ? "FAILED" : "PENDING";
-    const title = action === "complete" ? "Задача выполнена" : action === "fail" ? "Задача отмечена как не выполненная" : "Задача снова в плане";
 
     setBusyItemId(item.id);
-    setError(null);
-    setPlan((current) => current ? {
-      ...current,
-      items: current.items.map((entry) => entry.id === item.id ? { ...entry, status: nextStatus, completedAt: nextStatus === "COMPLETED" ? new Date().toISOString() : null } : entry)
-    } : current);
+    setPlan((current) => {
+      if (!current) return current;
+      const next = {
+        ...current,
+        items: current.items.map((entry) => entry.id === item.id ? { ...entry, status: nextStatus, completedAt: nextStatus === "PENDING" ? null : new Date().toISOString() } : entry)
+      };
+      writeCachedTodayPlan(today, next);
+      return next;
+    });
 
     try {
-      await api.dailyPlanItems[action](item.id);
-      notify({ tone: action === "fail" ? "info" : "success", title });
+      await runAction(item, action);
       refreshProfile().catch(() => undefined);
       syncAchievements(false).catch(() => undefined);
-      loadPlan().catch(() => undefined);
-      loadAux().catch(() => undefined);
+      if (item.sourceType === "QUEST") loadPlan(false).catch(() => undefined);
     } catch (err) {
-      setPlan((current) => current ? {
-        ...current,
-        items: current.items.map((entry) => entry.id === item.id ? { ...entry, status: previous } : entry)
-      } : current);
+      setPlan((current) => {
+        if (!current) return current;
+        const next = {
+          ...current,
+          items: current.items.map((entry) => entry.id === item.id ? { ...entry, status: previous } : entry)
+        };
+        writeCachedTodayPlan(today, next);
+        return next;
+      });
       setError(err instanceof Error ? err.message : "Не удалось изменить статус");
     } finally {
       setBusyItemId(null);
     }
   }
 
-  function cycleItem(item: DailyPlanItemResponse) {
-    if (isClosed || busyItemId === item.id) return;
-    act(item, nextActionFor(item));
+  function beginEdit(item: DailyPlanItemResponse) {
+    if (isClosed) return;
+    setEditingId(item.id);
+    setEditTitle(item.title);
+  }
+
+  async function saveTitle(item: DailyPlanItemResponse) {
+    const title = editTitle.trim();
+    if (!title || title === item.title) {
+      setEditingId(null);
+      return;
+    }
+    setPlan((current) => {
+      if (!current) return current;
+      const next = {
+        ...current,
+        items: current.items.map((entry) => entry.id === item.id ? { ...entry, title } : entry)
+      };
+      writeCachedTodayPlan(today, next);
+      return next;
+    });
+    setEditingId(null);
+    try {
+      await api.dailyPlanItems.update(item.id, {
+        title,
+        description: item.description ?? null,
+        plannedTime: item.plannedTime ?? null,
+        deadlineTime: item.deadlineTime ?? null
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось переименовать пункт");
+      loadPlan(false).catch(() => undefined);
+    }
+  }
+
+  function handleTitleKey(event: KeyboardEvent<HTMLInputElement>, item: DailyPlanItemResponse) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      saveTitle(item);
+    }
+    if (event.key === "Escape") setEditingId(null);
   }
 
   return (
-    <section className="page today-page">
-      <header className="page-header split-header compact-header">
-        <div>
-          <p className="eyebrow">главный экран</p>
-          <h1>Today</h1>
-          <p className="muted">План дня, привычки, квесты, дедлайны и состояние персонажа.</p>
+    <section className="page today-page compact-today-page">
+      <header className="day-hero today-hero">
+        <p className="eyebrow">{weekdayLabel(today)}</p>
+        <h1>{monthDayLabel(today)}</h1>
+        <div className="day-status-row">
+          <span>{plan ? planStatusLabel(plan.status) : "день не открыт"}</span>
+          {plan ? <b>{counts.COMPLETED} / {items.length}</b> : null}
         </div>
-        <div className="header-actions">
-          <Button variant="ghost" onClick={() => { loadPlan(); loadAux(); }}>Обновить</Button>
-          {plan && !isClosed ? <Button variant="danger" onClick={closeDay} disabled={busy}>Закрыть день</Button> : null}
-        </div>
+        <nav className="day-switcher" aria-label="Переключение дней">
+          <Link to={`/calendar/${addDays(today, -1)}`}>← предыдущий</Link>
+          <Link to={`/calendar/${addDays(today, 1)}`}>следующий →</Link>
+        </nav>
       </header>
 
-      <section className="section-line top-task-panel">
-        <div className="section-title-row small-title-row">
-          <div>
-            <p className="eyebrow">быстрое действие</p>
-            <h2>Добавить задачу</h2>
-            <p className="muted">Форма скрыта, пока она не нужна.</p>
-          </div>
-          <Button type="button" variant={taskDrawerOpen ? "thin" : "primary"} onClick={() => setTaskDrawerOpen((value) => !value)} aria-expanded={taskDrawerOpen}>
-            {taskDrawerOpen ? "Скрыть форму" : "Добавить задачу"}
-          </Button>
-        </div>
-        {taskDrawerOpen ? (
-          <form className="form-grid task-form task-drawer" onSubmit={createTask}>
-            <Field label="Название">
-              <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} />
-            </Field>
-            <Field label="Дедлайн">
-              <TextInput type="date" value={taskForm.deadlineDate ?? ""} onChange={(event) => setTaskForm({ ...taskForm, deadlineDate: event.target.value })} />
-            </Field>
-            <Field label="Описание">
-              <TextArea value={taskForm.description ?? ""} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} />
-            </Field>
-            <label className="check-line">
-              <input type="checkbox" checked={addTaskToToday} onChange={(event) => setAddTaskToToday(event.target.checked)} disabled={!plan || isClosed} />
-              <span>сразу добавить в Today</span>
-            </label>
-            <ErrorLine error={taskError} />
-            <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать задачу"}</Button></div>
-          </form>
-        ) : null}
-      </section>
-
-      {loading ? <Loader label="Загружаем Today" /> : null}
+      {loading ? <Loader label="Загружаем день" /> : null}
       <ErrorLine error={error} />
 
       {!loading && !plan ? (
-        <section className="section-line start-day-line">
-          <div>
-            <p className="eyebrow">план не открыт</p>
-            <h2>Начать день</h2>
-            <p className="muted">Активные привычки и шаги квестов на сегодня появятся в списке.</p>
+        <section className="section-line start-day-line clean-section center-open-day-panel">
+          <h2>Открыть день</h2>
+          <Button onClick={startDay} disabled={busy}>{busy ? "Открываем" : "Открыть день"}</Button>
+        </section>
+      ) : null}
+
+      {plan && !isClosed ? (
+        <section className="section-line task-create-panel drawer-host clean-section center-add-panel">
+          <div className="center-add-actions">
+            <Button type="button" onClick={() => setTaskDrawerOpen((value) => !value)} aria-expanded={taskDrawerOpen}>
+              {taskDrawerOpen ? "Скрыть задачу" : "Добавить задачу"}
+            </Button>
           </div>
-          <Button onClick={startDay} disabled={busy}>{busy ? "Запускаем" : "Начать день"}</Button>
+
+          {taskDrawerOpen ? (
+            <form className="form-grid task-form task-drawer unified-form compact-create-form ordered-form centered-task-form" onSubmit={createTask}>
+              <Field label="Название">
+                <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} placeholder="Например: подготовить отчёт" />
+              </Field>
+              <div className="optional-toolbar">
+                <OptionButton active={taskOptions.time || Boolean(taskForm.plannedTime)} onClick={() => setTaskOptions((state) => ({ ...state, time: !state.time }))}>
+                  {taskForm.plannedTime ? `Время: ${formatTime(taskForm.plannedTime)}` : "Время"}
+                </OptionButton>
+                <OptionButton active={taskOptions.deadline || Boolean(taskForm.deadlineTime)} onClick={() => setTaskOptions((state) => ({ ...state, deadline: !state.deadline }))}>
+                  {taskForm.deadlineTime ? `Дедлайн: ${formatTime(taskForm.deadlineTime)}` : "Дедлайн"}
+                </OptionButton>
+                <OptionButton active={taskOptions.description || Boolean(taskForm.description)} onClick={() => setTaskOptions((state) => ({ ...state, description: !state.description }))}>
+                  Описание
+                </OptionButton>
+              </div>
+              {taskOptions.time ? <Field label="Плановое время"><TimeWheelInput value={taskForm.plannedTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, plannedTime: value })} /></Field> : null}
+              {taskOptions.deadline ? <Field label="Дедлайн"><TimeWheelInput value={taskForm.deadlineTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field> : null}
+              {taskOptions.description ? <Field label="Описание"><TextArea value={taskForm.description ?? ""} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></Field> : null}
+              <ErrorLine error={taskError} />
+              <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
+            </form>
+          ) : null}
         </section>
       ) : null}
 
       <div className="today-grid">
-        <div className="today-main">
+        <main className="today-main">
           {plan ? (
-            <section className="section-line plan-section">
+            <section className="section-line plan-section clean-section">
               <div className="section-title-row plan-title-row">
-                <div>
-                  <p className="eyebrow">{formatDate(plan.planDate)}</p>
-                  <h2>{planStatusLabel(plan.status)}</h2>
-                </div>
+                <h2>Лист дня</h2>
                 <div className="plan-progress">
                   <strong>{completedPct}%</strong>
                   <div className="meter"><span style={{ width: `${completedPct}%` }} /></div>
                 </div>
               </div>
 
-              <div className="summary-strip soft-strip">
+              <div className="summary-strip soft-strip compact-strip">
                 <span>выполнено {counts.COMPLETED}</span>
                 <span>в плане {counts.PENDING}</span>
                 <span>не выполнено {counts.FAILED}</span>
-                <span>всего {items.length}</span>
-                {isClosed ? <span>XP {plan.xpEarned ?? "—"} · HP {signed(plan.hpDelta)}</span> : null}
+                {isClosed ? <HpXpLine xp={plan.xpEarned ?? 0} hp={plan.hpDelta ?? 0} /> : null}
               </div>
 
-              {!isClosed ? (
-                <div className="today-controls-row">
-                  <Button type="button" variant="ghost" onClick={() => setManualDrawerOpen((value) => !value)} aria-expanded={manualDrawerOpen}>
-                    {manualDrawerOpen ? "Скрыть быстрый пункт" : "Добавить пункт в Today"}
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen}>
-                    {filtersOpen ? "Скрыть фильтры" : "Фильтры"}
-                  </Button>
-                </div>
-              ) : (
-                <div className="today-controls-row">
-                  <Button type="button" variant="ghost" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen}>
-                    {filtersOpen ? "Скрыть фильтры" : "Фильтры"}
-                  </Button>
-                </div>
-              )}
-
-              {!isClosed && manualDrawerOpen ? (
-                <form className="quick-add drawer-panel" onSubmit={addManual}>
-                  <TextInput value={manualTitle} onChange={(event) => setManualTitle(event.target.value)} placeholder="Например: разобрать почту" required maxLength={160} />
-                  <Button disabled={busy || !manualTitle.trim()}>Добавить</Button>
-                </form>
-              ) : null}
+              <div className="today-controls-row">
+                <Button type="button" variant="ghost" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen}>{filtersOpen ? "Скрыть фильтры" : "Фильтры"}</Button>
+                <Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "По времени"}</Button>
+              </div>
 
               {filtersOpen ? (
                 <div className="filter-panel drawer-panel">
@@ -370,66 +465,62 @@ export function TodayPage() {
                       <button type="button" key={filter.value} className={statusFilter === filter.value ? "active" : ""} onClick={() => setStatusFilter(filter.value)}>{filter.label}</button>
                     ))}
                   </div>
-                  <TextInput value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Поиск по Today" />
+                  <TextInput value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Поиск" />
                 </div>
               ) : null}
 
-              {items.length === 0 ? <EmptyState title="В Today пока пусто" text="Добавь пункт вручную, создай задачу или настрой активные привычки и квесты." /> : null}
-              {items.length > 0 && filteredItems.length === 0 ? <EmptyState title="Ничего не найдено" text="Измени фильтры или очисти поиск." /> : null}
+              {items.length === 0 ? <EmptyState title="Пока пусто" text="Создай задачу или открой нужный квест в календаре." /> : null}
+              {items.length > 0 && filteredItems.length === 0 ? <EmptyState title="Ничего не найдено" text="Измени фильтры." /> : null}
 
-              <div className="line-list todo-list">
+              <div className="line-list todo-list typed-list clean-list">
                 {filteredItems.map((item) => (
-                  <article className={`line-item plan-item status-${item.status.toLowerCase()} source-${item.sourceType.toLowerCase()}`} key={item.id}>
+                  <article className={`line-item plan-item status-${item.status.toLowerCase()}`} key={item.id}>
                     <button
                       type="button"
                       className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
                       onClick={() => cycleItem(item)}
                       disabled={busyItemId === item.id || isClosed}
                       aria-label={`${cycleLabel(item.status)}: ${item.title}`}
-                      title={cycleLabel(item.status)}
-                    />
+                    >
+                      <StatusIcon status={item.status} />
+                    </button>
+                    {item.description ? (
+                      <button type="button" className={`description-toggle ${openDescriptionId === item.id ? "open" : ""}`} onClick={() => setOpenDescriptionId((current) => current === item.id ? null : item.id)} aria-label="Показать описание">›</button>
+                    ) : <span className="description-spacer" />}
                     <div className="todo-main">
-                      <strong>{item.title}</strong>
-                      <p className="muted">
-                        {sourceLabel(item.sourceType)} · {itemStatusLabel(item.status)} · XP {item.xpReward} · HP {signed(item.hpDeltaComplete)} / {signed(item.hpDeltaFail)}
+                      <div className="item-title-line">
+                        {editingId === item.id ? (
+                          <TextInput className="inline-edit-input" autoFocus value={editTitle} onChange={(event) => setEditTitle(event.target.value)} onBlur={() => saveTitle(item)} onKeyDown={(event) => handleTitleKey(event, item)} />
+                        ) : (
+                          <strong className="editable-title" onClick={() => beginEdit(item)}>{item.title}</strong>
+                        )}
+                        <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
+                      </div>
+                      <p className="muted compact-meta">
+                        {itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}
                       </p>
+                      {openDescriptionId === item.id && item.description ? <p className="item-description">{item.description}</p> : null}
                     </div>
                   </article>
                 ))}
               </div>
+
+              <div className="bottom-day-actions">
+                {isClosed ? (
+                  <Button onClick={reopenDay} disabled={busy}>{busy ? "Открываем" : "Открыть день"}</Button>
+                ) : (
+                  <Button variant="danger" onClick={closeDay} disabled={busy}>Закрыть день</Button>
+                )}
+              </div>
             </section>
           ) : null}
-        </div>
+        </main>
 
         <aside className="today-side">
-          <section className="section-line character-panel">
-            <Avatar stats={profile?.gameStats} compact variantIndex={avatarIndex} />
-            <div className="avatar-picker" aria-label="Выбор аватара">
-              {[1, 2, 3].map((index) => <button type="button" key={index} className={avatarIndex === index ? "active" : ""} onClick={() => setAvatarIndex(index)}>{index}</button>)}
-            </div>
+          <section className="section-line character-panel clean-section">
+            <Avatar stats={profile?.gameStats} compact variantIndex={1} />
+            <Button type="button" variant="ghost" disabled title="Смена аватара появится позже">Сменить аватар</Button>
             <GameHud stats={profile?.gameStats} />
-          </section>
-
-          <section className="section-line">
-            <div className="section-title-row small-title-row">
-              <div>
-                <p className="eyebrow">дедлайны</p>
-                <h2>Ближайшие</h2>
-              </div>
-              {tasksLoading ? <span className="muted">загрузка</span> : null}
-            </div>
-            {nearestDeadlines.length === 0 ? <EmptyState title="Дедлайнов нет" text="Задачи с датой появятся здесь." /> : null}
-            <div className="mini-list">
-              {nearestDeadlines.map((task) => (
-                <article className="mini-row" key={task.id}>
-                  <div>
-                    <strong>{task.title}</strong>
-                    <p className="muted">{taskStatusLabel(task.status)}</p>
-                  </div>
-                  <span>{formatDate(task.deadlineDate)}</span>
-                </article>
-              ))}
-            </div>
           </section>
         </aside>
       </div>

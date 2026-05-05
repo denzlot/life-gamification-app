@@ -1,4 +1,3 @@
-export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 export type TaskStatus = "OPEN" | "TODO" | "PENDING" | "COMPLETED" | "FAILED" | string;
 export type HabitStatus = string;
 export type QuestStatus = "ACTIVE" | "COMPLETED" | "ARCHIVED";
@@ -39,9 +38,10 @@ export interface TaskResponse {
   id: number;
   title: string;
   description?: string | null;
-  difficulty: Difficulty;
   status: TaskStatus;
   deadlineDate?: string | null;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -49,15 +49,18 @@ export interface TaskResponse {
 export interface CreateTaskRequest {
   title: string;
   description?: string | null;
-  difficulty: Difficulty;
   deadlineDate?: string | null;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
 }
 
 export interface HabitResponse {
   id: number;
   title: string;
   description?: string | null;
-  difficulty: Difficulty;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
+  scheduleDays: number[];
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -66,7 +69,9 @@ export interface HabitResponse {
 export interface CreateHabitRequest {
   title: string;
   description?: string | null;
-  difficulty: Difficulty;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
+  scheduleDays?: number[];
 }
 
 export type UpdateHabitRequest = CreateHabitRequest;
@@ -76,6 +81,9 @@ export interface DailyPlanItemResponse {
   sourceType: SourceType;
   sourceId?: number | null;
   title: string;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
+  description?: string | null;
   status: DailyPlanItemStatus;
   xpReward: number;
   hpDeltaComplete: number;
@@ -98,17 +106,22 @@ export interface DailyPlanResponse {
   hpDelta?: number;
   streakAfterClose?: number;
   shieldUsed?: boolean;
+  automatic?: boolean;
 }
 
 export interface CreateManualDailyPlanItemRequest {
   title: string;
+  description?: string | null;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
 }
 
 export interface QuestResponse {
   id: number;
   title: string;
   description?: string | null;
-  difficulty: Difficulty;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
   status: QuestStatus;
   startDate: string;
   targetDate: string;
@@ -125,6 +138,8 @@ export interface QuestStepResponse {
   title: string;
   description?: string | null;
   scheduledDate: string;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
   status: QuestStepStatus;
   createdAt?: string;
   updatedAt?: string;
@@ -134,7 +149,8 @@ export interface QuestStepResponse {
 export interface CreateQuestRequest {
   title: string;
   description?: string | null;
-  difficulty: Difficulty;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
   startDate: string;
   durationDays: number;
   totalSteps: number;
@@ -145,7 +161,8 @@ export interface CreateQuestRequest {
 export interface UpdateQuestRequest {
   title: string;
   description?: string | null;
-  difficulty: Difficulty;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
   status: QuestStatus;
 }
 
@@ -153,6 +170,15 @@ export interface UpdateQuestStepRequest {
   title: string;
   description?: string | null;
   scheduledDate: string;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
+}
+
+export interface UpdateDailyPlanItemRequest {
+  title: string;
+  description?: string | null;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
 }
 
 export interface TodaySummaryResponse {
@@ -167,15 +193,15 @@ export interface TodaySummaryResponse {
 export interface NearestDeadlineResponse {
   id: number;
   title: string;
-  difficulty: Difficulty;
   status: TaskStatus;
   deadlineDate?: string | null;
+  plannedTime?: string | null;
 }
 
 export interface ActiveQuestDashboardResponse {
   id: number;
   title: string;
-  difficulty: Difficulty;
+  plannedTime?: string | null;
   status: QuestStatus;
   targetDate?: string | null;
   completedSteps: number;
@@ -183,6 +209,7 @@ export interface ActiveQuestDashboardResponse {
   nextStepId?: number | null;
   nextStepTitle?: string | null;
   nextStepDate?: string | null;
+  nextStepTime?: string | null;
 }
 
 export interface DashboardResponse extends GameStats {
@@ -196,6 +223,12 @@ export interface CalendarDayResponse {
   status: DailyPlanStatus | "EMPTY";
   completedCount: number;
   totalCount: number;
+  taskCount?: number;
+  habitCount?: number;
+  questCount?: number;
+  taskCompletedCount?: number;
+  habitCompletedCount?: number;
+  questCompletedCount?: number;
   xpEarned: number;
   hpDelta: number;
   streakDay: number;

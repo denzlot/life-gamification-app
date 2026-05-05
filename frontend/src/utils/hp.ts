@@ -27,8 +27,7 @@ export function avatarMood(stats?: Pick<GameStats, "hp" | "maxHp"> | null): Avat
 }
 
 export function applyHpState(stats?: Pick<GameStats, "hp" | "maxHp" | "hpState"> | null) {
-  const state = normalizeHpState(stats).toLowerCase();
-  document.documentElement.setAttribute("data-hp-state", state);
+  document.documentElement.setAttribute("data-hp-state", normalizeHpState(stats).toLowerCase());
 }
 
 export function hpPhrase(state: HpState) {

@@ -6,7 +6,6 @@ import { GameProvider } from "./context/GameContext";
 import { AdminPage } from "./pages/AdminPage";
 import { AuthPage } from "./pages/AuthPage";
 import { CalendarPage } from "./pages/CalendarPage";
-import { DashboardPage } from "./pages/DashboardPage";
 import { DayDetailsPage } from "./pages/DayDetailsPage";
 import { HabitsPage } from "./pages/HabitsPage";
 import { HistoryPage } from "./pages/HistoryPage";
@@ -14,7 +13,6 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { QuestsPage } from "./pages/QuestsPage";
 import { StatsPage } from "./pages/StatsPage";
-import { TasksPage } from "./pages/TasksPage";
 import { TodayPage } from "./pages/TodayPage";
 
 function ProtectedShell() {
@@ -35,9 +33,7 @@ export function App() {
       <Route element={<AuthGuard />}>
         <Route element={<ProtectedShell />}>
           <Route path="/" element={<Navigate to="/today" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/today" element={<TodayPage />} />
-          <Route path="/tasks" element={<TasksPage />} />
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/quests" element={<QuestsPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
