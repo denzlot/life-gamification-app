@@ -89,11 +89,6 @@ public class DailyPlan {
         this.shieldUsed = shieldUsed;
     }
 
-    public void reopen() {
-        this.status = DailyPlanStatus.ACTIVE;
-        this.closedAt = null;
-    }
-
     public boolean isClosed() {
         return this.status == DailyPlanStatus.CLOSED;
     }

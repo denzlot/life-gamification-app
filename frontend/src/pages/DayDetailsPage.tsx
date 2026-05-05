@@ -132,23 +132,6 @@ export function DayDetailsPage() {
     }
   }
 
-  async function reopenDay() {
-    if (!window.confirm("Открыть закрытый день? После 03:00 следующего дня на это тратится щит.")) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const next = await api.dailyPlans.reopenByDate(date);
-      setPlan(next);
-      notify({ tone: "success", title: "День снова открыт" });
-      refreshProfile().catch(() => undefined);
-      await load(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось открыть день заново");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function closeDay() {
     if (!window.confirm("Закрыть этот день?")) return;
     setBusy(true);
@@ -362,7 +345,7 @@ export function DayDetailsPage() {
 
           {!loading && !plan ? <EmptyState title="День ещё не открыт" text="Открой день, чтобы добавить задачи и увидеть привычки." /> : null}
           {!loading && plan && items.length === 0 ? <EmptyState title="Пока пусто" text="Создай задачу или настрой привычки и квесты." /> : null}
-          {plan && isClosed ? <div className="bottom-day-actions"><Button onClick={reopenDay} disabled={busy}>Открыть заново</Button></div> : null}
+          {plan && isClosed ? <div className="bottom-day-actions"><p className="muted">День закрыт. Изменения уже учтены в streak, HP и XP.</p></div> : null}
           {plan && !isClosed && !isFuture ? <div className="bottom-day-actions"><Button variant="danger" onClick={closeDay} disabled={busy}>Закрыть день</Button></div> : null}
         </section>
       ) : null}

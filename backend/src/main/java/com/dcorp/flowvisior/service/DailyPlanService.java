@@ -89,7 +89,7 @@ public class DailyPlanService {
                 });
 
         if (dailyPlan.isClosed()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Closed daily plan must be reopened before editing");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Closed daily plan cannot be edited");
         }
 
         syncPlannedItems(dailyPlan, user, planDate);
@@ -151,24 +151,6 @@ public class DailyPlanService {
         }
 
         return closePlanInternal(user, dailyPlan, automatic);
-    }
-
-    @Transactional
-    public DailyPlanResponse reopenPlan(LocalDate planDate) {
-        User user = authenticatedUserService.getCurrentUser();
-        autoCloseOverduePlans(user);
-
-        DailyPlan dailyPlan = dailyPlanRepository.findByUserAndPlanDate(user, planDate)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Daily plan not found"));
-
-        if (!dailyPlan.isClosed()) {
-            return responseFor(dailyPlan);
-        }
-
-        throw new ResponseStatusException(
-                HttpStatus.CONFLICT,
-                "Closed daily plan cannot be reopened because game stats were already applied"
-        );
     }
 
     @Transactional

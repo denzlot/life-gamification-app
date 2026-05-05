@@ -58,13 +58,6 @@ public class DailyPlanController {
         return dailyPlanService.closePlan(date, false);
     }
 
-    @PostMapping("/date/{date}/reopen")
-    public DailyPlanResponse reopenPlanByDate(
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
-    ) {
-        return dailyPlanService.reopenPlan(date);
-    }
-
     @PostMapping("/{planId}/items")
     @ResponseStatus(HttpStatus.CREATED)
     public DailyPlanResponse addManualItem(

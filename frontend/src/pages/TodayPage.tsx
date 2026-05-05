@@ -219,24 +219,6 @@ export function TodayPage() {
     }
   }
 
-  async function reopenDay() {
-    if (!window.confirm("Открыть закрытый день? После 03:00 следующего дня на это может тратиться щит.")) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const next = await api.dailyPlans.reopenByDate(today);
-      setPlan(next);
-      writeCachedTodayPlan(today, next);
-      notify({ tone: "success", title: "День снова открыт" });
-      refreshProfile().catch(() => undefined);
-      await loadPlan(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось открыть день заново");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function createTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -507,7 +489,7 @@ export function TodayPage() {
 
               <div className="bottom-day-actions">
                 {isClosed ? (
-                  <Button onClick={reopenDay} disabled={busy}>{busy ? "Открываем" : "Открыть день"}</Button>
+                  <p className="muted">День закрыт. Изменения уже учтены в streak, HP и XP.</p>
                 ) : (
                   <Button variant="danger" onClick={closeDay} disabled={busy}>Закрыть день</Button>
                 )}

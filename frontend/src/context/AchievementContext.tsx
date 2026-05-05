@@ -15,7 +15,7 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { notify } = useToast();
 
-  const storageKey = user ? `flowvizior.achievements.${user.id}` : "flowvizior.achievements.guest";
+  const storageKey = user ? `flowvisior.achievements.${user.id}` : "flowvisior.achievements.guest";
 
   const syncAchievements = useCallback(
     async (silent = false) => {

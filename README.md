@@ -279,7 +279,6 @@ POST /api/daily-plans/today/close
 GET  /api/daily-plans/date/{date}
 POST /api/daily-plans/date/{date}/start
 POST /api/daily-plans/date/{date}/close
-POST /api/daily-plans/date/{date}/reopen
 POST /api/daily-plans/{planId}/items
 ```
 

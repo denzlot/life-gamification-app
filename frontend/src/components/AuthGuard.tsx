@@ -19,7 +19,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
       <section className="page narrow-page">
         <p className="eyebrow">админка</p>
         <h1>Доступ закрыт</h1>
-        <p className="muted">Этот экран доступен только пользователю с ролью ROLE_ADMIN.</p>
+        <p className="muted">Этот экран доступен только пользователю с ролью ADMIN.</p>
       </section>
     );
   }

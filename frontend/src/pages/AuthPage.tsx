@@ -70,7 +70,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
             <div><strong>Привычки</strong><span>Повторяемые действия по дням недели. Они автоматически попадают в дневной план.</span></div>
             <div><strong>Квесты</strong><span>Большие цели из шагов. Можно идти по плану, догонять темп или распределять шаги вручную.</span></div>
             <div><strong>Календарь</strong><span>Показывает историю дней и темп выбранного квеста: где отстаёшь, а где опережаешь.</span></div>
-            <div><strong>HP / XP</strong><span>XP растёт за выполненные дела, HP реагирует на провалы. Персонаж подсказывает состояние.</span></div>
+            <div><strong>HP / XP</strong><span>Прогресс растёт через streak и достижения. Персонаж подсказывает текущее состояние.</span></div>
           </div>
           <div className="welcome-actions">
             <Button onClick={() => navigate(target, { replace: true })}>Начать день</Button>

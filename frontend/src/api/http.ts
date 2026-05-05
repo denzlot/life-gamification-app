@@ -179,7 +179,6 @@ export const api = {
     byDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}`),
     startByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/start`, { method: "POST" }),
     closeByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/close`, { method: "POST" }),
-    reopenByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/reopen`, { method: "POST" }),
     addManualItem: (planId: number, payload: CreateManualDailyPlanItemRequest) =>
       request<DailyPlanResponse>(`/daily-plans/${planId}/items`, { method: "POST", body: json(payload) })
   },
