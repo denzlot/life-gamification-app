@@ -16,6 +16,7 @@ import type {
   QuestStepResponse,
   StatsResponse,
   TaskResponse,
+  UpdateDailyPlanItemRequest,
   UpdateGameStatsRequest,
   UpdateHabitRequest,
   UpdateQuestRequest,
@@ -26,6 +27,10 @@ import type {
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/api").replace(/\/$/, "");
 
 type QueryValue = string | number | boolean | null | undefined;
+const CSRF_COOKIE_NAME = "XSRF-TOKEN";
+const CSRF_HEADER_NAME = "X-XSRF-TOKEN";
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+let csrfTokenCache: string | null = null;
 
 export class ApiError extends Error {
   status: number;
@@ -49,6 +54,45 @@ function withQuery(path: string, query?: Record<string, QueryValue>) {
   return suffix ? `${path}?${suffix}` : path;
 }
 
+function getCookie(name: string) {
+  if (typeof document === "undefined") return null;
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${name}=`))
+    ?.split("=")[1] ?? null;
+}
+
+function isUnsafeMethod(method?: string) {
+  return !SAFE_METHODS.has((method ?? "GET").toUpperCase());
+}
+
+interface CsrfResponse {
+  headerName: string;
+  parameterName: string;
+  token: string;
+}
+
+async function fetchCsrfToken() {
+  const response = await fetch(`${API_BASE}/csrf`, {
+    method: "GET",
+    credentials: "include"
+  });
+  if (!response.ok) return null;
+  const data = await response.json() as CsrfResponse;
+  csrfTokenCache = data.token;
+  return csrfTokenCache;
+}
+
+async function ensureCsrfToken() {
+  if (csrfTokenCache) return csrfTokenCache;
+  const cookieToken = getCookie(CSRF_COOKIE_NAME);
+  if (cookieToken) {
+    csrfTokenCache = decodeURIComponent(cookieToken);
+    return csrfTokenCache;
+  }
+  return fetchCsrfToken();
+}
+
 async function readResponse(response: Response) {
   const contentType = response.headers.get("content-type") ?? "";
   if (response.status === 204) return undefined;
@@ -62,6 +106,11 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   const hasBody = init.body !== undefined && init.body !== null;
   if (hasBody && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
+  if (isUnsafeMethod(init.method)) {
+    const csrfToken = await ensureCsrfToken();
+    if (csrfToken) headers.set(CSRF_HEADER_NAME, csrfToken);
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers,
@@ -69,6 +118,10 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   });
 
   const data = await readResponse(response);
+
+  if (response.status === 403 && isUnsafeMethod(init.method)) {
+    csrfTokenCache = null;
+  }
 
   if (!response.ok) {
     const message =
@@ -109,7 +162,8 @@ export const api = {
   },
   tasks: {
     list: () => request<TaskResponse[]>("/tasks"),
-    create: (payload: CreateTaskRequest) => request<TaskResponse>("/tasks", { method: "POST", body: json(payload) })
+    create: (payload: CreateTaskRequest) => request<TaskResponse>("/tasks", { method: "POST", body: json(payload) }),
+    update: (id: number, payload: CreateTaskRequest) => request<TaskResponse>(`/tasks/${id}`, { method: "PATCH", body: json(payload) })
   },
   habits: {
     list: () => request<HabitResponse[]>("/habits"),
@@ -122,13 +176,18 @@ export const api = {
     today: () => request<DailyPlanResponse>("/daily-plans/today"),
     startToday: () => request<DailyPlanResponse>("/daily-plans/today/start", { method: "POST" }),
     closeToday: () => request<DailyPlanResponse>("/daily-plans/today/close", { method: "POST" }),
+    byDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}`),
+    startByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/start`, { method: "POST" }),
+    closeByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/close`, { method: "POST" }),
+    reopenByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/reopen`, { method: "POST" }),
     addManualItem: (planId: number, payload: CreateManualDailyPlanItemRequest) =>
       request<DailyPlanResponse>(`/daily-plans/${planId}/items`, { method: "POST", body: json(payload) })
   },
   dailyPlanItems: {
     complete: (id: number) => request<void>(`/daily-plan-items/${id}/complete`, { method: "POST" }),
     fail: (id: number) => request<void>(`/daily-plan-items/${id}/fail`, { method: "POST" }),
-    reset: (id: number) => request<void>(`/daily-plan-items/${id}/reset`, { method: "POST" })
+    reset: (id: number) => request<void>(`/daily-plan-items/${id}/reset`, { method: "POST" }),
+    update: (id: number, payload: UpdateDailyPlanItemRequest) => request<void>(`/daily-plan-items/${id}`, { method: "PATCH", body: json(payload) })
   },
   quests: {
     list: () => request<QuestResponse[]>("/quests"),
