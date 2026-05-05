@@ -89,8 +89,6 @@ public class DailyPlan {
         this.shieldUsed = shieldUsed;
     }
 
-
-
     public boolean isClosed() {
         return this.status == DailyPlanStatus.CLOSED;
     }

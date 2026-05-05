@@ -1,6 +1,7 @@
 package com.dcorp.flowvisior.service;
 
 import com.dcorp.flowvisior.entity.User;
+import com.dcorp.flowvisior.entity.UserStatus;
 import com.dcorp.flowvisior.repository.UserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,9 +27,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                         "Пользователь не найден: " + username
                 ));
 
+        boolean enabled = user.getStatus() == UserStatus.ACTIVE;
+
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
+                enabled,
+                true,
+                true,
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
     }

@@ -19,4 +19,6 @@ public interface DailyPlanItemRepository extends JpaRepository<DailyPlanItem, Lo
             ActivitySourceType sourceType,
             Long sourceId
     );
+
+    boolean existsBySourceTypeAndSourceIdIn(ActivitySourceType sourceType, List<Long> sourceIds);
 }

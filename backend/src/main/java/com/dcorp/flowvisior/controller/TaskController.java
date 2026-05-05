@@ -27,4 +27,12 @@ public class TaskController {
     public TaskResponse createTask(@Valid @RequestBody CreateTaskRequest request) {
         return taskService.createTask(request);
     }
+
+    @PatchMapping("/{id}")
+    public TaskResponse updateTask(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateTaskRequest request
+    ) {
+        return taskService.updateTask(id, request);
+    }
 }

@@ -52,17 +52,39 @@ public class AchievementService {
             if (isUnlocked(achievement, stats, user)) {
                 userAchievementRepository.save(new UserAchievement(user, achievement));
 
-                // Начисляем XP за достижение если есть
+                // Теперь достижения — основной источник большого прогресса.
                 if (achievement.getXpReward() > 0) {
                     stats.addXp(achievement.getXpReward());
-                    userGameStatsRepository.save(stats);
                 }
+
+                int hpReward = hpRewardFor(achievement);
+                if (hpReward > 0) {
+                    if ("streak_100".equals(achievement.getKey())) {
+                        stats.restoreFullHp();
+                    } else {
+                        stats.addHp(hpReward);
+                    }
+                }
+
+                stats.recalculateLevel();
+                userGameStatsRepository.save(stats);
 
                 newlyUnlocked.add(achievement.getKey());
             }
         }
 
         return newlyUnlocked;
+    }
+
+    private int hpRewardFor(Achievement achievement) {
+        return switch (achievement.getKey()) {
+            case "streak_7" -> 10;
+            case "streak_30" -> 30;
+            case "streak_100" -> achievement.getRequiredValue();
+            case "quests_1" -> 15;
+            case "full_hp" -> 0;
+            default -> 5;
+        };
     }
 
     private boolean isUnlocked(Achievement achievement, UserGameStats stats, User user) {

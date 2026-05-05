@@ -5,11 +5,18 @@ import com.dcorp.flowvisior.entity.TaskStatus;
 import com.dcorp.flowvisior.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByUserOrderByCreatedAtDesc(User user);
+
+    List<Task> findByUserAndStatusAndDeadlineDateOrderByPlannedTimeAscCreatedAtAsc(
+            User user,
+            TaskStatus status,
+            LocalDate deadlineDate
+    );
 
     List<Task> findTop5ByUserAndStatusAndDeadlineDateIsNotNullOrderByDeadlineDateAsc(
             User user,

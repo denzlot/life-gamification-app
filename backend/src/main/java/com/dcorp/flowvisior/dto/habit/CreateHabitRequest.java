@@ -1,9 +1,10 @@
 package com.dcorp.flowvisior.dto.habit;
 
-import com.dcorp.flowvisior.entity.Difficulty;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import java.time.LocalTime;
+import java.util.List;
 
 public class CreateHabitRequest {
 
@@ -13,18 +14,15 @@ public class CreateHabitRequest {
 
     private String description;
 
-    @NotNull
-    private Difficulty difficulty;
+    private LocalTime plannedTime;
 
-    public String getTitle() {
-        return title;
-    }
+    private LocalTime deadlineTime;
 
-    public String getDescription() {
-        return description;
-    }
+    private List<Integer> scheduleDays;
 
-    public Difficulty getDifficulty() {
-        return difficulty;
-    }
+    public String getTitle() { return title; }
+    public String getDescription() { return description; }
+    public LocalTime getPlannedTime() { return plannedTime; }
+    public LocalTime getDeadlineTime() { return deadlineTime; }
+    public List<Integer> getScheduleDays() { return scheduleDays; }
 }

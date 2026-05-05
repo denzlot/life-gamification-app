@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "quests")
@@ -23,9 +24,11 @@ public class Quest {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private Difficulty difficulty;
+    @Column(name = "planned_time")
+    private LocalTime plannedTime;
+
+    @Column(name = "deadline_time")
+    private LocalTime deadlineTime;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -38,11 +41,9 @@ public class Quest {
     private LocalDate targetDate;
 
     @Column(name = "duration_days", nullable = false)
-
     private int durationDays;
 
     @Column(name = "total_steps", nullable = false)
-
     private int totalSteps;
 
     @Column(name = "created_at", nullable = false)
@@ -58,7 +59,8 @@ public class Quest {
             User user,
             String title,
             String description,
-            Difficulty difficulty,
+            LocalTime plannedTime,
+            LocalTime deadlineTime,
             LocalDate startDate,
             int durationDays,
             int totalSteps
@@ -66,7 +68,8 @@ public class Quest {
         this.user = user;
         this.title = title;
         this.description = description;
-        this.difficulty = difficulty;
+        this.plannedTime = plannedTime;
+        this.deadlineTime = deadlineTime;
         this.status = QuestStatus.ACTIVE;
         this.startDate = startDate;
         this.durationDays = durationDays;
@@ -86,66 +89,29 @@ public class Quest {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void update(String title, String description, Difficulty difficulty, QuestStatus status) {
+    public void update(String title, String description, LocalTime plannedTime, LocalTime deadlineTime, QuestStatus status) {
         this.title = title;
         this.description = description;
-        this.difficulty = difficulty;
+        this.plannedTime = plannedTime;
+        this.deadlineTime = deadlineTime;
         this.status = status;
     }
 
-    public void complete() {
-        this.status = QuestStatus.COMPLETED;
-    }
+    public void complete() { this.status = QuestStatus.COMPLETED; }
+    public void activate() { this.status = QuestStatus.ACTIVE; }
+    public void archive() { this.status = QuestStatus.ARCHIVED; }
 
-    public void activate() {
-        this.status = QuestStatus.ACTIVE;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Difficulty getDifficulty() {
-        return difficulty;
-    }
-
-    public QuestStatus getStatus() {
-        return status;
-    }
-
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public LocalDate getTargetDate() {
-        return targetDate;
-    }
-
-    public int getDurationDays() {
-        return durationDays;
-    }
-
-    public int getTotalSteps() {
-        return totalSteps;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public Long getId() { return id; }
+    public User getUser() { return user; }
+    public String getTitle() { return title; }
+    public String getDescription() { return description; }
+    public LocalTime getPlannedTime() { return plannedTime; }
+    public LocalTime getDeadlineTime() { return deadlineTime; }
+    public QuestStatus getStatus() { return status; }
+    public LocalDate getStartDate() { return startDate; }
+    public LocalDate getTargetDate() { return targetDate; }
+    public int getDurationDays() { return durationDays; }
+    public int getTotalSteps() { return totalSteps; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }
