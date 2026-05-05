@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(
@@ -34,6 +35,12 @@ public class QuestStep {
     @Column(name = "scheduled_date", nullable = false)
     private LocalDate scheduledDate;
 
+    @Column(name = "planned_time")
+    private LocalTime plannedTime;
+
+    @Column(name = "deadline_time")
+    private LocalTime deadlineTime;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private QuestStepStatus status;
@@ -55,13 +62,17 @@ public class QuestStep {
             int stepNumber,
             String title,
             String description,
-            LocalDate scheduledDate
+            LocalDate scheduledDate,
+            LocalTime plannedTime,
+            LocalTime deadlineTime
     ) {
         this.quest = quest;
         this.stepNumber = stepNumber;
         this.title = title;
         this.description = description;
         this.scheduledDate = scheduledDate;
+        this.plannedTime = plannedTime;
+        this.deadlineTime = deadlineTime;
         this.status = QuestStepStatus.PENDING;
     }
 
@@ -77,10 +88,12 @@ public class QuestStep {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void update(String title, String description, LocalDate scheduledDate) {
+    public void update(String title, String description, LocalDate scheduledDate, LocalTime plannedTime, LocalTime deadlineTime) {
         this.title = title;
         this.description = description;
         this.scheduledDate = scheduledDate;
+        this.plannedTime = plannedTime;
+        this.deadlineTime = deadlineTime;
     }
 
     public void complete() {
@@ -98,43 +111,16 @@ public class QuestStep {
         this.completedAt = null;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public Quest getQuest() {
-        return quest;
-    }
-
-    public int getStepNumber() {
-        return stepNumber;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public LocalDate getScheduledDate() {
-        return scheduledDate;
-    }
-
-    public QuestStepStatus getStatus() {
-        return status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public LocalDateTime getCompletedAt() {
-        return completedAt;
-    }
+    public Long getId() { return id; }
+    public Quest getQuest() { return quest; }
+    public int getStepNumber() { return stepNumber; }
+    public String getTitle() { return title; }
+    public String getDescription() { return description; }
+    public LocalDate getScheduledDate() { return scheduledDate; }
+    public LocalTime getPlannedTime() { return plannedTime; }
+    public LocalTime getDeadlineTime() { return deadlineTime; }
+    public QuestStepStatus getStatus() { return status; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public LocalDateTime getCompletedAt() { return completedAt; }
 }

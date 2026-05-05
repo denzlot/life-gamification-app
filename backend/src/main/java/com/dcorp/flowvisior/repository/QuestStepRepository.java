@@ -33,5 +33,12 @@ public interface QuestStepRepository extends JpaRepository<QuestStep, Long> {
             LocalDate scheduledDate
     );
 
+    List<QuestStep> findByQuest_UserAndQuest_StatusAndStatusAndScheduledDateOrderByStepNumberAsc(
+            User user,
+            QuestStatus questStatus,
+            QuestStepStatus status,
+            LocalDate scheduledDate
+    );
+
     boolean existsByQuestAndStatusNot(Quest quest, QuestStepStatus status);
 }

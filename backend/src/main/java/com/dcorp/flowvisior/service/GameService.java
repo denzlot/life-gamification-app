@@ -16,6 +16,10 @@ import java.time.LocalDate;
 public class GameService {
 
     private static final String CLOSED_PLAN_ERROR = "Cannot modify items in a closed daily plan";
+    private static final int SEVEN_DAY_XP_REWARD = 70;
+    private static final int SEVEN_DAY_HP_REWARD = 7;
+    private static final int MISSED_DAY_XP_PENALTY = -70;
+    private static final int MISSED_DAY_HP_PENALTY = -7;
 
     private final UserGameStatsRepository userGameStatsRepository;
     private final DailyPlanItemRepository dailyPlanItemRepository;
@@ -27,7 +31,8 @@ public class GameService {
             UserGameStatsRepository userGameStatsRepository,
             DailyPlanItemRepository dailyPlanItemRepository,
             ActivityLogRepository activityLogRepository,
-            QuestStepRepository questStepRepository, AchievementService achievementService
+            QuestStepRepository questStepRepository,
+            AchievementService achievementService
     ) {
         this.userGameStatsRepository = userGameStatsRepository;
         this.dailyPlanItemRepository = dailyPlanItemRepository;
@@ -38,11 +43,7 @@ public class GameService {
 
     @Transactional
     public void complete(DailyPlanItem item, User user) {
-        if (item.getDailyPlan().isClosed()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
-            );
-        }
+        validateEditable(item);
 
         if (item.getStatus() != DailyPlanItemStatus.PENDING) {
             throw new ResponseStatusException(
@@ -51,29 +52,16 @@ public class GameService {
         }
 
         UserGameStats stats = getStats(user);
-        // Для привычек и manual-задач тут будет null, это нормально.
         QuestStep questStep = getPendingQuestStepForItem(item, user);
-
-        int xpDelta = item.getXpReward();
-        int plannedHpDelta = item.getHpDeltaComplete();
-        int hpBefore = stats.getHp();
 
         item.complete();
         dailyPlanItemRepository.save(item);
-
-        stats.addXp(xpDelta);
-        stats.addHp(plannedHpDelta);
-
-        int actualHpDelta = stats.getHp() - hpBefore;
-
-        recalculateLevel(stats);
-        userGameStatsRepository.save(stats);
-        completeQuestStep(questStep);
+        completeQuestStep(questStep, item.getDailyPlan().getPlanDate());
 
         activityLogRepository.save(new ActivityLog(
                 user, item.getDailyPlan(), item,
                 ActivityAction.COMPLETED,
-                xpDelta, actualHpDelta,
+                0, 0,
                 stats.getXp(), stats.getHp(),
                 stats.getStreak(), stats.isStreakShield()
         ));
@@ -83,39 +71,34 @@ public class GameService {
 
     @Transactional
     public void fail(DailyPlanItem item, User user) {
-        if (item.getDailyPlan().isClosed()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
-            );
-        }
+        validateEditable(item);
 
-        if (item.getStatus() != DailyPlanItemStatus.PENDING) {
+        UserGameStats stats = getStats(user);
+        QuestStep questStep = getQuestStepForItem(item, user);
+
+        if (item.getStatus() == DailyPlanItemStatus.COMPLETED) {
+            item.reset();
+            resetQuestStep(questStep, item.getDailyPlan().getPlanDate());
+        } else if (item.getStatus() != DailyPlanItemStatus.PENDING) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Item is not in PENDING status"
             );
         }
 
-        UserGameStats stats = getStats(user);
-        // Если шаг уже закрыт, второй раз его не трогаем.
-        QuestStep questStep = getPendingQuestStepForItem(item, user);
-
-        int plannedHpDelta = item.getHpDeltaFail();
-        int hpBefore = stats.getHp();
+        if (questStep != null && questStep.getStatus() != QuestStepStatus.PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Quest step is not in PENDING status"
+            );
+        }
 
         item.fail();
         dailyPlanItemRepository.save(item);
-
-        stats.addHp(plannedHpDelta);
-
-        int actualHpDelta = stats.getHp() - hpBefore;
-
-        userGameStatsRepository.save(stats);
-        skipQuestStep(questStep);
+        postponeQuestStepAfterFailedDay(questStep, item.getDailyPlan().getPlanDate());
 
         activityLogRepository.save(new ActivityLog(
                 user, item.getDailyPlan(), item,
                 ActivityAction.FAILED,
-                0, actualHpDelta,
+                0, 0,
                 stats.getXp(), stats.getHp(),
                 stats.getStreak(), stats.isStreakShield()
         ));
@@ -125,11 +108,7 @@ public class GameService {
 
     @Transactional
     public void reset(DailyPlanItem item, User user) {
-        if (item.getDailyPlan().isClosed()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
-            );
-        }
+        validateEditable(item);
 
         if (item.getStatus() == DailyPlanItemStatus.PENDING) {
             throw new ResponseStatusException(
@@ -137,42 +116,19 @@ public class GameService {
             );
         }
 
-        // Находим последнюю не-RESET запись для этого item
-        ActivityLog lastLog = activityLogRepository
-                .findTopByDailyPlanItemAndActionNotOrderByCreatedAtDesc(
-                        item, ActivityAction.RESET
-                )
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR, "Activity log not found for reset"
-                ));
-
         UserGameStats stats = getStats(user);
-        // Reset должен откатить не только item дня, но и связанный шаг квеста.
         QuestStep questStep = getQuestStepForItem(item, user);
-
-        // Откатываем изменения обратными значениями
-        int xpBefore = stats.getXp();
-        int hpBefore = stats.getHp();
-
-        stats.addXp(-lastLog.getXpDelta());
-        stats.addHp(-lastLog.getHpDelta());
-
-        int actualXpDelta = stats.getXp() - xpBefore;
-        int actualHpDelta = stats.getHp() - hpBefore;
-
-        recalculateLevel(stats);
-        userGameStatsRepository.save(stats);
 
         item.reset();
         dailyPlanItemRepository.save(item);
-        resetQuestStep(questStep);
+        resetQuestStep(questStep, item.getDailyPlan().getPlanDate());
 
         activityLogRepository.save(new ActivityLog(
                 user,
                 item.getDailyPlan(),
                 item,
                 ActivityAction.RESET,
-                actualXpDelta, actualHpDelta,
+                0, 0,
                 stats.getXp(), stats.getHp(),
                 stats.getStreak(), stats.isStreakShield()
         ));
@@ -180,7 +136,67 @@ public class GameService {
         achievementService.checkAndGrant(user);
     }
 
-    // --- вспомогательные методы ---
+    public DayGameDelta applyDayClose(UserGameStats stats, boolean dayWasProductive, LocalDate planDate) {
+        int xpBefore = stats.getXp();
+        int hpBefore = stats.getHp();
+        boolean shieldBefore = stats.isStreakShield();
+        boolean shieldUsed = false;
+
+        if (dayWasProductive) {
+            LocalDate expectedPrevious = planDate.minusDays(1);
+            LocalDate lastProductiveDate = stats.getLastProductiveDate();
+
+            if (lastProductiveDate == null || !lastProductiveDate.equals(expectedPrevious)) {
+                stats.setStreak(0);
+            }
+
+            stats.setStreak(stats.getStreak() + 1);
+            stats.setLastProductiveDate(planDate);
+
+            if (stats.getStreak() % 7 == 0) {
+                stats.setStreakShield(true);
+                stats.addXp(SEVEN_DAY_XP_REWARD);
+                stats.addHp(SEVEN_DAY_HP_REWARD);
+            }
+        } else {
+            if (shieldBefore) {
+                stats.setStreakShield(false);
+                stats.setLastProductiveDate(planDate);
+                shieldUsed = true;
+            } else {
+                stats.setStreak(0);
+                stats.addXp(MISSED_DAY_XP_PENALTY);
+                stats.addHp(MISSED_DAY_HP_PENALTY);
+            }
+        }
+
+        stats.recalculateLevel();
+
+        return new DayGameDelta(
+                stats.getXp() - xpBefore,
+                stats.getHp() - hpBefore,
+                shieldUsed
+        );
+    }
+
+    // Старый метод оставлен для совместимости вызовов, если они где-то остались.
+    public void applyStreakLogic(UserGameStats stats, boolean dayWasProductive) {
+        applyDayClose(stats, dayWasProductive, LocalDate.now());
+    }
+
+    private void validateEditable(DailyPlanItem item) {
+        if (item.getDailyPlan().isClosed()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, CLOSED_PLAN_ERROR
+            );
+        }
+
+        if (item.getDailyPlan().getPlanDate().isAfter(LocalDate.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Future daily plan items cannot be confirmed yet"
+            );
+        }
+    }
 
     private UserGameStats getStats(User user) {
         return userGameStatsRepository.findByUser(user)
@@ -202,7 +218,6 @@ public class GameService {
     }
 
     private QuestStep getQuestStepForItem(DailyPlanItem item, User user) {
-        // Не каждый пункт дня связан с квестом.
         if (item.getSourceType() != ActivitySourceType.QUEST || item.getSourceId() == null) {
             return null;
         }
@@ -213,14 +228,14 @@ public class GameService {
                 ));
     }
 
-    private void completeQuestStep(QuestStep questStep) {
+    private void completeQuestStep(QuestStep questStep, LocalDate planDate) {
         if (questStep == null) {
             return;
         }
 
+        restoreQuestStepDate(questStep, planDate);
         questStep.complete();
 
-        // Последний выполненный шаг автоматически закрывает весь квест.
         boolean hasIncompleteSteps = questStepRepository.existsByQuestAndStatusNot(
                 questStep.getQuest(),
                 QuestStepStatus.COMPLETED
@@ -231,65 +246,60 @@ public class GameService {
         }
     }
 
-    private void skipQuestStep(QuestStep questStep) {
-        if (questStep == null) {
+    private void restoreQuestStepDate(QuestStep questStep, LocalDate planDate) {
+        if (questStep == null || planDate == null || planDate.equals(questStep.getScheduledDate())) {
             return;
         }
 
-        questStep.skip();
+        questStep.update(
+                questStep.getTitle(),
+                questStep.getDescription(),
+                planDate,
+                questStep.getPlannedTime(),
+                questStep.getDeadlineTime()
+        );
     }
 
-    private void resetQuestStep(QuestStep questStep) {
+    private void postponeQuestStepAfterFailedDay(QuestStep questStep, LocalDate failedPlanDate) {
         if (questStep == null) {
             return;
         }
 
+        questStep.update(
+                questStep.getTitle(),
+                questStep.getDescription(),
+                failedPlanDate.plusDays(1),
+                questStep.getPlannedTime(),
+                questStep.getDeadlineTime()
+        );
+    }
+
+    private void resetQuestStep(QuestStep questStep, LocalDate planDate) {
+        if (questStep == null) {
+            return;
+        }
+
+        restoreQuestStepDate(questStep, planDate);
         questStep.reset();
 
-        // Если откатили шаг завершённого квеста, квест снова становится активным.
         if (questStep.getQuest().getStatus() == QuestStatus.COMPLETED) {
             questStep.getQuest().activate();
         }
     }
 
-    private void recalculateLevel(UserGameStats stats) {
-        // XP для уровня N = 500 * (N-1) * N / 2
-        // Ищем максимальный уровень при котором суммарный XP <= stats.xp
-        int level = 1;
-        while (true) {
-            int xpRequired = 500 * level * (level + 1) / 2;
-            if (stats.getXp() < xpRequired) break;
-            level++;
+    public static final class DayGameDelta {
+        private final int xpDelta;
+        private final int hpDelta;
+        private final boolean shieldUsed;
+
+        private DayGameDelta(int xpDelta, int hpDelta, boolean shieldUsed) {
+            this.xpDelta = xpDelta;
+            this.hpDelta = hpDelta;
+            this.shieldUsed = shieldUsed;
         }
-        stats.setLevel(level);
+
+        public int getXpDelta() { return xpDelta; }
+        public int getHpDelta() { return hpDelta; }
+        public boolean isShieldUsed() { return shieldUsed; }
     }
-
-    public void applyStreakLogic(UserGameStats stats, boolean dayWasProductive) {
-        LocalDate today = LocalDate.now();
-        LocalDate yesterday = today.minusDays(1);
-        LocalDate lastProductiveDate = stats.getLastProductiveDate();
-
-        if (dayWasProductive) {
-            // Reset streak if the consecutive chain is broken (last productive day was not yesterday)
-            if (lastProductiveDate == null || !lastProductiveDate.equals(yesterday)) {
-                stats.setStreak(0);
-            }
-            stats.setStreak(stats.getStreak() + 1);
-            stats.setLastProductiveDate(today);
-
-            if (stats.getStreak() % 7 == 0) {
-                stats.setStreakShield(true);
-            }
-        } else {
-            if (stats.isStreakShield()) {
-                stats.setStreakShield(false);
-                // Treat the shielded day as "counted" so the next productive day continues the streak
-                stats.setLastProductiveDate(today);
-                // streak НЕ обнуляется
-            } else {
-                stats.setStreak(0);
-            }
-        }
-    }
-
 }

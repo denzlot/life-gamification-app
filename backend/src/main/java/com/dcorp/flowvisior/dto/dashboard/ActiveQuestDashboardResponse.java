@@ -1,17 +1,17 @@
 package com.dcorp.flowvisior.dto.dashboard;
 
-import com.dcorp.flowvisior.entity.Difficulty;
 import com.dcorp.flowvisior.entity.Quest;
 import com.dcorp.flowvisior.entity.QuestStatus;
 import com.dcorp.flowvisior.entity.QuestStep;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class ActiveQuestDashboardResponse {
 
     private final Long id;
     private final String title;
-    private final Difficulty difficulty;
+    private final LocalTime plannedTime;
     private final QuestStatus status;
     private final LocalDate targetDate;
     private final int completedSteps;
@@ -19,6 +19,7 @@ public class ActiveQuestDashboardResponse {
     private final Long nextStepId;
     private final String nextStepTitle;
     private final LocalDate nextStepDate;
+    private final LocalTime nextStepTime;
 
     public ActiveQuestDashboardResponse(
             Quest quest,
@@ -28,7 +29,7 @@ public class ActiveQuestDashboardResponse {
     ) {
         this.id = quest.getId();
         this.title = quest.getTitle();
-        this.difficulty = quest.getDifficulty();
+        this.plannedTime = quest.getPlannedTime();
         this.status = quest.getStatus();
         this.targetDate = quest.getTargetDate();
         this.completedSteps = completedSteps;
@@ -36,45 +37,18 @@ public class ActiveQuestDashboardResponse {
         this.nextStepId = nextStep == null ? null : nextStep.getId();
         this.nextStepTitle = nextStep == null ? null : nextStep.getTitle();
         this.nextStepDate = nextStep == null ? null : nextStep.getScheduledDate();
+        this.nextStepTime = nextStep == null ? null : nextStep.getPlannedTime();
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public Difficulty getDifficulty() {
-        return difficulty;
-    }
-
-    public QuestStatus getStatus() {
-        return status;
-    }
-
-    public LocalDate getTargetDate() {
-        return targetDate;
-    }
-
-    public int getCompletedSteps() {
-        return completedSteps;
-    }
-
-    public int getTotalSteps() {
-        return totalSteps;
-    }
-
-    public Long getNextStepId() {
-        return nextStepId;
-    }
-
-    public String getNextStepTitle() {
-        return nextStepTitle;
-    }
-
-    public LocalDate getNextStepDate() {
-        return nextStepDate;
-    }
+    public Long getId() { return id; }
+    public String getTitle() { return title; }
+    public LocalTime getPlannedTime() { return plannedTime; }
+    public QuestStatus getStatus() { return status; }
+    public LocalDate getTargetDate() { return targetDate; }
+    public int getCompletedSteps() { return completedSteps; }
+    public int getTotalSteps() { return totalSteps; }
+    public Long getNextStepId() { return nextStepId; }
+    public String getNextStepTitle() { return nextStepTitle; }
+    public LocalDate getNextStepDate() { return nextStepDate; }
+    public LocalTime getNextStepTime() { return nextStepTime; }
 }

@@ -1,9 +1,11 @@
 package com.dcorp.flowvisior.service;
 
 import com.dcorp.flowvisior.dto.quest.*;
+import com.dcorp.flowvisior.entity.ActivitySourceType;
 import com.dcorp.flowvisior.entity.Quest;
 import com.dcorp.flowvisior.entity.QuestStep;
 import com.dcorp.flowvisior.entity.User;
+import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
 import com.dcorp.flowvisior.repository.QuestRepository;
 import com.dcorp.flowvisior.repository.QuestStepRepository;
 import org.springframework.http.HttpStatus;
@@ -20,15 +22,18 @@ public class QuestService {
 
     private final QuestRepository questRepository;
     private final QuestStepRepository questStepRepository;
+    private final DailyPlanItemRepository dailyPlanItemRepository;
     private final AuthenticatedUserService authenticatedUserService;
 
     public QuestService(
             QuestRepository questRepository,
             QuestStepRepository questStepRepository,
+            DailyPlanItemRepository dailyPlanItemRepository,
             AuthenticatedUserService authenticatedUserService
     ) {
         this.questRepository = questRepository;
         this.questStepRepository = questStepRepository;
+        this.dailyPlanItemRepository = dailyPlanItemRepository;
         this.authenticatedUserService = authenticatedUserService;
     }
 
@@ -58,7 +63,8 @@ public class QuestService {
                 user,
                 request.getTitle(),
                 request.getDescription(),
-                request.getDifficulty(),
+                request.getPlannedTime(),
+                request.getDeadlineTime(),
                 request.getStartDate(),
                 request.getDurationDays(),
                 request.getTotalSteps()
@@ -78,7 +84,8 @@ public class QuestService {
         quest.update(
                 request.getTitle(),
                 request.getDescription(),
-                request.getDifficulty(),
+                request.getPlannedTime(),
+                request.getDeadlineTime(),
                 request.getStatus()
         );
 
@@ -89,6 +96,19 @@ public class QuestService {
     public void deleteQuest(Long id) {
         User user = authenticatedUserService.getCurrentUser();
         Quest quest = getQuestForUser(id, user);
+
+        List<Long> stepIds = questStepRepository.findByQuestOrderByStepNumberAsc(quest)
+                .stream()
+                .map(QuestStep::getId)
+                .toList();
+
+        boolean usedInDailyPlan = !stepIds.isEmpty()
+                && dailyPlanItemRepository.existsBySourceTypeAndSourceIdIn(ActivitySourceType.QUEST, stepIds);
+
+        if (usedInDailyPlan) {
+            quest.archive();
+            return;
+        }
 
         questRepository.delete(quest);
     }
@@ -114,7 +134,9 @@ public class QuestService {
         questStep.update(
                 request.getTitle(),
                 request.getDescription(),
-                request.getScheduledDate()
+                request.getScheduledDate(),
+                request.getPlannedTime(),
+                request.getDeadlineTime()
         );
 
         return new QuestStepResponse(questStep);
@@ -142,7 +164,9 @@ public class QuestService {
                     stepNumber,
                     title,
                     request.getBaseStepDescription(),
-                    scheduledDate
+                    scheduledDate,
+                    request.getPlannedTime(),
+                    request.getDeadlineTime()
             ));
         }
 
@@ -165,7 +189,6 @@ public class QuestService {
     ) {
         int offsetDays = totalSteps == 1 ? 0 :
                 (int) Math.round((double)(stepNumber - 1) * (durationDays - 1) / (totalSteps - 1));
-
 
         return startDate.plusDays(offsetDays);
     }

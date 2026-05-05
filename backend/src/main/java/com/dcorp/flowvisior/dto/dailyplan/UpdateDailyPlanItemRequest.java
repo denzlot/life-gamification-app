@@ -1,12 +1,11 @@
-package com.dcorp.flowvisior.dto.habit;
+package com.dcorp.flowvisior.dto.dailyplan;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalTime;
-import java.util.List;
 
-public class UpdateHabitRequest {
+public class UpdateDailyPlanItemRequest {
 
     @NotBlank
     @Size(max = 160)
@@ -18,11 +17,8 @@ public class UpdateHabitRequest {
 
     private LocalTime deadlineTime;
 
-    private List<Integer> scheduleDays;
-
     public String getTitle() { return title; }
     public String getDescription() { return description; }
     public LocalTime getPlannedTime() { return plannedTime; }
     public LocalTime getDeadlineTime() { return deadlineTime; }
-    public List<Integer> getScheduleDays() { return scheduleDays; }
 }

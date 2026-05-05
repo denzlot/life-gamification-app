@@ -130,6 +130,22 @@ public class UserGameStats {
         this.level = level;
     }
 
+    public void recalculateLevel() {
+        int nextLevel = 1;
+        while (true) {
+            int xpRequired = 500 * nextLevel * (nextLevel + 1) / 2;
+            if (this.xp < xpRequired) {
+                break;
+            }
+            nextLevel++;
+        }
+        this.level = nextLevel;
+    }
+
+    public void restoreFullHp() {
+        this.hp = this.maxHp;
+    }
+
     public void setStreak(int streak) {
         this.streak = streak;
     }

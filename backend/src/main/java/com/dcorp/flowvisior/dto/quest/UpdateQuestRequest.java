@@ -1,10 +1,11 @@
 package com.dcorp.flowvisior.dto.quest;
 
-import com.dcorp.flowvisior.entity.Difficulty;
 import com.dcorp.flowvisior.entity.QuestStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import java.time.LocalTime;
 
 public class UpdateQuestRequest {
 
@@ -14,25 +15,16 @@ public class UpdateQuestRequest {
 
     private String description;
 
-    @NotNull
-    private Difficulty difficulty;
+    private LocalTime plannedTime;
+
+    private LocalTime deadlineTime;
 
     @NotNull
     private QuestStatus status;
 
-    public String getTitle() {
-        return title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Difficulty getDifficulty() {
-        return difficulty;
-    }
-
-    public QuestStatus getStatus() {
-        return status;
-    }
+    public String getTitle() { return title; }
+    public String getDescription() { return description; }
+    public LocalTime getPlannedTime() { return plannedTime; }
+    public LocalTime getDeadlineTime() { return deadlineTime; }
+    public QuestStatus getStatus() { return status; }
 }

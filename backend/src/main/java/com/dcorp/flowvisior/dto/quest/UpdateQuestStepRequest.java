@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class UpdateQuestStepRequest {
 
@@ -17,15 +18,13 @@ public class UpdateQuestStepRequest {
     @NotNull
     private LocalDate scheduledDate;
 
-    public String getTitle() {
-        return title;
-    }
+    private LocalTime plannedTime;
 
-    public String getDescription() {
-        return description;
-    }
+    private LocalTime deadlineTime;
 
-    public LocalDate getScheduledDate() {
-        return scheduledDate;
-    }
+    public String getTitle() { return title; }
+    public String getDescription() { return description; }
+    public LocalDate getScheduledDate() { return scheduledDate; }
+    public LocalTime getPlannedTime() { return plannedTime; }
+    public LocalTime getDeadlineTime() { return deadlineTime; }
 }

@@ -1,10 +1,7 @@
 package com.dcorp.flowvisior.service;
 
 import com.dcorp.flowvisior.dto.calendar.CalendarDayResponse;
-import com.dcorp.flowvisior.entity.DailyPlan;
-import com.dcorp.flowvisior.entity.DailyPlanItem;
-import com.dcorp.flowvisior.entity.DailyPlanItemStatus;
-import com.dcorp.flowvisior.entity.User;
+import com.dcorp.flowvisior.entity.*;
 import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
 import com.dcorp.flowvisior.repository.DailyPlanRepository;
 import org.springframework.http.HttpStatus;
@@ -25,20 +22,24 @@ public class CalendarService {
     private final DailyPlanRepository dailyPlanRepository;
     private final DailyPlanItemRepository dailyPlanItemRepository;
     private final AuthenticatedUserService authenticatedUserService;
+    private final DailyPlanService dailyPlanService;
 
     public CalendarService(
             DailyPlanRepository dailyPlanRepository,
             DailyPlanItemRepository dailyPlanItemRepository,
-            AuthenticatedUserService authenticatedUserService
+            AuthenticatedUserService authenticatedUserService,
+            DailyPlanService dailyPlanService
     ) {
         this.dailyPlanRepository = dailyPlanRepository;
         this.dailyPlanItemRepository = dailyPlanItemRepository;
         this.authenticatedUserService = authenticatedUserService;
+        this.dailyPlanService = dailyPlanService;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<CalendarDayResponse> getMonthCalendar(int year, int month) {
         User user = authenticatedUserService.getCurrentUser();
+        dailyPlanService.autoCloseOverduePlans(user);
 
         // 1. Валидируем year и month перед вызовом YearMonth.of
         if (month < 1 || month > 12) {
@@ -62,13 +63,25 @@ public class CalendarService {
                 ? List.of()
                 : dailyPlanItemRepository.findByDailyPlanIn(plans);
 
-        // 5. Предварительно считаем total и completed для каждого плана
         Map<Long, Long> totalCountByPlanId = allItems.stream()
                 .collect(Collectors.groupingBy(item -> item.getDailyPlan().getId(), Collectors.counting()));
 
         Map<Long, Long> completedCountByPlanId = allItems.stream()
                 .filter(i -> i.getStatus() == DailyPlanItemStatus.COMPLETED)
                 .collect(Collectors.groupingBy(item -> item.getDailyPlan().getId(), Collectors.counting()));
+
+        Map<String, Long> totalByPlanAndType = allItems.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getDailyPlan().getId() + ":" + item.getSourceType().name(),
+                        Collectors.counting()
+                ));
+
+        Map<String, Long> completedByPlanAndType = allItems.stream()
+                .filter(i -> i.getStatus() == DailyPlanItemStatus.COMPLETED)
+                .collect(Collectors.groupingBy(
+                        item -> item.getDailyPlan().getId() + ":" + item.getSourceType().name(),
+                        Collectors.counting()
+                ));
 
         // 6. Превращаем в Map дата → план для быстрого поиска
         Map<LocalDate, DailyPlan> plansByDate = plans.stream()
@@ -86,7 +99,17 @@ public class CalendarService {
                 int completedCount = plan.isClosed()
                         ? plan.getCompletedCount()
                         : completedCountByPlanId.getOrDefault(plan.getId(), 0L).intValue();
-                result.add(new CalendarDayResponse(plan, completedCount, totalCount));
+                result.add(new CalendarDayResponse(
+                        plan,
+                        completedCount,
+                        totalCount,
+                        count(totalByPlanAndType, plan.getId(), ActivitySourceType.TASK),
+                        count(totalByPlanAndType, plan.getId(), ActivitySourceType.HABIT),
+                        count(totalByPlanAndType, plan.getId(), ActivitySourceType.QUEST),
+                        count(completedByPlanAndType, plan.getId(), ActivitySourceType.TASK),
+                        count(completedByPlanAndType, plan.getId(), ActivitySourceType.HABIT),
+                        count(completedByPlanAndType, plan.getId(), ActivitySourceType.QUEST)
+                ));
             } else {
                 result.add(new CalendarDayResponse(current));
             }
@@ -95,5 +118,9 @@ public class CalendarService {
         }
 
         return result;
+    }
+
+    private int count(Map<String, Long> counts, Long planId, ActivitySourceType type) {
+        return counts.getOrDefault(planId + ":" + type.name(), 0L).intValue();
     }
 }

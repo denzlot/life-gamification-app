@@ -1,9 +1,11 @@
 package com.dcorp.flowvisior.controller;
 
+import com.dcorp.flowvisior.dto.dailyplan.UpdateDailyPlanItemRequest;
 import com.dcorp.flowvisior.entity.*;
 import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
 import com.dcorp.flowvisior.service.AuthenticatedUserService;
 import com.dcorp.flowvisior.service.GameService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -51,13 +53,27 @@ public class DailyPlanItemController {
         return ResponseEntity.ok().build();
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<Void> update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateDailyPlanItemRequest request
+    ) {
+        User user = authenticatedUserService.getCurrentUser();
+        DailyPlanItem item = getItemForUser(id, user);
+        if (item.getDailyPlan().isClosed()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Closed daily plan item cannot be edited");
+        }
+        item.update(request.getTitle(), request.getDescription(), request.getPlannedTime(), request.getDeadlineTime());
+        dailyPlanItemRepository.save(item);
+        return ResponseEntity.noContent().build();
+    }
+
     private DailyPlanItem getItemForUser(Long id, User user) {
         DailyPlanItem item = dailyPlanItemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Item not found"
                 ));
 
-        // Проверяем что item принадлежит этому пользователю
         if (!item.getDailyPlan().getUser().getId().equals(user.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found");
         }

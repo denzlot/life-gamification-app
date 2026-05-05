@@ -1,6 +1,7 @@
 package com.dcorp.flowvisior.repository;
 
 import com.dcorp.flowvisior.entity.DailyPlan;
+import com.dcorp.flowvisior.entity.DailyPlanStatus;
 import com.dcorp.flowvisior.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -18,4 +19,10 @@ public interface DailyPlanRepository extends JpaRepository<DailyPlan, Long> {
 
     List<DailyPlan> findByUserAndPlanDateBetweenOrderByPlanDateAsc(
             User user, LocalDate startDate, LocalDate endDate);
+
+    List<DailyPlan> findByUserAndStatusAndPlanDateGreaterThanEqualOrderByPlanDateAsc(
+            User user, DailyPlanStatus status, LocalDate planDate);
+
+    List<DailyPlan> findByUserAndStatusAndPlanDateLessThanEqualOrderByPlanDateAsc(
+            User user, DailyPlanStatus status, LocalDate planDate);
 }

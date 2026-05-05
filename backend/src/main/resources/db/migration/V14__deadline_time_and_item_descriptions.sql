@@ -1,0 +1,6 @@
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deadline_time TIME;
+ALTER TABLE habits ADD COLUMN IF NOT EXISTS deadline_time TIME;
+ALTER TABLE quests ADD COLUMN IF NOT EXISTS deadline_time TIME;
+ALTER TABLE quest_steps ADD COLUMN IF NOT EXISTS deadline_time TIME;
+ALTER TABLE daily_plan_items ADD COLUMN IF NOT EXISTS deadline_time TIME;
+ALTER TABLE daily_plan_items ADD COLUMN IF NOT EXISTS description TEXT;

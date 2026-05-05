@@ -5,6 +5,7 @@ import com.dcorp.flowvisior.entity.DailyPlanItem;
 import com.dcorp.flowvisior.entity.DailyPlanItemStatus;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public class DailyPlanItemResponse {
 
@@ -12,6 +13,9 @@ public class DailyPlanItemResponse {
     private final ActivitySourceType sourceType;
     private final Long sourceId;
     private final String title;
+    private final String description;
+    private final LocalTime plannedTime;
+    private final LocalTime deadlineTime;
     private final DailyPlanItemStatus status;
     private final int xpReward;
     private final int hpDeltaComplete;
@@ -24,6 +28,9 @@ public class DailyPlanItemResponse {
         this.sourceType = item.getSourceType();
         this.sourceId = item.getSourceId();
         this.title = item.getTitle();
+        this.description = item.getDescription();
+        this.plannedTime = item.getPlannedTime();
+        this.deadlineTime = item.getDeadlineTime();
         this.status = item.getStatus();
         this.xpReward = item.getXpReward();
         this.hpDeltaComplete = item.getHpDeltaComplete();
@@ -36,6 +43,9 @@ public class DailyPlanItemResponse {
     public ActivitySourceType getSourceType() { return sourceType; }
     public Long getSourceId() { return sourceId; }
     public String getTitle() { return title; }
+    public String getDescription() { return description; }
+    public LocalTime getPlannedTime() { return plannedTime; }
+    public LocalTime getDeadlineTime() { return deadlineTime; }
     public DailyPlanItemStatus getStatus() { return status; }
     public int getXpReward() { return xpReward; }
     public int getHpDeltaComplete() { return hpDeltaComplete; }

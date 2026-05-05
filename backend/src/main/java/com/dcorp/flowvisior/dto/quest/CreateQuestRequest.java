@@ -1,9 +1,9 @@
 package com.dcorp.flowvisior.dto.quest;
 
-import com.dcorp.flowvisior.entity.Difficulty;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class CreateQuestRequest {
 
@@ -13,8 +13,9 @@ public class CreateQuestRequest {
 
     private String description;
 
-    @NotNull
-    private Difficulty difficulty;
+    private LocalTime plannedTime;
+
+    private LocalTime deadlineTime;
 
     @NotNull
     private LocalDate startDate;
@@ -32,35 +33,13 @@ public class CreateQuestRequest {
 
     private String baseStepDescription;
 
-    public String getTitle() {
-        return title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public Difficulty getDifficulty() {
-        return difficulty;
-    }
-
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public int getDurationDays() {
-        return durationDays;
-    }
-
-    public int getTotalSteps() {
-        return totalSteps;
-    }
-
-    public String getBaseStepTitle() {
-        return baseStepTitle;
-    }
-
-    public String getBaseStepDescription() {
-        return baseStepDescription;
-    }
+    public String getTitle() { return title; }
+    public String getDescription() { return description; }
+    public LocalTime getPlannedTime() { return plannedTime; }
+    public LocalTime getDeadlineTime() { return deadlineTime; }
+    public LocalDate getStartDate() { return startDate; }
+    public int getDurationDays() { return durationDays; }
+    public int getTotalSteps() { return totalSteps; }
+    public String getBaseStepTitle() { return baseStepTitle; }
+    public String getBaseStepDescription() { return baseStepDescription; }
 }
