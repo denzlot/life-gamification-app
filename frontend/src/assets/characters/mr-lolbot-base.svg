@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" role="img" aria-labelledby="title desc">
+  <title id="title">Мистер Лолбот</title>
+  <desc id="desc">Стилизованный робот-помощник</desc>
+  <defs>
+    <linearGradient id="body" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#dfe6ef"/><stop offset="1" stop-color="#79889a"/></linearGradient>
+    <radialGradient id="glow" cx="50%" cy="36%" r="58%"><stop offset="0" stop-color="#9fb7ff" stop-opacity=".7"/><stop offset="1" stop-color="#111827" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="260" height="260" fill="url(#glow)"/>
+  <path d="M92 73c5-23 71-23 76 0l6 47c4 32-18 61-44 61s-48-29-44-61l6-47Z" fill="url(#body)" stroke="#151923" stroke-width="7"/>
+  <path d="M82 112c-21 8-33 30-30 54 3 23 20 43 43 50 17 5 52 5 69 0 23-7 40-27 43-50 3-24-9-46-30-54" fill="#151923" stroke="#dfe6ef" stroke-width="7" stroke-linejoin="round"/>
+  <rect x="82" y="82" width="96" height="62" rx="24" fill="#0d1017" stroke="#dfe6ef" stroke-width="7"/>
+  <circle cx="111" cy="113" r="9" fill="#9fb7ff"/><circle cx="149" cy="113" r="9" fill="#9fb7ff"/>
+  <path d="M115 139c11 9 20 9 30 0" fill="none" stroke="#9fb7ff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M130 49v-18" stroke="#dfe6ef" stroke-width="7" stroke-linecap="round"/><circle cx="130" cy="24" r="10" fill="#9fb7ff" stroke="#151923" stroke-width="5"/>
+</svg>

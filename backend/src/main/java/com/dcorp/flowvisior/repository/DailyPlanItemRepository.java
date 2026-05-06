@@ -14,6 +14,8 @@ public interface DailyPlanItemRepository extends JpaRepository<DailyPlanItem, Lo
 
     List<DailyPlanItem> findByDailyPlanIn(List<DailyPlan> plans);
 
+    List<DailyPlanItem> findBySourceTypeAndSourceId(ActivitySourceType sourceType, Long sourceId);
+
     boolean existsByDailyPlanAndSourceTypeAndSourceId(
             DailyPlan dailyPlan,
             ActivitySourceType sourceType,
@@ -21,4 +23,6 @@ public interface DailyPlanItemRepository extends JpaRepository<DailyPlanItem, Lo
     );
 
     boolean existsBySourceTypeAndSourceIdIn(ActivitySourceType sourceType, List<Long> sourceIds);
+
+    void deleteBySourceTypeAndSourceIdIn(ActivitySourceType sourceType, List<Long> sourceIds);
 }

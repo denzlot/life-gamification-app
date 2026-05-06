@@ -17,6 +17,7 @@ import type {
   StatsResponse,
   TaskResponse,
   UpdateDailyPlanItemRequest,
+  UpdateDailyPlanNoteRequest,
   UpdateGameStatsRequest,
   UpdateHabitRequest,
   UpdateQuestRequest,
@@ -179,6 +180,8 @@ export const api = {
     byDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}`),
     startByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/start`, { method: "POST" }),
     closeByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/close`, { method: "POST" }),
+    updateNoteByDate: (date: string, payload: UpdateDailyPlanNoteRequest) =>
+      request<DailyPlanResponse>(`/daily-plans/date/${date}/note`, { method: "PATCH", body: json(payload) }),
     addManualItem: (planId: number, payload: CreateManualDailyPlanItemRequest) =>
       request<DailyPlanResponse>(`/daily-plans/${planId}/items`, { method: "POST", body: json(payload) })
   },

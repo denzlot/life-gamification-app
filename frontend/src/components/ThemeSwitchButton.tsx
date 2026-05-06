@@ -1,30 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
-
-type ThemeName = "dark" | "light" | "rpg" | "vampire";
+import { applyTheme, CHARACTER_EVENT, readTheme, THEME_STORAGE_KEY, type ThemeName } from "../utils/character";
 
 const themes: Array<{ name: ThemeName; label: string; icon: string }> = [
   { name: "dark", label: "Тёмная", icon: "◐" },
-  { name: "light", label: "Светлая", icon: "☼" },
-  { name: "rpg", label: "РПГ", icon: "✦" },
-  { name: "vampire", label: "Vampire", icon: "☾" }
+  { name: "vampire", label: "Красная", icon: "☾" },
+  { name: "light", label: "Светлая", icon: "☼" }
 ];
-
-const storageKey = "flowvisior-theme";
-
-function readTheme(): ThemeName {
-  if (typeof window === "undefined") return "dark";
-  const saved = window.localStorage.getItem(storageKey);
-  return themes.some((theme) => theme.name === saved) ? (saved as ThemeName) : "dark";
-}
 
 export function ThemeSwitchButton() {
   const [theme, setTheme] = useState<ThemeName>(() => readTheme());
   const current = useMemo(() => themes.find((entry) => entry.name === theme) ?? themes[0], [theme]);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem(storageKey, theme);
+    applyTheme(theme);
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
+
+  useEffect(() => {
+    function syncTheme() {
+      setTheme(readTheme());
+    }
+
+    window.addEventListener(CHARACTER_EVENT, syncTheme as EventListener);
+    window.addEventListener("storage", syncTheme);
+    return () => {
+      window.removeEventListener(CHARACTER_EVENT, syncTheme as EventListener);
+      window.removeEventListener("storage", syncTheme);
+    };
+  }, []);
 
   function cycleTheme() {
     const index = themes.findIndex((entry) => entry.name === theme);

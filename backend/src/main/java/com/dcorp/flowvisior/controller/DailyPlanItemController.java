@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+
 @RestController
 @RequestMapping("/api/daily-plan-items")
 public class DailyPlanItemController {
@@ -62,6 +64,9 @@ public class DailyPlanItemController {
         DailyPlanItem item = getItemForUser(id, user);
         if (item.getDailyPlan().isClosed()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Closed daily plan item cannot be edited");
+        }
+        if (item.getDailyPlan().getPlanDate().isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Past daily plan items are read-only");
         }
         item.update(request.getTitle(), request.getDescription(), request.getPlannedTime(), request.getDeadlineTime());
         dailyPlanItemRepository.save(item);

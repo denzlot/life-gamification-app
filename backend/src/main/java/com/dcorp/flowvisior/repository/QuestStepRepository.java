@@ -41,4 +41,6 @@ public interface QuestStepRepository extends JpaRepository<QuestStep, Long> {
     );
 
     boolean existsByQuestAndStatusNot(Quest quest, QuestStepStatus status);
+
+    void deleteByQuest(Quest quest);
 }

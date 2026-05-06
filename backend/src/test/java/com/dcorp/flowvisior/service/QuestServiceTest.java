@@ -1,5 +1,6 @@
 package com.dcorp.flowvisior.service;
 
+import com.dcorp.flowvisior.dto.quest.UpdateQuestStepRequest;
 import com.dcorp.flowvisior.entity.ActivitySourceType;
 import com.dcorp.flowvisior.entity.Quest;
 import com.dcorp.flowvisior.entity.QuestStatus;
@@ -18,9 +19,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,6 +58,8 @@ class QuestServiceTest {
 
         assertThat(quest.getStatus()).isEqualTo(QuestStatus.ARCHIVED);
         verify(questRepository, never()).delete(quest);
+        verify(questStepRepository, never()).deleteByQuest(quest);
+        verify(dailyPlanItemRepository, never()).deleteBySourceTypeAndSourceIdIn(ActivitySourceType.QUEST, List.of(42L));
     }
 
     @Test
@@ -72,7 +77,41 @@ class QuestServiceTest {
 
         service().deleteQuest(10L);
 
+        assertThat(quest.getStatus()).isEqualTo(QuestStatus.ACTIVE);
+        verify(dailyPlanItemRepository, never()).deleteBySourceTypeAndSourceIdIn(ActivitySourceType.QUEST, List.of(42L));
+        verify(questStepRepository).deleteByQuest(quest);
         verify(questRepository).delete(quest);
+    }
+
+    @Test
+    void deleteQuestWithNoStepsDeletesQuestWithoutCheckingDailyPlanItems() {
+        User user = new User("user", "{noop}password");
+        Quest quest = quest(user);
+
+        when(authenticatedUserService.getCurrentUser()).thenReturn(user);
+        when(questRepository.findByIdAndUser(10L, user)).thenReturn(Optional.of(quest));
+        when(questStepRepository.findByQuestOrderByStepNumberAsc(quest)).thenReturn(List.of());
+
+        service().deleteQuest(10L);
+
+        verifyNoInteractions(dailyPlanItemRepository);
+        verify(questStepRepository).deleteByQuest(quest);
+        verify(questRepository).delete(quest);
+    }
+
+    @Test
+    void updateQuestStepDoesNotExposeStepOwnedByAnotherUser() {
+        User user = new User("user", "{noop}password");
+        UpdateQuestStepRequest request = mock(UpdateQuestStepRequest.class);
+
+        when(authenticatedUserService.getCurrentUser()).thenReturn(user);
+        when(questStepRepository.findByIdAndQuest_User(99L, user)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service().updateQuestStep(99L, request))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("Quest step not found");
+
+        verify(questStepRepository).findByIdAndQuest_User(99L, user);
     }
 
     private QuestService service() {

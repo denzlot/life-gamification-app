@@ -56,6 +56,9 @@ public class DailyPlan {
     @Column(name = "shield_used", nullable = false)
     private boolean shieldUsed;
 
+    @Column(columnDefinition = "TEXT")
+    private String note;
+
 
     protected DailyPlan() {
     }
@@ -91,6 +94,10 @@ public class DailyPlan {
 
     public boolean isClosed() {
         return this.status == DailyPlanStatus.CLOSED;
+    }
+
+    public void updateNote(String note) {
+        this.note = note;
     }
 
     public Long getId() {
@@ -132,4 +139,7 @@ public class DailyPlan {
     public int getStreakAfterClose() { return streakAfterClose; }
 
     public boolean isShieldUsed() { return shieldUsed; }
+
+    public String getNote() { return note; }
 }
+

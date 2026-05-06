@@ -131,8 +131,12 @@ export function HabitsPage() {
         </div>
 
         {formOpen ? (
-          <form className="form-grid unified-form compact-create-form create-drawer-form" onSubmit={submit}>
-            <p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новая привычка"}</p>
+          <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={resetForm}>
+            <form className="form-grid unified-form compact-create-form create-drawer-form modal-form-card" onSubmit={submit} role="dialog" aria-modal="true" aria-label={editing ? "Редактирование привычки" : "Новая привычка"} onMouseDown={(event) => event.stopPropagation()}>
+              <div className="modal-form-head">
+                <div><p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новая привычка"}</p><strong>{editing ? "Изменить привычку" : "Добавить привычку"}</strong></div>
+                <button type="button" className="dialog-close" onClick={resetForm} aria-label="Закрыть">×</button>
+              </div>
             <Field label="Название">
               <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} placeholder="Например: выпить витамины" />
             </Field>
@@ -165,7 +169,8 @@ export function HabitsPage() {
               <Button disabled={busy}>{busy ? "Сохраняем" : editing ? "Сохранить" : "Создать"}</Button>
               {editing ? <Button type="button" variant="ghost" onClick={resetForm}>Отмена</Button> : null}
             </div>
-          </form>
+            </form>
+          </div>
         ) : null}
       </section>
 

@@ -28,7 +28,7 @@ export function HistoryPage() {
         <div>
           <p className="eyebrow">журнал действий</p>
           <h1>История</h1>
-          <p className="muted">Записи ActivityLog: выполнение, провалы, сбросы и закрытые дни.</p>
+          <p className="muted">Выполнение, провалы, сбросы и закрытые дни.</p>
         </div>
         <div className="header-actions">
           <Button variant="ghost" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))}>Назад</Button>
@@ -47,7 +47,6 @@ export function HistoryPage() {
           {data?.items.map((item) => (
             <article className={`history-item action-${String(item.action).toLowerCase()}`} key={item.id}>
               <div className="history-time">
-                <span>#{item.id}</span>
                 <small>{formatDateTime(item.createdAt)}</small>
               </div>
               <div>
