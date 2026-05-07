@@ -366,7 +366,7 @@ export function CalendarPage() {
   const daysLeft = targetDate ? dateDiffDays(targetDate, today) : null;
 
   function chooseQuest(id: number | null) {
-    setSelectedQuestId(id);
+    setSelectedQuestId((current) => current === id ? null : id);
   }
 
   return (

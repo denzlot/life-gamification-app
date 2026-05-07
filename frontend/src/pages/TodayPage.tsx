@@ -19,6 +19,7 @@ import { useAchievementWatcher } from "../context/AchievementContext";
 import { useGame } from "../context/GameContext";
 import { useToast } from "../context/ToastContext";
 import { formatDate, formatTime, itemStatusLabel, pct, planStatusLabel, signed, sourceLabel, todayISO } from "../utils/format";
+import { applyPlanItemOrder, animatePlanItemShift, capturePlanItemRects, readBooleanPreference, reorderItems, writeBooleanPreference, writePlanItemOrder } from "../utils/planItemUi";
 
 const sourceFilters: Array<{ value: SourceType | "ALL"; label: string }> = [
   { value: "ALL", label: "Все" },
@@ -36,95 +37,6 @@ const statusFilters: Array<{ value: DailyPlanItemStatus | "ALL"; label: string }
 ];
 
 
-
-function planItemOrderKey(date: string) {
-  return `flowvisior:plan-item-order:${date}`;
-}
-
-function readPlanItemOrder(date: string): number[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(planItemOrderKey(date));
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((value): value is number => typeof value === "number") : [];
-  } catch {
-    return [];
-  }
-}
-
-function writePlanItemOrder(date: string, items: DailyPlanItemResponse[]) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(planItemOrderKey(date), JSON.stringify(items.map((item) => item.id)));
-  } catch {
-    // Manual ordering is a UI preference; ignore storage limits/private mode.
-  }
-}
-
-function applyPlanItemOrder(items: DailyPlanItemResponse[], date: string) {
-  const order = readPlanItemOrder(date);
-  if (order.length === 0) return items;
-  const orderIndex = new Map(order.map((id, index) => [id, index]));
-  return [...items].sort((a, b) => {
-    const left = orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
-    const right = orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
-    return left - right;
-  });
-}
-
-function reorderItems(items: DailyPlanItemResponse[], activeId: number, overId: number) {
-  const from = items.findIndex((item) => item.id === activeId);
-  const to = items.findIndex((item) => item.id === overId);
-  if (from < 0 || to < 0 || from === to) return items;
-  const next = [...items];
-  const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next;
-}
-
-
-function capturePlanItemRects() {
-  if (typeof document === "undefined") return new Map<number, DOMRect>();
-  const rects = new Map<number, DOMRect>();
-  document.querySelectorAll<HTMLElement>("[data-plan-item-id]").forEach((element) => {
-    const id = Number(element.dataset.planItemId);
-    if (Number.isFinite(id)) rects.set(id, element.getBoundingClientRect());
-  });
-  return rects;
-}
-
-function animatePlanItemShift(previousRects: Map<number, DOMRect>) {
-  if (typeof document === "undefined" || previousRects.size === 0) return;
-  window.requestAnimationFrame(() => {
-    document.querySelectorAll<HTMLElement>("[data-plan-item-id]").forEach((element) => {
-      const id = Number(element.dataset.planItemId);
-      const previous = previousRects.get(id);
-      if (!previous) return;
-      const next = element.getBoundingClientRect();
-      const deltaX = previous.left - next.left;
-      const deltaY = previous.top - next.top;
-      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
-      element.animate(
-        [{ transform: `translate(${deltaX}px, ${deltaY}px)` }, { transform: "translate(0, 0)" }],
-        { duration: 190, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
-      );
-    });
-  });
-}
-
-function readBooleanPreference(key: string, fallback = false) {
-  if (typeof window === "undefined") return fallback;
-  return window.localStorage.getItem(key) === "1";
-}
-
-function writeBooleanPreference(key: string, value: boolean) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, value ? "1" : "0");
-  } catch {
-    // UI preference only.
-  }
-}
 
 function todayPlanCacheKey(date: string) {
   return `flowvisior:today-plan:${date}`;
@@ -254,6 +166,15 @@ function FocusTimer() {
 
   const progress = Math.round(((total - remaining) / total) * 100);
 
+  function toggleRunning() {
+    if (remaining === 0) {
+      setRemaining(total);
+      setRunning(true);
+      return;
+    }
+    setRunning((value) => !value);
+  }
+
   return (
     <div className="avatar-focus-timer" aria-label="Фокус-таймер">
       <div className="timer-ring" style={{ "--timer-progress": `${progress}%` } as CSSProperties}>
@@ -264,8 +185,8 @@ function FocusTimer() {
         <small>{running ? "сессия идёт" : remaining === 0 ? "готово" : "25 минут"}</small>
       </div>
       <div className="timer-actions">
-        <button type="button" onClick={() => setRunning((value) => !value)}>{running ? "Пауза" : remaining === 0 ? "Снова" : "Старт"}</button>
-        <button type="button" onClick={() => { setRunning(false); setRemaining(total); }}>Сброс</button>
+        <Button type="button" variant="thin" onClick={toggleRunning}>{running ? "Пауза" : remaining === 0 ? "Снова" : "Старт"}</Button>
+        <Button type="button" variant="ghost" className="timer-reset-button" onClick={() => { setRunning(false); setRemaining(total); }}>Сброс</Button>
       </div>
     </div>
   );
@@ -431,6 +352,17 @@ export function TodayPage() {
     activeDragItemIdRef.current = null;
     lastDragOverIdRef.current = null;
     setDraggingItemId(null);
+  }
+
+  function handleDragKeyDown(event: KeyboardEvent<HTMLElement>, itemId: number) {
+    if (!canManualReorder) return;
+    const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : 0;
+    if (direction === 0) return;
+    event.preventDefault();
+    const index = items.findIndex((item) => item.id === itemId);
+    const target = items[index + direction];
+    if (index < 0 || !target) return;
+    movePlanItem(itemId, target.id);
   }
 
   function toggleTwoColumnLayout() {
@@ -657,49 +589,6 @@ export function TodayPage() {
         </>
       ) : null}
 
-      {!isClosed && !plan ? (
-        <section className="section-line task-create-panel drawer-host clean-section center-add-panel">
-          <div className="center-add-actions">
-            <Button type="button" onClick={() => setTaskDrawerOpen((value) => !value)} aria-expanded={taskDrawerOpen}>
-              {taskDrawerOpen ? "Скрыть задачу" : "Добавить задачу"}
-            </Button>
-          </div>
-
-          {taskDrawerOpen ? (
-            <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={() => setTaskDrawerOpen(false)}>
-              <form className="form-grid task-form task-drawer unified-form compact-create-form ordered-form centered-task-form modal-form-card" onSubmit={createTask} role="dialog" aria-modal="true" aria-label="Создание задачи" onMouseDown={(event) => event.stopPropagation()}>
-                <div className="modal-form-head">
-                  <div><p className="eyebrow">новая задача</p><strong>Добавить задачу</strong></div>
-                  <button type="button" className="dialog-close" onClick={() => setTaskDrawerOpen(false)} aria-label="Закрыть">×</button>
-                </div>
-              <Field label="Название">
-                <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} placeholder="Например: подготовить отчёт" />
-              </Field>
-              <Field label="Дата задачи">
-                <DateWheelInput value={taskForm.deadlineDate || today} onChange={(value) => setTaskForm({ ...taskForm, deadlineDate: value || today })} allowClear={false} />
-              </Field>
-              <div className="optional-toolbar">
-                <OptionButton active={taskOptions.time || Boolean(taskForm.plannedTime)} onClick={() => setTaskOptions((state) => ({ ...state, time: !state.time }))}>
-                  {taskForm.plannedTime ? `Время: ${formatTime(taskForm.plannedTime)}` : "Время"}
-                </OptionButton>
-                <OptionButton active={taskOptions.deadline || Boolean(taskForm.deadlineTime)} onClick={() => setTaskOptions((state) => ({ ...state, deadline: !state.deadline }))}>
-                  {taskForm.deadlineTime ? `Дедлайн: ${formatTime(taskForm.deadlineTime)}` : "Дедлайн"}
-                </OptionButton>
-                <OptionButton active={taskOptions.description || Boolean(taskForm.description)} onClick={() => setTaskOptions((state) => ({ ...state, description: !state.description }))}>
-                  Описание
-                </OptionButton>
-              </div>
-              {taskOptions.time ? <Field label="Плановое время"><TimeWheelInput value={taskForm.plannedTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, plannedTime: value })} /></Field> : null}
-              {taskOptions.deadline ? <Field label="Дедлайн"><TimeWheelInput value={taskForm.deadlineTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field> : null}
-              {taskOptions.description ? <Field label="Описание"><TextArea value={taskForm.description ?? ""} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></Field> : null}
-              <ErrorLine error={taskError} />
-              <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
-              </form>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
       <div className="today-grid">
         <main className="today-main">
           {plan ? (
@@ -796,20 +685,20 @@ export function TodayPage() {
                           key={item.id}
                           data-plan-item-id={item.id}
                         >
-                          <span
+                          <button
+                            type="button"
                             className="drag-handle"
-                            role="button"
-                            tabIndex={canManualReorder ? 0 : -1}
-                            aria-disabled={!canManualReorder}
+                            disabled={!canManualReorder}
                             onPointerDown={(event) => handleDragPointerDown(event, item.id)}
                             onPointerMove={handleDragPointerMove}
                             onPointerUp={handleDragPointerEnd}
                             onPointerCancel={handleDragPointerEnd}
-                            title={canManualReorder ? "Перетащить пункт" : "Ручной порядок доступен без сортировки по времени"}
+                            onKeyDown={(event) => handleDragKeyDown(event, item.id)}
+                            title={canManualReorder ? "Перетащить пункт. Стрелки вверх/вниз тоже меняют порядок." : "Ручной порядок доступен без сортировки по времени"}
                             aria-label="Перетащить пункт"
                           >
                             ⋮⋮
-                          </span>
+                          </button>
                           <button
                             type="button"
                             className={`status-cycle status-cycle-${item.status.toLowerCase()}`}

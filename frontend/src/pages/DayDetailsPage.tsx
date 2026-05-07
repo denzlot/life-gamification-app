@@ -10,98 +10,10 @@ import { useAchievementWatcher } from "../context/AchievementContext";
 import { useGame } from "../context/GameContext";
 import { useToast } from "../context/ToastContext";
 import { formatDate, formatTime, itemStatusLabel, pct, planStatusLabel, signed, sourceLabel, todayISO } from "../utils/format";
+import { applyPlanItemOrder, animatePlanItemShift, capturePlanItemRects, readBooleanPreference, reorderItems, writeBooleanPreference, writePlanItemOrder } from "../utils/planItemUi";
 import { buildPreviewItems, summarizePreviewItems } from "../utils/planningPreview";
 
 
-
-function planItemOrderKey(date: string) {
-  return `flowvisior:plan-item-order:${date}`;
-}
-
-function readPlanItemOrder(date: string): number[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(planItemOrderKey(date));
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((value): value is number => typeof value === "number") : [];
-  } catch {
-    return [];
-  }
-}
-
-function writePlanItemOrder(date: string, items: DailyPlanItemResponse[]) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(planItemOrderKey(date), JSON.stringify(items.map((item) => item.id)));
-  } catch {
-    // Manual ordering is a UI preference; ignore storage limits/private mode.
-  }
-}
-
-function applyPlanItemOrder(items: DailyPlanItemResponse[], date: string) {
-  const order = readPlanItemOrder(date);
-  if (order.length === 0) return items;
-  const orderIndex = new Map(order.map((id, index) => [id, index]));
-  return [...items].sort((a, b) => {
-    const left = orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
-    const right = orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
-    return left - right;
-  });
-}
-
-function reorderItems(items: DailyPlanItemResponse[], activeId: number, overId: number) {
-  const from = items.findIndex((item) => item.id === activeId);
-  const to = items.findIndex((item) => item.id === overId);
-  if (from < 0 || to < 0 || from === to) return items;
-  const next = [...items];
-  const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next;
-}
-
-
-function capturePlanItemRects() {
-  if (typeof document === "undefined") return new Map<number, DOMRect>();
-  const rects = new Map<number, DOMRect>();
-  document.querySelectorAll<HTMLElement>("[data-plan-item-id]").forEach((element) => {
-    const id = Number(element.dataset.planItemId);
-    if (Number.isFinite(id)) rects.set(id, element.getBoundingClientRect());
-  });
-  return rects;
-}
-
-function animatePlanItemShift(previousRects: Map<number, DOMRect>) {
-  if (typeof document === "undefined" || previousRects.size === 0) return;
-  window.requestAnimationFrame(() => {
-    document.querySelectorAll<HTMLElement>("[data-plan-item-id]").forEach((element) => {
-      const id = Number(element.dataset.planItemId);
-      const previous = previousRects.get(id);
-      if (!previous) return;
-      const next = element.getBoundingClientRect();
-      const deltaX = previous.left - next.left;
-      const deltaY = previous.top - next.top;
-      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
-      element.animate(
-        [{ transform: `translate(${deltaX}px, ${deltaY}px)` }, { transform: "translate(0, 0)" }],
-        { duration: 190, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
-      );
-    });
-  });
-}
-
-function readBooleanPreference(key: string, fallback = false) {
-  if (typeof window === "undefined") return fallback;
-  return window.localStorage.getItem(key) === "1";
-}
-
-function writeBooleanPreference(key: string, value: boolean) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, value ? "1" : "0");
-  } catch {
-    // UI preference only.
-  }
-}
 
 function emptyCalendarDay(date: string): CalendarDayResponse {
   return {
@@ -334,6 +246,17 @@ export function DayDetailsPage() {
     activeDragItemIdRef.current = null;
     lastDragOverIdRef.current = null;
     setDraggingItemId(null);
+  }
+
+  function handleDragKeyDown(event: KeyboardEvent<HTMLElement>, itemId: number) {
+    if (!canManualReorder) return;
+    const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : 0;
+    if (direction === 0) return;
+    event.preventDefault();
+    const index = items.findIndex((item) => item.id === itemId);
+    const target = items[index + direction];
+    if (index < 0 || !target) return;
+    movePlanItem(itemId, target.id);
   }
 
   function toggleTwoColumnLayout() {
@@ -594,20 +517,20 @@ export function DayDetailsPage() {
                         key={item.id}
                         data-plan-item-id={item.id}
                       >
-                        <span
+                        <button
+                          type="button"
                           className="drag-handle"
-                          role="button"
-                          tabIndex={canManualReorder ? 0 : -1}
-                          aria-disabled={!canManualReorder}
+                          disabled={!canManualReorder}
                           onPointerDown={(event) => handleDragPointerDown(event, item.id)}
                           onPointerMove={handleDragPointerMove}
                           onPointerUp={handleDragPointerEnd}
                           onPointerCancel={handleDragPointerEnd}
-                          title={canManualReorder ? "Перетащить пункт" : "Ручной порядок доступен только для открытого дня без сортировки по времени"}
+                          onKeyDown={(event) => handleDragKeyDown(event, item.id)}
+                          title={canManualReorder ? "Перетащить пункт. Стрелки вверх/вниз тоже меняют порядок." : "Ручной порядок доступен только для открытого дня без сортировки по времени"}
                           aria-label="Перетащить пункт"
                         >
                           ⋮⋮
-                        </span>
+                        </button>
                         <button
                           type="button"
                           className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
