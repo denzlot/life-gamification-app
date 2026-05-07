@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" role="img" aria-labelledby="title desc">
+  <title id="title">Носферату</title>
+  <desc id="desc">Стилизованный ночной персонаж</desc>
+  <defs>
+    <linearGradient id="cape" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#4b1724"/><stop offset="1" stop-color="#12080e"/></linearGradient>
+    <radialGradient id="moon" cx="74%" cy="19%" r="25%"><stop offset="0" stop-color="#ffe1a5"/><stop offset="1" stop-color="#ffe1a5" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="260" height="260" fill="#09070b"/>
+  <rect width="260" height="260" fill="url(#moon)" opacity=".75"/>
+  <path d="M69 220c13-74 24-107 61-107s48 33 61 107H69Z" fill="url(#cape)" stroke="#d6a75b" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M91 89c6-35 72-35 78 0l-8 40c-5 26-57 26-62 0l-8-40Z" fill="#f0e7df" stroke="#2b111a" stroke-width="7"/>
+  <path d="M85 83c20-30 70-30 90 0-18 5-29 17-45 17s-27-12-45-17Z" fill="#1a0b12"/>
+  <path d="M99 130c14 12 48 12 62 0l-8 30-23-13-23 13-8-30Z" fill="#b73446" stroke="#2b111a" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="113" cy="111" r="6" fill="#b73446"/><circle cx="147" cy="111" r="6" fill="#b73446"/>
+  <path d="M118 134h24" stroke="#2b111a" stroke-width="5" stroke-linecap="round"/>
+</svg>

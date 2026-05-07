@@ -12,6 +12,7 @@ public class CreateTaskRequest {
     @Size(max = 160)
     private String title;
 
+    @Size(max = 5000)
     private String description;
 
     // Date where task is planned. Kept as API compatibility field.

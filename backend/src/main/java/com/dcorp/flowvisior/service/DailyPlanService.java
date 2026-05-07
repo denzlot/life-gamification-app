@@ -2,6 +2,7 @@ package com.dcorp.flowvisior.service;
 
 import com.dcorp.flowvisior.dto.dailyplan.CreateManualDailyPlanItemRequest;
 import com.dcorp.flowvisior.dto.dailyplan.DailyPlanResponse;
+import com.dcorp.flowvisior.dto.dailyplan.UpdateDailyPlanNoteRequest;
 import com.dcorp.flowvisior.entity.*;
 import com.dcorp.flowvisior.repository.*;
 import org.springframework.http.HttpStatus;
@@ -81,6 +82,10 @@ public class DailyPlanService {
         User user = authenticatedUserService.getCurrentUser();
         autoCloseOverduePlans(user);
 
+        if (planDate.isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Past daily plans are read-only");
+        }
+
         DailyPlan dailyPlan = dailyPlanRepository.findByUserAndPlanDate(user, planDate)
                 .orElseGet(() -> {
                     DailyPlan next = new DailyPlan(user, planDate, DailyPlanStatus.ACTIVE);
@@ -90,6 +95,10 @@ public class DailyPlanService {
 
         if (dailyPlan.isClosed()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Closed daily plan cannot be edited");
+        }
+
+        if (dailyPlan.getStatus() != DailyPlanStatus.ACTIVE) {
+            dailyPlan.start();
         }
 
         syncPlannedItems(dailyPlan, user, planDate);
@@ -112,6 +121,10 @@ public class DailyPlanService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Closed daily plan cannot be edited");
         }
 
+        if (dailyPlan.getPlanDate().isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Past daily plans are read-only");
+        }
+
         DailyPlanItem item = new DailyPlanItem(
                 dailyPlan,
                 ActivitySourceType.MANUAL,
@@ -126,6 +139,30 @@ public class DailyPlanService {
         );
 
         dailyPlanItemRepository.save(item);
+        return responseFor(dailyPlan);
+    }
+
+    @Transactional
+    public DailyPlanResponse updatePlanNote(LocalDate planDate, UpdateDailyPlanNoteRequest request) {
+        User user = authenticatedUserService.getCurrentUser();
+        autoCloseOverduePlans(user);
+
+        DailyPlan dailyPlan = dailyPlanRepository.findByUserAndPlanDate(user, planDate)
+                .orElseGet(() -> {
+                    if (planDate.isBefore(LocalDate.now())) {
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Daily plan not found");
+                    }
+                    DailyPlan next = new DailyPlan(user, planDate, DailyPlanStatus.PLANNED);
+                    return dailyPlanRepository.save(next);
+                });
+
+        dailyPlan.updateNote(normalizeNote(request.getNote()));
+        dailyPlanRepository.save(dailyPlan);
+
+        if (!dailyPlan.isClosed()) {
+            syncPlannedItems(dailyPlan, user, planDate);
+        }
+
         return responseFor(dailyPlan);
     }
 
@@ -167,6 +204,34 @@ public class DailyPlanService {
                 closePlanInternal(user, plan, true);
             }
         }
+
+        List<DailyPlan> stalePlannedPlans = dailyPlanRepository
+                .findByUserAndStatusAndPlanDateLessThanEqualOrderByPlanDateAsc(
+                        user,
+                        DailyPlanStatus.PLANNED,
+                        LocalDate.now().minusDays(1)
+                );
+
+        for (DailyPlan plan : stalePlannedPlans) {
+            closePlannedPlanWithoutGameDelta(plan);
+        }
+    }
+
+    private void closePlannedPlanWithoutGameDelta(DailyPlan dailyPlan) {
+        if (dailyPlan.isClosed()) {
+            return;
+        }
+
+        List<DailyPlanItem> items = dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(dailyPlan);
+        long completedCount = items.stream()
+                .filter(i -> i.getStatus() == DailyPlanItemStatus.COMPLETED)
+                .count();
+        long failedCount = items.stream()
+                .filter(i -> i.getStatus() == DailyPlanItemStatus.FAILED)
+                .count();
+
+        dailyPlan.close((int) completedCount, (int) failedCount, 0, 0, 0, false);
+        dailyPlanRepository.save(dailyPlan);
     }
 
     private DailyPlanResponse closePlanInternal(User user, DailyPlan dailyPlan, boolean automatic) {
@@ -224,7 +289,7 @@ public class DailyPlanService {
     }
 
     private void syncPlannedItems(DailyPlan dailyPlan, User user, LocalDate planDate) {
-        if (dailyPlan.isClosed()) {
+        if (dailyPlan.isClosed() || planDate.isBefore(LocalDate.now())) {
             return;
         }
 
@@ -316,6 +381,13 @@ public class DailyPlanService {
     }
 
     private boolean isAfterAutoCloseTime(LocalDate planDate) {
+        LocalDate today = LocalDate.now();
+        if (planDate.isBefore(today)) {
+            return true;
+        }
+        if (planDate.isAfter(today)) {
+            return false;
+        }
         LocalDateTime cutoff = planDate.plusDays(1).atTime(AUTO_CLOSE_TIME);
         return !LocalDateTime.now().isBefore(cutoff);
     }
@@ -341,6 +413,14 @@ public class DailyPlanService {
         if (!expired.isEmpty()) {
             dailyPlanItemRepository.saveAll(expired);
         }
+    }
+
+    private String normalizeNote(String note) {
+        if (note == null) {
+            return null;
+        }
+        String trimmed = note.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private static final class ClosedDailyPlanResponse extends DailyPlanResponse {

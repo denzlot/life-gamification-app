@@ -16,6 +16,7 @@ public class DailyPlanResponse {
     private final LocalDateTime createdAt;
     private final LocalDateTime startedAt;
     private final LocalDateTime closedAt;
+    private final String note;
     private final List<DailyPlanItemResponse> items;
 
     public DailyPlanResponse(DailyPlan dailyPlan, List<DailyPlanItem> items) {
@@ -25,6 +26,7 @@ public class DailyPlanResponse {
         this.createdAt = dailyPlan.getCreatedAt();
         this.startedAt = dailyPlan.getStartedAt();
         this.closedAt = dailyPlan.getClosedAt();
+        this.note = dailyPlan.getNote();
         this.items = items.stream()
                 .map(DailyPlanItemResponse::new)
                 .toList();
@@ -36,5 +38,6 @@ public class DailyPlanResponse {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getStartedAt() { return startedAt; }
     public LocalDateTime getClosedAt() { return closedAt; }
+    public String getNote() { return note; }
     public List<DailyPlanItemResponse> getItems() { return items; }
 }

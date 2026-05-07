@@ -16,7 +16,8 @@ const rightNav = [
 
 const extraNav = [
   { to: "/stats", label: "Статистика" },
-  { to: "/history", label: "История" }
+  { to: "/history", label: "История" },
+  { to: "/achievements", label: "Все достижения" }
 ];
 
 export function AppShell() {

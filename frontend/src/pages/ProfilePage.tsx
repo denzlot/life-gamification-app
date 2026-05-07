@@ -1,20 +1,42 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/http";
 import type { AchievementResponse } from "../api/types";
+import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
+import { CharacterChooser } from "../components/CharacterChooser";
 import { EmptyState } from "../components/EmptyState";
 import { GameHud } from "../components/GameHud";
 import { ErrorLine, Loader } from "../components/Loader";
-import { useAchievementWatcher } from "../context/AchievementContext";
 import { useGame } from "../context/GameContext";
+import { applyTheme, getCharacter, readSelectedCharacter, readTheme, type CharacterId } from "../utils/character";
 import { formatDateTime } from "../utils/format";
 
 export function ProfilePage() {
-  const { profile, loading, refreshProfile } = useGame();
-  const { syncAchievements } = useAchievementWatcher();
+  const { profile, loading } = useGame();
   const [achievements, setAchievements] = useState<AchievementResponse[]>([]);
   const [achLoading, setAchLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showChooser, setShowChooser] = useState(false);
+  const [selectedCharacterId, setSelectedCharacterId] = useState(() => readSelectedCharacter());
+  const [previewCharacterId, setPreviewCharacterId] = useState<typeof selectedCharacterId>(null);
+  const character = getCharacter(previewCharacterId ?? selectedCharacterId);
+
+  function toggleChooser() {
+    setShowChooser((value) => {
+      const next = !value;
+      if (!next) {
+        setPreviewCharacterId(null);
+        applyTheme(readTheme());
+      }
+      return next;
+    });
+  }
+
+  function confirmCharacter(id: CharacterId) {
+    setSelectedCharacterId(id);
+    setPreviewCharacterId(null);
+    setShowChooser(false);
+  }
 
   async function loadAchievements() {
     setAchLoading(true);
@@ -32,36 +54,54 @@ export function ProfilePage() {
     loadAchievements();
   }, []);
 
-  async function refreshAll() {
-    await refreshProfile();
-    const list = await syncAchievements(true);
-    setAchievements(list);
-  }
+  useEffect(() => {
+    return () => {
+      applyTheme(readTheme());
+    };
+  }, []);
 
   return (
-    <section className="page profile-page">
-      <header className="page-header split-header compact-header">
-        <div>
-          <p className="eyebrow">профиль</p>
-          <h1>{profile?.username ?? "Игрок"}</h1>
-          <p className="muted">Роль: {profile?.role ?? "—"}</p>
-        </div>
-        <Button variant="ghost" onClick={refreshAll}>Обновить</Button>
+    <section className="page profile-page centered-page">
+      <header className="page-header centered-title-header profile-title-header">
+        <p className="eyebrow">профиль</p>
+        <h1>Персонаж и прогресс</h1>
       </header>
 
       {loading ? <Loader label="Загружаем профиль" /> : null}
       <ErrorLine error={error} />
 
-      <section className="section-line profile-stats-line">
-        <div>
-          <p className="eyebrow">характеристики</p>
-          <h2>Текущий прогресс</h2>
-          <p className="muted">Аватар находится только на Today, чтобы не дублироваться на каждой странице.</p>
+      <section className="section-line clean-section profile-character-card">
+        <div className="profile-character-body">
+          <div className="profile-avatar-slot">
+            <Avatar stats={profile?.gameStats} compact characterId={character.id} />
+          </div>
+          <div className="profile-stats-slot">
+            <div className="profile-character-head">
+              <div>
+                <p className="eyebrow">персонаж</p>
+                <span className="profile-username-chip">{profile?.username ?? "Игрок"}</span>
+                <h2>{character.name}</h2>
+                <p className="muted">{character.description}</p>
+              </div>
+              <Button variant="ghost" onClick={toggleChooser}>{showChooser ? "Скрыть" : "Сменить"}</Button>
+            </div>
+            <GameHud stats={profile?.gameStats} />
+          </div>
         </div>
-        <GameHud stats={profile?.gameStats} />
+
+        {showChooser ? (
+          <CharacterChooser
+            embedded
+            title="Выбери другого персонажа"
+            description="Нажми на героя, чтобы сразу увидеть его тему. Подтверди выбор, когда всё подходит."
+            initialCharacter={character.id}
+            onPreview={setPreviewCharacterId}
+            onConfirm={confirmCharacter}
+          />
+        ) : null}
       </section>
 
-      <section className="section-line">
+      <section className="section-line clean-section profile-achievements-panel">
         <div className="section-title-row">
           <div>
             <p className="eyebrow">открыто</p>

@@ -1,0 +1,2 @@
+ALTER TABLE daily_plans
+ADD COLUMN IF NOT EXISTS note TEXT;

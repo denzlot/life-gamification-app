@@ -1,13 +1,72 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import appIcon from "../assets/app-icon.svg";
+import logoMark from "../assets/logo-mark.svg";
 import { Button } from "../components/Button";
+import { CharacterChooser } from "../components/CharacterChooser";
 import { Field, TextInput } from "../components/FormFields";
 import { ThemeSwitchButton } from "../components/ThemeSwitchButton";
 import { ErrorLine } from "../components/Loader";
 import { useAuth } from "../context/AuthContext";
 
 type Mode = "login" | "register";
+
+type RegisterStep = "welcome" | "character";
+
+function AppPreviewGhost() {
+  return (
+    <div className="app-preview-ghost" aria-hidden="true">
+      <div className="ghost-shell">
+        <div className="ghost-topbar">
+          <div className="ghost-brand">
+            <span className="ghost-brand-mark" />
+            <strong>Flowvisior</strong>
+          </div>
+          <div className="ghost-nav-row">
+            <span>Привычки</span>
+            <span>Квесты</span>
+            <b>Today</b>
+            <span>Календарь</span>
+            <span>Профиль</span>
+          </div>
+          <div className="ghost-menu-pill">Ещё</div>
+        </div>
+        <div className="ghost-main-layout">
+          <section className="ghost-page-card ghost-plan-card">
+            <div className="ghost-card-head">
+              <small>today</small>
+              <strong>Лист дня</strong>
+              <span />
+            </div>
+            <div className="ghost-toolbar-row">
+              <i />
+              <i />
+            </div>
+            <div className="ghost-task-list">
+              <div className="ghost-task-item"><em /><div><b /><span /></div><small /></div>
+              <div className="ghost-task-item"><em /><div><b /><span /></div><small /></div>
+              <div className="ghost-task-item"><em /><div><b /><span /></div><small /></div>
+              <div className="ghost-action-row"><i /><i /></div>
+            </div>
+          </section>
+          <aside className="ghost-page-card ghost-side-card">
+            <div className="ghost-side-top">
+              <div className="ghost-avatar-orb" />
+              <div className="ghost-side-lines">
+                <b />
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+            <div className="ghost-side-stats">
+              <i /><i /><i /><i />
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AuthPage({ mode }: { mode: Mode }) {
   const { user, login, register } = useAuth();
@@ -19,6 +78,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const [error, setError] = useState<string | null>(null);
   const [pendingWelcome, setPendingWelcome] = useState(false);
   const [welcomeName, setWelcomeName] = useState("");
+  const [registerStep, setRegisterStep] = useState<RegisterStep>("welcome");
 
   const target = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/today";
   const isLogin = mode === "login";
@@ -35,9 +95,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
         await login(cleanName, password);
         navigate(target, { replace: true });
       } else {
-        setPendingWelcome(true);
-        setWelcomeName(cleanName || "User");
         await register(cleanName, password);
+        setPendingWelcome(true);
+        setRegisterStep("welcome");
+        setWelcomeName(cleanName || "User");
       }
     } catch (err) {
       setPendingWelcome(false);
@@ -47,35 +108,45 @@ export function AuthPage({ mode }: { mode: Mode }) {
     }
   }
 
-
   if (user && pendingWelcome && !isLogin) {
     return (
-      <main className="auth-screen refined-auth-screen welcome-screen">
+      <main className={`auth-screen refined-auth-screen welcome-screen ${registerStep === "character" ? "character-preview-screen" : ""}`}>
+        {registerStep === "character" ? <AppPreviewGhost /> : null}
         <ThemeSwitchButton />
-        <section className="auth-panel refined-auth-panel welcome-panel">
-          <div className="auth-intro welcome-intro">
-            <div className="brand auth-brand refined-auth-brand">
-              <span className="brand-mark"><img src={appIcon} alt="" /></span>
-              <span>
-                <strong>Flowvisior</strong>
-                <small>первый уровень открыт</small>
-              </span>
-            </div>
-            <p className="eyebrow">регистрация завершена</p>
-            <h1>Теперь вы User а не Looser!</h1>
-            <p className="muted auth-copy">Добро пожаловать, {welcomeName || user.username}. Ниже — короткая карта приложения, чтобы быстро начать.</p>
-          </div>
-          <div className="welcome-guide">
-            <div><strong>Today</strong><span>Главный лист дня: открываешь день, добавляешь задачи, отмечаешь выполнение и закрываешь день.</span></div>
-            <div><strong>Привычки</strong><span>Повторяемые действия по дням недели. Они автоматически попадают в дневной план.</span></div>
-            <div><strong>Квесты</strong><span>Большие цели из шагов. Можно идти по плану, догонять темп или распределять шаги вручную.</span></div>
-            <div><strong>Календарь</strong><span>Показывает историю дней и темп выбранного квеста: где отстаёшь, а где опережаешь.</span></div>
-            <div><strong>HP / XP</strong><span>Прогресс растёт через streak и достижения. Персонаж подсказывает текущее состояние.</span></div>
-          </div>
-          <div className="welcome-actions">
-            <Button onClick={() => navigate(target, { replace: true })}>Начать день</Button>
-            <Link className="text-link" to="/quests">Создать первый квест</Link>
-          </div>
+        <section className={`auth-panel refined-auth-panel welcome-panel ${registerStep === "character" ? "character-welcome-panel" : ""}`}>
+          {registerStep === "welcome" ? (
+            <>
+              <div className="auth-intro welcome-intro">
+                <div className="brand auth-brand refined-auth-brand">
+                  <span className="brand-mark brand-mark-image"><img src={logoMark} alt="" className="brand-logo-image" /></span>
+                  <span>
+                    <strong>Flowvisior</strong>
+                    <small>первый уровень открыт</small>
+                  </span>
+                </div>
+                <p className="eyebrow">регистрация завершена</p>
+                <h1>Теперь вы User, а не Looser!</h1>
+                <p className="muted auth-copy">Добро пожаловать, {welcomeName || user.username}. Ниже — короткая карта приложения, чтобы быстро стартовать.</p>
+              </div>
+              <div className="welcome-guide">
+                <div><strong>Today</strong><span>Главный лист дня: открываешь день, добавляешь задачи, отмечаешь выполнение и закрываешь день.</span></div>
+                <div><strong>Привычки</strong><span>Повторяемые действия по дням недели. Они автоматически попадают в дневной план.</span></div>
+                <div><strong>Квесты</strong><span>Большие цели из шагов. Можно идти по плану, догонять темп или распределять шаги вручную.</span></div>
+                <div><strong>Календарь</strong><span>Показывает будущую загрузку, уже закрытые дни и общее ожидание по выбранной дате.</span></div>
+                <div><strong>HP / XP</strong><span>Прогресс растёт через streak и достижения. Персонаж подсказывает текущее состояние.</span></div>
+              </div>
+              <div className="welcome-actions">
+                <Button onClick={() => setRegisterStep("character")}>Выбрать персонажа</Button>
+              </div>
+            </>
+          ) : (
+            <CharacterChooser
+              title="Финальный шаг — выбери персонажа"
+              description="Выбери спутника на каждый день. Он будет задавать настроение, говорить короткие фразы и менять тему приложения сразу при выборе."
+              onConfirm={() => navigate(target, { replace: true })}
+              embedded
+            />
+          )}
         </section>
       </main>
     );
@@ -87,7 +158,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
       <section className="auth-panel refined-auth-panel">
         <div className="auth-intro">
           <div className="brand auth-brand refined-auth-brand">
-            <span className="brand-mark"><img src={appIcon} alt="" /></span>
+            <span className="brand-mark brand-mark-image"><img src={logoMark} alt="" className="brand-logo-image" /></span>
             <span>
               <strong>Flowvisior</strong>
               <small>life gamification</small>

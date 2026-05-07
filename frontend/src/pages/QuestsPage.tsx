@@ -3,13 +3,12 @@ import { api } from "../api/http";
 import type {
   CreateQuestRequest,
   QuestResponse,
-  QuestStatus,
   QuestStepResponse,
   UpdateQuestStepRequest
 } from "../api/types";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
-import { DateWheelInput, Field, NumberWheelInput, SelectInput, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
+import { DateWheelInput, Field, NumberWheelInput, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useAchievementWatcher } from "../context/AchievementContext";
 import { useToast } from "../context/ToastContext";
@@ -32,6 +31,131 @@ function OptionButton({ active, children, onClick }: { active?: boolean; childre
   return <button type="button" className={`option-chip ${active ? "active" : ""}`} onClick={onClick}>{children}</button>;
 }
 
+interface QuestDayStats {
+  total: number;
+  pending: number;
+}
+
+interface QuestPaceInfo {
+  tone: "behind" | "ahead" | "even";
+  behind: number;
+  ahead: number;
+}
+
+function shortStepWord(count: number) {
+  const abs = Math.abs(count);
+  if (abs % 10 === 1 && abs % 100 !== 11) return "шаг";
+  if ([2, 3, 4].includes(abs % 10) && ![12, 13, 14].includes(abs % 100)) return "шага";
+  return "шагов";
+}
+
+function dayWeight(date: string) {
+  const day = new Date(`${date}T12:00:00`).getDay();
+  return day === 0 || day === 6 ? 1.35 : 1;
+}
+
+const routeScheduleCache = new Map<string, string[]>();
+
+function plannedDatesForQuest(quest: QuestResponse) {
+  const safeDuration = Math.max(1, quest.durationDays);
+  const safeSteps = Math.max(1, quest.totalSteps);
+  const cacheKey = `${quest.id}:${quest.startDate}:${safeDuration}:${safeSteps}`;
+  const cached = routeScheduleCache.get(cacheKey);
+  if (cached) return cached;
+
+  const quotas = Array.from({ length: safeDuration }, () => 0);
+
+  if (safeSteps <= safeDuration) {
+    for (let index = 0; index < safeSteps; index += 1) {
+      const offset = safeSteps === 1 ? 0 : Math.round((index * (safeDuration - 1)) / (safeSteps - 1));
+      quotas[offset] += 1;
+    }
+  } else {
+    quotas.fill(1);
+    let extraSteps = safeSteps - safeDuration;
+
+    while (extraSteps > 0) {
+      let bestOffset = 0;
+      let bestPressure = Number.POSITIVE_INFINITY;
+
+      for (let offset = 0; offset < safeDuration; offset += 1) {
+        const pressure = quotas[offset] / dayWeight(addDays(quest.startDate, offset));
+        if (pressure < bestPressure) {
+          bestPressure = pressure;
+          bestOffset = offset;
+        }
+      }
+
+      quotas[bestOffset] += 1;
+      extraSteps -= 1;
+    }
+  }
+
+  const result: string[] = [];
+  quotas.forEach((count, offset) => {
+    for (let step = 0; step < count; step += 1) {
+      result.push(addDays(quest.startDate, offset));
+    }
+  });
+
+  routeScheduleCache.set(cacheKey, result);
+  if (routeScheduleCache.size > 50) {
+    const firstKey = routeScheduleCache.keys().next().value;
+    if (firstKey) routeScheduleCache.delete(firstKey);
+  }
+  return result;
+}
+
+function plannedDateForStep(quest: QuestResponse, stepNumber: number) {
+  const dates = plannedDatesForQuest(quest);
+  const safeIndex = Math.min(Math.max(stepNumber - 1, 0), dates.length - 1);
+  return dates[safeIndex] ?? quest.startDate;
+}
+
+function expectedStepsByDate(quest: QuestResponse, date: string) {
+  let expected = 0;
+  for (let stepNumber = 1; stepNumber <= quest.totalSteps; stepNumber += 1) {
+    if (plannedDateForStep(quest, stepNumber) <= date) expected += 1;
+  }
+  return expected;
+}
+
+function baseQuotaForDate(quest: QuestResponse, date: string) {
+  let planned = 0;
+  for (let stepNumber = 1; stepNumber <= quest.totalSteps; stepNumber += 1) {
+    if (plannedDateForStep(quest, stepNumber) === date) planned += 1;
+  }
+  return Math.max(1, planned);
+}
+
+function computeQuestPace(quest: QuestResponse | null, steps: QuestStepResponse[]): QuestPaceInfo {
+  if (!quest) return { tone: "even", behind: 0, ahead: 0 };
+
+  const today = todayISO();
+  const grouped = steps.reduce<Record<string, QuestDayStats>>((acc, step) => {
+    const entry = acc[step.scheduledDate] ?? { total: 0, pending: 0 };
+    entry.total += 1;
+    if (step.status === "PENDING") entry.pending += 1;
+    acc[step.scheduledDate] = entry;
+    return acc;
+  }, {});
+
+  const completed = steps.filter((step) => step.status === "COMPLETED").length;
+  const expectedToday = expectedStepsByDate(quest, today);
+  const expectedBeforeToday = expectedStepsByDate(quest, addDays(today, -1));
+  const overduePendingDebt = steps.filter((step) => step.status === "PENDING" && step.scheduledDate < today).length;
+  const legacySkippedDebt = steps.filter((step) => step.status === "SKIPPED" && step.scheduledDate <= today).length;
+  const lateDebt = Math.max(overduePendingDebt + legacySkippedDebt, Math.max(0, expectedBeforeToday - completed));
+
+  const recoveryDebt = Object.entries(grouped)
+    .filter(([date, stats]) => date >= today && stats.pending > 0 && stats.total > baseQuotaForDate(quest, date))
+    .reduce((maxDebt, [date, stats]) => Math.max(maxDebt, stats.total - baseQuotaForDate(quest, date)), 0);
+
+  const behind = Math.max(lateDebt, recoveryDebt);
+  const ahead = Math.max(0, completed - expectedToday);
+  return { tone: behind > 0 ? "behind" : ahead > 0 ? "ahead" : "even", behind, ahead };
+}
+
 export function QuestsPage() {
   const { data: quests, loading, error, reload } = useAsync(() => api.quests.list(), []);
   const { notify } = useToast();
@@ -41,19 +165,20 @@ export function QuestsPage() {
   const [stepsLoading, setStepsLoading] = useState(false);
   const [form, setForm] = useState<CreateQuestRequest>(emptyQuest);
   const [editing, setEditing] = useState<QuestResponse | null>(null);
-  const [editStatus, setEditStatus] = useState<QuestStatus>("ACTIVE");
+  const [showArchived, setShowArchived] = useState(false);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [options, setOptions] = useState({ schedule: false, time: false, deadline: false, description: false, steps: false });
   const [formOpen, setFormOpen] = useState(false);
   const [stepsView, setStepsView] = useState<"list" | "route">("list");
 
-  const selected = useMemo(() => quests?.find((quest) => quest.id === selectedId) ?? null, [quests, selectedId]);
+  const visibleQuests = useMemo(() => (quests ?? []).filter((quest) => showArchived ? quest.status === "ARCHIVED" : quest.status !== "ARCHIVED"), [quests, showArchived]);
+  const selected = useMemo(() => visibleQuests.find((quest) => quest.id === selectedId) ?? null, [visibleQuests, selectedId]);
 
   useEffect(() => {
-    const first = quests?.[0]?.id ?? null;
-    if (selectedId === null && first !== null) setSelectedId(first);
-  }, [quests, selectedId]);
+    const first = visibleQuests[0]?.id ?? null;
+    if (!visibleQuests.some((quest) => quest.id === selectedId)) setSelectedId(first);
+  }, [visibleQuests, selectedId]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -71,7 +196,6 @@ export function QuestsPage() {
   function startEdit(quest: QuestResponse) {
     setEditing(quest);
     setFormOpen(true);
-    setEditStatus(quest.status);
     setForm({
       title: quest.title,
       description: quest.description ?? "",
@@ -88,7 +212,6 @@ export function QuestsPage() {
 
   function cancelEdit() {
     setEditing(null);
-    setEditStatus("ACTIVE");
     setForm(emptyQuest);
     setFormError(null);
     setOptions({ schedule: false, time: false, deadline: false, description: false, steps: false });
@@ -101,7 +224,6 @@ export function QuestsPage() {
       return;
     }
     setEditing(null);
-    setEditStatus("ACTIVE");
     setForm(emptyQuest);
     setFormError(null);
     setOptions({ schedule: false, time: false, deadline: false, description: false, steps: false });
@@ -119,7 +241,7 @@ export function QuestsPage() {
           description: form.description?.trim() || null,
           plannedTime: form.plannedTime || null,
           deadlineTime: form.deadlineTime || null,
-          status: editStatus
+          status: editing.status
         });
         notify({ tone: "success", title: "Квест обновлён" });
       } else {
@@ -147,14 +269,58 @@ export function QuestsPage() {
     }
   }
 
+  async function archiveQuest(quest: QuestResponse) {
+    if (!window.confirm(`Отправить квест «${quest.title}» в архив? Он исчезнет из активного списка, календаря и маршрутов, пока ты не вернёшь его из архива.`)) return;
+    setBusy(true);
+    try {
+      await api.quests.update(quest.id, {
+        title: quest.title,
+        description: quest.description ?? null,
+        plannedTime: quest.plannedTime ?? null,
+        deadlineTime: quest.deadlineTime ?? null,
+        status: "ARCHIVED"
+      });
+      notify({ tone: "info", title: "Квест в архиве" });
+      if (selectedId === quest.id) setSelectedId(null);
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function restoreQuest(quest: QuestResponse) {
+    setBusy(true);
+    try {
+      await api.quests.update(quest.id, {
+        title: quest.title,
+        description: quest.description ?? null,
+        plannedTime: quest.plannedTime ?? null,
+        deadlineTime: quest.deadlineTime ?? null,
+        status: "ACTIVE"
+      });
+      notify({ tone: "success", title: "Квест снова активен" });
+      setShowArchived(false);
+      setSelectedId(quest.id);
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function remove(quest: QuestResponse) {
-    if (!window.confirm(`Удалить или архивировать квест «${quest.title}»?`)) return;
+    if (!window.confirm(`Удалить квест «${quest.title}»? Если квест уже попадал в дневные планы, удаление будет отклонено: такой квест можно только отправить в архив.`)) return;
     setBusy(true);
     try {
       await api.quests.delete(quest.id);
-      notify({ tone: "danger", title: "Квест удалён или архивирован" });
+      notify({ tone: "danger", title: "Квест удалён" });
       if (selectedId === quest.id) setSelectedId(null);
       await reload();
+    } catch (err) {
+      notify({
+        tone: "danger",
+        title: "Квест не удалён",
+        text: err instanceof Error ? err.message : "Квест с историей можно только архивировать."
+      });
     } finally {
       setBusy(false);
     }
@@ -180,8 +346,12 @@ export function QuestsPage() {
         </div>
 
         {formOpen ? (
-          <form className="form-grid unified-form quest-form compact-create-form create-drawer-form" onSubmit={submit}>
-            <p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новый квест"}</p>
+          <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={cancelEdit}>
+            <form className="form-grid unified-form quest-form compact-create-form create-drawer-form modal-form-card" onSubmit={submit} role="dialog" aria-modal="true" aria-label={editing ? "Редактирование квеста" : "Новый квест"} onMouseDown={(event) => event.stopPropagation()}>
+              <div className="modal-form-head">
+                <div><p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новый квест"}</p><strong>{editing ? "Изменить квест" : "Добавить квест"}</strong></div>
+                <button type="button" className="dialog-close" onClick={cancelEdit} aria-label="Закрыть">×</button>
+              </div>
             <Field label="Название">
               <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} maxLength={160} required placeholder="Например: изучить Java за 30 дней" />
             </Field>
@@ -208,15 +378,6 @@ export function QuestsPage() {
               ) : null}
             </div>
 
-            {editing ? (
-              <Field label="Статус">
-                <SelectInput value={editStatus} onChange={(event) => setEditStatus(event.target.value as QuestStatus)}>
-                  <option value="ACTIVE">Активен</option>
-                  <option value="COMPLETED">Завершён</option>
-                  <option value="ARCHIVED">Архив</option>
-                </SelectInput>
-              </Field>
-            ) : null}
 
             {!editing && options.schedule ? (
               <Field label="Дата старта">
@@ -264,7 +425,8 @@ export function QuestsPage() {
               <Button disabled={busy}>{busy ? "Сохраняем" : editing ? "Сохранить" : "Создать"}</Button>
               {editing ? <Button type="button" variant="ghost" onClick={cancelEdit}>Отмена</Button> : null}
             </div>
-          </form>
+            </form>
+          </div>
         ) : null}
       </section>
 
@@ -272,9 +434,12 @@ export function QuestsPage() {
         <section className="section-line clean-section">
           <p className="eyebrow">список квестов</p>
           {loading ? <Loader /> : <ErrorLine error={error} />}
-          {!loading && quests?.length === 0 ? <EmptyState title="Квестов пока нет" text="Создай длинную цель и получи шаги по датам." /> : null}
+          <div className="archive-toggle-row">
+            <Button type="button" variant="ghost" onClick={() => setShowArchived((value) => !value)}>{showArchived ? "Показать активные" : "Архив"}</Button>
+          </div>
+          {!loading && visibleQuests.length === 0 ? <EmptyState title={showArchived ? "Архив пуст" : "Квестов пока нет"} text={showArchived ? "Архивные квесты будут здесь. Их можно вернуть в активные." : "Создай длинную цель и получи шаги по датам."} /> : null}
           <div className="line-list typed-list">
-            {quests?.map((quest) => (
+            {visibleQuests.map((quest) => (
               <article className={`line-item clickable ${selectedId === quest.id ? "selected" : ""}`} key={quest.id} onClick={() => setSelectedId(quest.id)}>
                 <div className="quest-row-main">
                   <div className="item-title-line">
@@ -288,6 +453,11 @@ export function QuestsPage() {
                 <div className="item-tail wide-tail">
                   <span>{quest.totalSteps} шагов</span>
                   <Button variant="thin" onClick={(event) => { event.stopPropagation(); startEdit(quest); }}>Изменить</Button>
+                  {quest.status === "COMPLETED" ? null : quest.status === "ARCHIVED" ? (
+                    <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); restoreQuest(quest); }}>Вернуть</Button>
+                  ) : (
+                    <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); archiveQuest(quest); }}>В архив</Button>
+                  )}
                   <Button variant="danger" disabled={busy} onClick={(event) => { event.stopPropagation(); remove(quest); }}>Удалить</Button>
                 </div>
               </article>
@@ -300,6 +470,7 @@ export function QuestsPage() {
             <div>
               <p className="eyebrow">шаги</p>
               <h2>{selected ? selected.title : "Квест не выбран"}</h2>
+              {selected?.description ? <p className="muted quest-description-line">{selected.description}</p> : null}
             </div>
             <Button type="button" variant="ghost" onClick={() => setStepsView((view) => view === "list" ? "route" : "list")}>
               {stepsView === "list" ? "Маршрут" : "Список шагов"}
@@ -307,9 +478,9 @@ export function QuestsPage() {
           </div>
           {stepsLoading ? <Loader /> : null}
           {selected && steps.length === 0 && !stepsLoading ? <EmptyState title="Шаги не загружены" /> : null}
-          <p className="muted quest-steps-hint">Можно переносить шаги на другой день вручную. Если хочешь опередить план, нажми «На сегодня», затем открой Today и отметь шаг выполненным.</p>
+          <p className="muted quest-steps-hint">Можно переносить шаги на другой день вручную. Для сегодняшнего шага доступна кнопка «Отложить на завтра», а будущие шаги можно быстро вернуть на сегодня.</p>
           {stepsView === "route" ? (
-            <QuestRouteView steps={steps} questTotal={selected?.totalSteps ?? 0} onSaved={reloadSteps} />
+            <QuestRouteView steps={steps} quest={selected} onSaved={reloadSteps} />
           ) : (
             <div className="line-list step-list typed-list quest-steps-list">
               {steps.map((step) => (
@@ -324,32 +495,65 @@ export function QuestsPage() {
 }
 
 
+function addDays(date: string, delta: number) {
+  const next = new Date(`${date}T12:00:00`);
+  next.setDate(next.getDate() + delta);
+  return next.toISOString().slice(0, 10);
+}
+
 function statusTone(status: QuestStepResponse["status"]) {
   if (status === "COMPLETED") return "готово";
   if (status === "SKIPPED") return "сорвано";
   return "в пути";
 }
 
-function QuestRouteView({ steps, questTotal, onSaved }: { steps: QuestStepResponse[]; questTotal: number; onSaved: () => Promise<void> }) {
+function QuestRouteView({ steps, quest, onSaved }: { steps: QuestStepResponse[]; quest: QuestResponse | null; onSaved: () => Promise<void> }) {
   const [selectedStepId, setSelectedStepId] = useState<number | null>(steps[0]?.id ?? null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [editingStepId, setEditingStepId] = useState<number | null>(null);
+  const [form, setForm] = useState<UpdateQuestStepRequest>({
+    title: steps[0]?.title ?? "",
+    description: steps[0]?.description ?? "",
+    scheduledDate: steps[0]?.scheduledDate ?? todayISO(),
+    plannedTime: steps[0]?.plannedTime ?? "",
+    deadlineTime: steps[0]?.deadlineTime ?? ""
+  });
 
   useEffect(() => {
     if (!steps.some((step) => step.id === selectedStepId)) setSelectedStepId(steps[0]?.id ?? null);
   }, [steps, selectedStepId]);
 
   const selectedStep = steps.find((step) => step.id === selectedStepId) ?? steps[0] ?? null;
-  const completed = steps.filter((step) => step.status === "COMPLETED").length;
-  const skipped = steps.filter((step) => step.status === "SKIPPED").length;
-  const progress = questTotal ? pct(completed, questTotal) : 0;
 
-  async function moveToToday(step: QuestStepResponse) {
+  useEffect(() => {
+    if (!selectedStep) return;
+    setForm({
+      title: selectedStep.title,
+      description: selectedStep.description ?? "",
+      scheduledDate: selectedStep.scheduledDate,
+      plannedTime: selectedStep.plannedTime ?? "",
+      deadlineTime: selectedStep.deadlineTime ?? ""
+    });
+    setEditingStepId(null);
+  }, [selectedStep?.id]);
+
+  const questTotal = quest?.totalSteps ?? steps.length;
+  const completed = steps.filter((step) => step.status === "COMPLETED").length;
+  const pace = computeQuestPace(quest, steps);
+  const progress = questTotal ? pct(completed, questTotal) : 0;
+  const paceLabel = pace.behind > 0
+    ? `отставание: ${pace.behind} ${shortStepWord(pace.behind)}`
+    : pace.ahead > 0
+      ? `опережение: ${pace.ahead} ${shortStepWord(pace.ahead)}`
+      : "по плану";
+
+  async function shiftStep(step: QuestStepResponse, targetDate: string) {
     setBusyId(step.id);
     try {
       await api.quests.updateStep(step.id, {
         title: step.title,
         description: step.description ?? null,
-        scheduledDate: todayISO(),
+        scheduledDate: targetDate,
         plannedTime: step.plannedTime ?? null,
         deadlineTime: step.deadlineTime ?? null
       });
@@ -359,17 +563,37 @@ function QuestRouteView({ steps, questTotal, onSaved }: { steps: QuestStepRespon
     }
   }
 
+  async function saveRouteEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedStep) return;
+    setBusyId(selectedStep.id);
+    try {
+      await api.quests.updateStep(selectedStep.id, {
+        title: form.title.trim(),
+        description: form.description?.trim() || null,
+        scheduledDate: form.scheduledDate,
+        plannedTime: form.plannedTime || null,
+        deadlineTime: form.deadlineTime || null
+      });
+      setEditingStepId(null);
+      await onSaved();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (steps.length === 0) return null;
 
   return (
-    <div className="quest-route-board">
+    <div className="quest-route-board polished-route-board redesigned-route-board">
       <div className="quest-route-head">
         <div>
           <p className="eyebrow">маршрут</p>
           <strong>{completed}/{questTotal || steps.length} пройдено</strong>
+          {quest?.description ? <small className="route-quest-description">{quest.description}</small> : null}
         </div>
         <div className="quest-route-meter" aria-label={`Прогресс ${progress}%`}><span style={{ width: `${progress}%` }} /></div>
-        {skipped ? <span className="route-alert">сорвано {skipped}</span> : <span className="route-ok">темп живой</span>}
+        <span className={pace.tone === "behind" ? "route-alert" : "route-ok"}>{paceLabel}</span>
       </div>
 
       <div className="quest-route-track" role="list" aria-label="Маршрут шагов квеста">
@@ -388,16 +612,45 @@ function QuestRouteView({ steps, questTotal, onSaved }: { steps: QuestStepRespon
       </div>
 
       {selectedStep ? (
-        <div className={`quest-route-focus status-${selectedStep.status.toLowerCase()}`}>
-          <div>
-            <span className="route-step-kicker">Шаг {selectedStep.stepNumber} · {statusTone(selectedStep.status)}</span>
-            <strong>{selectedStep.title}</strong>
-            <small>{formatDate(selectedStep.scheduledDate)}{selectedStep.plannedTime ? ` · ${formatTime(selectedStep.plannedTime)}` : ""}</small>
+        <>
+          <div className={`quest-route-focus status-${selectedStep.status.toLowerCase()}`}>
+            <div>
+              <span className="route-step-kicker">Шаг {selectedStep.stepNumber} · {statusTone(selectedStep.status)}</span>
+              <strong>{selectedStep.title}</strong>
+              <small>{formatDate(selectedStep.scheduledDate)}{selectedStep.plannedTime ? ` · ${formatTime(selectedStep.plannedTime)}` : ""}</small>
+            </div>
+            <div className="route-step-actions">
+              {selectedStep.status === "PENDING" ? (
+                <Button
+                  variant="thin"
+                  disabled={busyId === selectedStep.id}
+                  onClick={() => shiftStep(selectedStep, selectedStep.scheduledDate === todayISO() ? addDays(todayISO(), 1) : todayISO())}
+                >
+                  {selectedStep.scheduledDate === todayISO() ? "Отложить на завтра" : "На сегодня"}
+                </Button>
+              ) : null}
+              <Button type="button" variant="thin" onClick={() => setEditingStepId((current) => current === selectedStep.id ? null : selectedStep.id)}>
+                {editingStepId === selectedStep.id ? "Скрыть" : "Изменить шаг"}
+              </Button>
+            </div>
           </div>
-          {selectedStep.status === "PENDING" && selectedStep.scheduledDate !== todayISO() ? (
-            <Button variant="thin" disabled={busyId === selectedStep.id} onClick={() => moveToToday(selectedStep)}>На сегодня</Button>
+
+          {editingStepId === selectedStep.id ? (
+            <form className="route-step-edit compact-create-form" onSubmit={saveRouteEdit}>
+              <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} />
+              <div className="route-step-edit-grid">
+                <Field label="Дата"><DateWheelInput value={form.scheduledDate} onChange={(value) => setForm({ ...form, scheduledDate: value || selectedStep.scheduledDate })} allowClear={false} /></Field>
+                <Field label="Время"><TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} /></Field>
+                <Field label="Дедлайн"><TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field>
+              </div>
+              <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} rows={3} placeholder="Описание шага" />
+              <div className="form-actions route-edit-actions">
+                <Button disabled={busyId === selectedStep.id || !form.title.trim()}>Сохранить</Button>
+                <Button type="button" variant="ghost" onClick={() => setEditingStepId(null)}>Отмена</Button>
+              </div>
+            </form>
           ) : null}
-        </div>
+        </>
       ) : null}
     </div>
   );
@@ -438,13 +691,13 @@ function StepEditor({ step, questTotal, onSaved }: { step: QuestStepResponse; qu
     }
   }
 
-  async function moveToToday() {
+  async function shiftStep(targetDate: string) {
     setBusy(true);
     try {
       await api.quests.updateStep(step.id, {
         title: step.title,
         description: step.description ?? null,
-        scheduledDate: todayISO(),
+        scheduledDate: targetDate,
         plannedTime: step.plannedTime ?? null,
         deadlineTime: step.deadlineTime ?? null
       });
@@ -493,7 +746,11 @@ function StepEditor({ step, questTotal, onSaved }: { step: QuestStepResponse; qu
       </div>
       <div className="item-tail wide-tail">
         <span>{stepStatusLabel(step.status)}</span>
-        {step.status === "PENDING" && step.scheduledDate !== todayISO() ? <Button variant="thin" disabled={busy} onClick={moveToToday}>На сегодня</Button> : null}
+        {step.status === "PENDING" ? (
+          <Button variant="thin" disabled={busy} onClick={() => shiftStep(step.scheduledDate === todayISO() ? addDays(todayISO(), 1) : todayISO())}>
+            {step.scheduledDate === todayISO() ? "Отложить на завтра" : "На сегодня"}
+          </Button>
+        ) : null}
         <Button variant="thin" onClick={() => setEditing(true)}>Изменить шаг</Button>
       </div>
     </article>

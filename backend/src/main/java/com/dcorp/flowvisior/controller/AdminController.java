@@ -35,7 +35,7 @@ public class AdminController {
     @PatchMapping("/users/{id}/game-stats")
     public AdminUserResponse updateGameStats(
             @PathVariable Long id,
-            @RequestBody UpdateGameStatsRequest request
+            @Valid @RequestBody UpdateGameStatsRequest request
     ) {
         return adminService.updateGameStats(id, request);
     }

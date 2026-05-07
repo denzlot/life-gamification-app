@@ -99,6 +99,7 @@ export interface DailyPlanResponse {
   createdAt?: string;
   startedAt?: string | null;
   closedAt?: string | null;
+  note?: string | null;
   items: DailyPlanItemResponse[];
   completedCount?: number;
   failedCount?: number;
@@ -114,6 +115,10 @@ export interface CreateManualDailyPlanItemRequest {
   description?: string | null;
   plannedTime?: string | null;
   deadlineTime?: string | null;
+}
+
+export interface UpdateDailyPlanNoteRequest {
+  note: string | null;
 }
 
 export interface QuestResponse {

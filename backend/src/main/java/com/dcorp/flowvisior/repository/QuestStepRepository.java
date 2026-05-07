@@ -15,6 +15,11 @@ public interface QuestStepRepository extends JpaRepository<QuestStep, Long> {
 
     List<QuestStep> findByQuestOrderByStepNumberAsc(Quest quest);
 
+    List<QuestStep> findByQuest_UserAndQuest_StatusOrderByQuest_IdAscStepNumberAsc(
+            User user,
+            QuestStatus questStatus
+    );
+
     Optional<QuestStep> findByIdAndQuest_User(Long id, User user);
 
     int countByQuest(Quest quest);
@@ -41,4 +46,6 @@ public interface QuestStepRepository extends JpaRepository<QuestStep, Long> {
     );
 
     boolean existsByQuestAndStatusNot(Quest quest, QuestStepStatus status);
+
+    void deleteByQuest(Quest quest);
 }

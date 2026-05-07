@@ -51,6 +51,10 @@ function parseTime(value?: string | null) {
   };
 }
 
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export function TimeWheelInput({
   value,
   onChange,
@@ -89,10 +93,22 @@ export function TimeWheelInput({
         {value ? formatTime(value) : placeholder}
       </button>
       {open ? (
-        <div className="wheel-popover time-wheel compact-wheel" role="dialog" aria-label={label}>
+        <div className="wheel-popover time-wheel compact-wheel manual-wheel" role="dialog" aria-label={label}>
           <p className="eyebrow">{label}</p>
           <div className="wheel-preview"><span>{pad(draft.hour)}</span><b>:</b><span>{pad(draft.minute)}</span></div>
-          <div className="wheel-columns two-columns">
+          <label className="wheel-manual-label">
+            <span>Ввести вручную</span>
+            <input
+              className="input wheel-manual-input"
+              type="time"
+              value={`${pad(draft.hour)}:${pad(draft.minute)}`}
+              onChange={(event) => {
+                const next = parseTime(event.target.value);
+                setDraft(next);
+              }}
+            />
+          </label>
+          <div className="wheel-columns two-columns wider-columns">
             <div className="wheel-column" aria-label="Часы">
               {hours.map((hour) => (
                 <button type="button" key={hour} className={draft.hour === hour ? "selected" : ""} onClick={() => setDraft({ ...draft, hour })}>
@@ -169,10 +185,19 @@ export function DateWheelInput({
         {value ? formatDate(value) : placeholder}
       </button>
       {open ? (
-        <div className="wheel-popover date-wheel compact-wheel" role="dialog" aria-label={label}>
+        <div className="wheel-popover date-wheel compact-wheel manual-wheel" role="dialog" aria-label={label}>
           <p className="eyebrow">{label}</p>
           <div className="wheel-preview date-preview"><span>{pad(draft.day)}</span><span>{months[draft.month - 1]}</span><span>{draft.year}</span></div>
-          <div className="wheel-columns three-columns">
+          <label className="wheel-manual-label">
+            <span>Ввести вручную</span>
+            <input
+              className="input wheel-manual-input"
+              type="date"
+              value={`${draft.year}-${pad(draft.month)}-${pad(draft.day)}`}
+              onChange={(event) => setDraft(parseDate(event.target.value))}
+            />
+          </label>
+          <div className="wheel-columns three-columns wider-columns">
             <div className="wheel-column" aria-label="День">
               {days.map((day) => (
                 <button type="button" key={day} className={draft.day === day ? "selected" : ""} onClick={() => setDraft({ ...draft, day })}>
@@ -230,7 +255,7 @@ export function NumberWheelInput({
   }, [open, value, min]);
 
   function apply() {
-    onChange(draft);
+    onChange(clampNumber(draft, min, max));
     setOpen(false);
   }
 
@@ -240,10 +265,21 @@ export function NumberWheelInput({
         {value ? `${value}${suffix ? ` ${suffix}` : ""}` : placeholder}
       </button>
       {open ? (
-        <div className="wheel-popover number-wheel compact-wheel" role="dialog" aria-label={label}>
+        <div className="wheel-popover number-wheel compact-wheel number-select-wheel" role="dialog" aria-label={label}>
           <p className="eyebrow">{label}</p>
           <div className="wheel-preview"><span>{draft}</span>{suffix ? <small>{suffix}</small> : null}</div>
-          <div className="wheel-columns one-column">
+          <label className="wheel-manual-label">
+            <span>Ввести вручную</span>
+            <input
+              className="input wheel-manual-input"
+              type="number"
+              min={min}
+              max={max}
+              value={draft}
+              onChange={(event) => setDraft(clampNumber(Number(event.target.value || min), min, max))}
+            />
+          </label>
+          <div className="wheel-columns one-column wider-columns">
             <div className="wheel-column" aria-label={label}>
               {values.map((entry) => (
                 <button type="button" key={entry} className={draft === entry ? "selected" : ""} onClick={() => setDraft(entry)}>

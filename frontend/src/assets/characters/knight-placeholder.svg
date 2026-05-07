@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Рыцарь">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="28%" r="70%"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d8e4ef"/></radialGradient>
+    <linearGradient id="m" x1="0" x2="1"><stop stop-color="#eef4fb"/><stop offset="1" stop-color="#9fb1c4"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="88" fill="url(#bg)"/>
+  <path d="M126 404c20-92 72-148 130-148s110 56 130 148c-56 46-204 46-260 0Z" fill="#d7e0e9" stroke="#8497aa" stroke-width="10"/>
+  <path d="M154 202c0-78 46-124 102-124s102 46 102 124v38c0 64-46 108-102 108s-102-44-102-108v-38Z" fill="url(#m)" stroke="#63778b" stroke-width="10"/>
+  <path d="M174 188h164M190 226h132M212 264h88" stroke="#405268" stroke-width="14" stroke-linecap="round"/>
+  <path d="M256 76v270" stroke="#ffffff" stroke-width="9" opacity=".7"/>
+  <path d="M190 392l66 44 66-44v-74H190v74Z" fill="#ffffff" stroke="#7d8fa1" stroke-width="10"/>
+</svg>

@@ -11,6 +11,7 @@ public class UpdateDailyPlanItemRequest {
     @Size(max = 160)
     private String title;
 
+    @Size(max = 5000)
     private String description;
 
     private LocalTime plannedTime;

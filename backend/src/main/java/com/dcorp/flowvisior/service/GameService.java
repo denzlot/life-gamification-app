@@ -191,6 +191,12 @@ public class GameService {
             );
         }
 
+        if (item.getDailyPlan().getPlanDate().isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Past daily plan items are read-only"
+            );
+        }
+
         if (item.getDailyPlan().getPlanDate().isAfter(LocalDate.now())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Future daily plan items cannot be confirmed yet"

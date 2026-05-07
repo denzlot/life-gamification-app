@@ -13,6 +13,7 @@ public class UpdateQuestStepRequest {
     @Size(max = 160)
     private String title;
 
+    @Size(max = 5000)
     private String description;
 
     @NotNull

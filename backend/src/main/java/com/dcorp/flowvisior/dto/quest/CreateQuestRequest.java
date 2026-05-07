@@ -11,6 +11,7 @@ public class CreateQuestRequest {
     @Size(max = 160)
     private String title;
 
+    @Size(max = 5000)
     private String description;
 
     private LocalTime plannedTime;
@@ -21,6 +22,7 @@ public class CreateQuestRequest {
     private LocalDate startDate;
 
     @Min(1)
+    @Max(3650)
     private int durationDays;
 
     @Min(1)
@@ -31,6 +33,7 @@ public class CreateQuestRequest {
     @Size(max = 150)
     private String baseStepTitle;
 
+    @Size(max = 5000)
     private String baseStepDescription;
 
     public String getTitle() { return title; }

@@ -17,6 +17,7 @@ import type {
   StatsResponse,
   TaskResponse,
   UpdateDailyPlanItemRequest,
+  UpdateDailyPlanNoteRequest,
   UpdateGameStatsRequest,
   UpdateHabitRequest,
   UpdateQuestRequest,
@@ -179,6 +180,8 @@ export const api = {
     byDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}`),
     startByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/start`, { method: "POST" }),
     closeByDate: (date: string) => request<DailyPlanResponse>(`/daily-plans/date/${date}/close`, { method: "POST" }),
+    updateNoteByDate: (date: string, payload: UpdateDailyPlanNoteRequest) =>
+      request<DailyPlanResponse>(`/daily-plans/date/${date}/note`, { method: "PATCH", body: json(payload) }),
     addManualItem: (planId: number, payload: CreateManualDailyPlanItemRequest) =>
       request<DailyPlanResponse>(`/daily-plans/${planId}/items`, { method: "POST", body: json(payload) })
   },
@@ -194,6 +197,7 @@ export const api = {
     get: (id: number) => request<QuestResponse>(`/quests/${id}`),
     update: (id: number, payload: UpdateQuestRequest) => request<QuestResponse>(`/quests/${id}`, { method: "PATCH", body: json(payload) }),
     delete: (id: number) => request<void>(`/quests/${id}`, { method: "DELETE" }),
+    activeSteps: () => request<QuestStepResponse[]>("/quests/steps/active"),
     steps: (id: number) => request<QuestStepResponse[]>(`/quests/${id}/steps`),
     updateStep: (id: number, payload: UpdateQuestStepRequest) => request<QuestStepResponse>(`/quest-steps/${id}`, { method: "PATCH", body: json(payload) })
   },

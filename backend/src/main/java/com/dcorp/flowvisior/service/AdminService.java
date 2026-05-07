@@ -68,11 +68,30 @@ public class AdminService {
 
         UserGameStats stats = userGameStatsRepository.findByUser(user).orElseThrow();
 
-        if (request.getXp() != null) stats.addXp(request.getXp() - stats.getXp());
-        if (request.getHp() != null) stats.setHp(request.getHp());
-        if (request.getStreak() != null) stats.setStreak(request.getStreak());
+        if (request.getXp() != null) {
+            validateNonNegative("xp", request.getXp());
+            stats.addXp(request.getXp() - stats.getXp());
+            stats.recalculateLevel();
+        }
+        if (request.getHp() != null) {
+            validateNonNegative("hp", request.getHp());
+            stats.setHp(request.getHp());
+        }
+        if (request.getStreak() != null) {
+            validateNonNegative("streak", request.getStreak());
+            stats.setStreak(request.getStreak());
+        }
 
         userGameStatsRepository.save(stats);
         return new AdminUserResponse(user, stats);
+    }
+
+    private void validateNonNegative(String field, int value) {
+        if (value < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    field + " must be greater than or equal to 0"
+            );
+        }
     }
 }

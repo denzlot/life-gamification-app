@@ -2,8 +2,11 @@ package com.dcorp.flowvisior.service;
 
 import com.dcorp.flowvisior.dto.quest.*;
 import com.dcorp.flowvisior.entity.ActivitySourceType;
+import com.dcorp.flowvisior.entity.DailyPlan;
+import com.dcorp.flowvisior.entity.DailyPlanItem;
 import com.dcorp.flowvisior.entity.Quest;
 import com.dcorp.flowvisior.entity.QuestStep;
+import com.dcorp.flowvisior.entity.QuestStatus;
 import com.dcorp.flowvisior.entity.User;
 import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
 import com.dcorp.flowvisior.repository.QuestRepository;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,12 +85,20 @@ public class QuestService {
         User user = authenticatedUserService.getCurrentUser();
         Quest quest = getQuestForUser(id, user);
 
+        QuestStatus requestedStatus = request.getStatus();
+        if (requestedStatus == QuestStatus.COMPLETED && quest.getStatus() != QuestStatus.COMPLETED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quest completion is calculated automatically");
+        }
+        if (quest.getStatus() == QuestStatus.COMPLETED && requestedStatus != QuestStatus.COMPLETED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Completed quests cannot be reopened manually");
+        }
+
         quest.update(
                 request.getTitle(),
                 request.getDescription(),
                 request.getPlannedTime(),
                 request.getDeadlineTime(),
-                request.getStatus()
+                requestedStatus
         );
 
         return new QuestResponse(quest);
@@ -102,14 +114,17 @@ public class QuestService {
                 .map(QuestStep::getId)
                 .toList();
 
-        boolean usedInDailyPlan = !stepIds.isEmpty()
+        boolean hasPlannedHistory = !stepIds.isEmpty()
                 && dailyPlanItemRepository.existsBySourceTypeAndSourceIdIn(ActivitySourceType.QUEST, stepIds);
 
-        if (usedInDailyPlan) {
-            quest.archive();
-            return;
+        if (hasPlannedHistory) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Quest already has daily plan history and can only be archived"
+            );
         }
 
+        questStepRepository.deleteByQuest(quest);
         questRepository.delete(quest);
     }
 
@@ -119,6 +134,16 @@ public class QuestService {
         Quest quest = getQuestForUser(questId, user);
 
         return questStepRepository.findByQuestOrderByStepNumberAsc(quest)
+                .stream()
+                .map(QuestStepResponse::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<QuestStepResponse> getActiveQuestSteps() {
+        User user = authenticatedUserService.getCurrentUser();
+
+        return questStepRepository.findByQuest_UserAndQuest_StatusOrderByQuest_IdAscStepNumberAsc(user, QuestStatus.ACTIVE)
                 .stream()
                 .map(QuestStepResponse::new)
                 .toList();
@@ -139,7 +164,38 @@ public class QuestService {
                 request.getDeadlineTime()
         );
 
+        syncOpenDailyPlanItems(questStep);
+
         return new QuestStepResponse(questStep);
+    }
+
+    private void syncOpenDailyPlanItems(QuestStep questStep) {
+        List<DailyPlanItem> items = dailyPlanItemRepository.findBySourceTypeAndSourceId(
+                ActivitySourceType.QUEST,
+                questStep.getId()
+        );
+        List<DailyPlanItem> toDelete = new ArrayList<>();
+
+        for (DailyPlanItem item : items) {
+            DailyPlan plan = item.getDailyPlan();
+            if (plan.isClosed()) {
+                continue;
+            }
+            if (!plan.getPlanDate().equals(questStep.getScheduledDate())) {
+                toDelete.add(item);
+                continue;
+            }
+            item.update(
+                    questStep.getTitle(),
+                    questStep.getDescription(),
+                    questStep.getPlannedTime(),
+                    questStep.getDeadlineTime()
+            );
+        }
+
+        if (!toDelete.isEmpty()) {
+            dailyPlanItemRepository.deleteAll(toDelete);
+        }
     }
 
     private Quest getQuestForUser(Long id, User user) {
@@ -150,14 +206,15 @@ public class QuestService {
     private List<QuestStep> generateSteps(Quest quest, CreateQuestRequest request) {
         List<QuestStep> steps = new ArrayList<>();
 
+        List<LocalDate> scheduledDates = calculateScheduleDates(
+                request.getStartDate(),
+                request.getDurationDays(),
+                request.getTotalSteps()
+        );
+
         for (int stepNumber = 1; stepNumber <= request.getTotalSteps(); stepNumber++) {
             String title = generateStepTitle(request.getBaseStepTitle(), stepNumber);
-            LocalDate scheduledDate = calculateScheduledDate(
-                    request.getStartDate(),
-                    request.getDurationDays(),
-                    stepNumber,
-                    request.getTotalSteps()
-            );
+            LocalDate scheduledDate = scheduledDates.get(stepNumber - 1);
 
             steps.add(new QuestStep(
                     quest,
@@ -181,15 +238,57 @@ public class QuestService {
         return baseStepTitle + " " + stepNumber;
     }
 
-    private LocalDate calculateScheduledDate(
+    private List<LocalDate> calculateScheduleDates(
             LocalDate startDate,
             int durationDays,
-            int stepNumber,
             int totalSteps
     ) {
-        int offsetDays = totalSteps == 1 ? 0 :
-                (int) Math.round((double)(stepNumber - 1) * (durationDays - 1) / (totalSteps - 1));
+        int safeDuration = Math.max(1, durationDays);
+        int safeSteps = Math.max(1, totalSteps);
+        int[] quotas = new int[safeDuration];
 
-        return startDate.plusDays(offsetDays);
+        if (safeSteps <= safeDuration) {
+            for (int index = 0; index < safeSteps; index++) {
+                int offset = safeSteps == 1
+                        ? 0
+                        : Math.round((float) index * (safeDuration - 1) / (safeSteps - 1));
+                quotas[offset] += 1;
+            }
+        } else {
+            for (int offset = 0; offset < safeDuration; offset++) {
+                quotas[offset] = 1;
+            }
+
+            int extraSteps = safeSteps - safeDuration;
+            while (extraSteps > 0) {
+                int bestOffset = 0;
+                double bestPressure = Double.MAX_VALUE;
+
+                for (int offset = 0; offset < safeDuration; offset++) {
+                    double pressure = quotas[offset] / dayWeight(startDate.plusDays(offset));
+                    if (pressure < bestPressure) {
+                        bestPressure = pressure;
+                        bestOffset = offset;
+                    }
+                }
+
+                quotas[bestOffset] += 1;
+                extraSteps--;
+            }
+        }
+
+        List<LocalDate> dates = new ArrayList<>(safeSteps);
+        for (int offset = 0; offset < safeDuration; offset++) {
+            for (int count = 0; count < quotas[offset]; count++) {
+                dates.add(startDate.plusDays(offset));
+            }
+        }
+
+        return dates;
+    }
+
+    private double dayWeight(LocalDate date) {
+        DayOfWeek day = date.getDayOfWeek();
+        return day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY ? 1.35d : 1.0d;
     }
 }

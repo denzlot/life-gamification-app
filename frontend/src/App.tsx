@@ -4,6 +4,7 @@ import { AdminGuard, AuthGuard } from "./components/AuthGuard";
 import { AchievementProvider } from "./context/AchievementContext";
 import { GameProvider } from "./context/GameContext";
 import { AdminPage } from "./pages/AdminPage";
+import { AchievementsPage } from "./pages/AchievementsPage";
 import { AuthPage } from "./pages/AuthPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { DayDetailsPage } from "./pages/DayDetailsPage";
@@ -40,6 +41,7 @@ export function App() {
           <Route path="/calendar/:date" element={<DayDetailsPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
         </Route>

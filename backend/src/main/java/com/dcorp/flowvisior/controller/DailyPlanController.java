@@ -2,6 +2,7 @@ package com.dcorp.flowvisior.controller;
 
 import com.dcorp.flowvisior.dto.dailyplan.CreateManualDailyPlanItemRequest;
 import com.dcorp.flowvisior.dto.dailyplan.DailyPlanResponse;
+import com.dcorp.flowvisior.dto.dailyplan.UpdateDailyPlanNoteRequest;
 import com.dcorp.flowvisior.service.DailyPlanService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -56,6 +57,14 @@ public class DailyPlanController {
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
         return dailyPlanService.closePlan(date, false);
+    }
+
+    @PatchMapping("/date/{date}/note")
+    public DailyPlanResponse updatePlanNoteByDate(
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Valid @RequestBody UpdateDailyPlanNoteRequest request
+    ) {
+        return dailyPlanService.updatePlanNote(date, request);
     }
 
     @PostMapping("/{planId}/items")
