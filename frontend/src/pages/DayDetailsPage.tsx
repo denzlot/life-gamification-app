@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/http";
 import type { CalendarDayResponse, CreateTaskRequest, DailyPlanItemResponse, DailyPlanItemStatus, DailyPlanResponse, SourceType } from "../api/types";
@@ -10,7 +10,9 @@ import { useAchievementWatcher } from "../context/AchievementContext";
 import { useGame } from "../context/GameContext";
 import { useToast } from "../context/ToastContext";
 import { formatDate, formatTime, itemStatusLabel, pct, planStatusLabel, signed, sourceLabel, todayISO } from "../utils/format";
+import { applyPlanItemOrder, animatePlanItemShift, capturePlanItemRects, readBooleanPreference, reorderItems, writeBooleanPreference, writePlanItemOrder } from "../utils/planItemUi";
 import { buildPreviewItems, summarizePreviewItems } from "../utils/planningPreview";
+
 
 
 function emptyCalendarDay(date: string): CalendarDayResponse {
@@ -130,6 +132,10 @@ export function DayDetailsPage() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
+  const [draggingItemId, setDraggingItemId] = useState<number | null>(null);
+  const [twoColumnLayout, setTwoColumnLayout] = useState(() => readBooleanPreference("flowvisior:details-two-column-layout"));
+  const activeDragItemIdRef = useRef<number | null>(null);
+  const lastDragOverIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (date === todayISO()) {
@@ -157,7 +163,8 @@ export function DayDetailsPage() {
         api.habits.list(),
         api.quests.activeSteps()
       ]);
-      const preview = dayPlan ? [] : buildPreviewItems(date, { tasks: taskList, habits: habitList, questSteps });
+      const orderedDayPlan = dayPlan ? { ...dayPlan, items: applyPlanItemOrder(dayPlan.items, date) } : null;
+      const preview = orderedDayPlan ? [] : buildPreviewItems(date, { tasks: taskList, habits: habitList, questSteps });
       const previewStats = summarizePreviewItems(preview);
       const calendarSummary = calendar.find((day) => day.date === date) ?? emptyCalendarDay(date);
 
@@ -174,8 +181,8 @@ export function DayDetailsPage() {
         questCompletedCount: previewStats.questCompletedCount
       } : calendarSummary);
       setPreviewItems(preview);
-      setPlan(dayPlan);
-      setNoteDraft(dayPlan?.note ?? "");
+      setPlan(orderedDayPlan);
+      setNoteDraft(orderedDayPlan?.note ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось открыть день");
     } finally {
@@ -196,6 +203,69 @@ export function DayDetailsPage() {
   const today = todayISO();
   const isPast = date < today;
   const isFuture = date > today;
+  const canManualReorder = Boolean(plan && !isClosed && !isPast && !isFuture && !sortByTime);
+
+  function movePlanItem(activeId: number, overId: number) {
+    if (!canManualReorder) return;
+    const previousRects = capturePlanItemRects();
+    setPlan((current) => {
+      if (!current) return current;
+      const nextItems = reorderItems(current.items, activeId, overId);
+      if (nextItems === current.items) return current;
+      writePlanItemOrder(date, nextItems);
+      return { ...current, items: nextItems };
+    });
+    animatePlanItemShift(previousRects);
+  }
+
+  function handleDragPointerDown(event: ReactPointerEvent<HTMLElement>, itemId: number) {
+    if (!canManualReorder) return;
+    event.preventDefault();
+    activeDragItemIdRef.current = itemId;
+    lastDragOverIdRef.current = itemId;
+    setDraggingItemId(itemId);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function handleDragPointerMove(event: ReactPointerEvent<HTMLElement>) {
+    const activeId = activeDragItemIdRef.current;
+    if (!canManualReorder || activeId === null) return;
+    event.preventDefault();
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const itemElement = target?.closest<HTMLElement>("[data-plan-item-id]");
+    const overId = Number(itemElement?.dataset.planItemId);
+    if (!Number.isFinite(overId) || overId === activeId || overId === lastDragOverIdRef.current) return;
+    lastDragOverIdRef.current = overId;
+    movePlanItem(activeId, overId);
+  }
+
+  function handleDragPointerEnd(event?: ReactPointerEvent<HTMLElement>) {
+    if (event && event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    }
+    activeDragItemIdRef.current = null;
+    lastDragOverIdRef.current = null;
+    setDraggingItemId(null);
+  }
+
+  function handleDragKeyDown(event: KeyboardEvent<HTMLElement>, itemId: number) {
+    if (!canManualReorder) return;
+    const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : 0;
+    if (direction === 0) return;
+    event.preventDefault();
+    const index = items.findIndex((item) => item.id === itemId);
+    const target = items[index + direction];
+    if (index < 0 || !target) return;
+    movePlanItem(itemId, target.id);
+  }
+
+  function toggleTwoColumnLayout() {
+    setTwoColumnLayout((value) => {
+      const next = !value;
+      writeBooleanPreference("flowvisior:details-two-column-layout", next);
+      return next;
+    });
+  }
 
   async function startDay() {
     if (isPast) return;
@@ -203,8 +273,9 @@ export function DayDetailsPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.startByDate(date);
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, date) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
       notify({ tone: "success", title: "День открыт" });
       await load(false);
     } catch (err) {
@@ -220,8 +291,9 @@ export function DayDetailsPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.closeByDate(date);
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, date) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
       notify({ tone: "success", title: "День закрыт" });
       refreshProfile().catch(() => undefined);
       syncAchievements(false).catch(() => undefined);
@@ -263,8 +335,9 @@ export function DayDetailsPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.updateNoteByDate(date, { note: noteDraft.trim() || null });
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, date) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
       notify({ tone: "success", title: "Заметка сохранена" });
       setNoteOpen(false);
       await load(false);
@@ -422,10 +495,15 @@ export function DayDetailsPage() {
             <div className="plan-progress"><strong>{completedPct}%</strong><div className="meter"><span style={{ width: `${completedPct}%` }} /></div></div>
           </div>
           {isPast ? <p className="muted inline-note">Прошедший день открыт только для просмотра задач. Заметку можно обновить.</p> : null}
-          {items.length > 1 ? <div className="today-controls-row"><Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "Сортировать по времени"}</Button></div> : null}
+          {items.length > 1 ? (
+            <div className="today-controls-row">
+              <Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "Сортировать по времени"}</Button>
+              <Button type="button" variant="ghost" className={twoColumnLayout ? "toolbar-active" : ""} onClick={toggleTwoColumnLayout}>{twoColumnLayout ? "В один ряд" : "В два ряда"}</Button>
+            </div>
+          ) : null}
 
           {items.length > 0 ? (
-            <div className="grouped-plan-list details-list">
+            <div className={`grouped-plan-list details-list ${twoColumnLayout ? "two-column-enabled" : ""}`}>
               {groupedItems.map((group) => (
                 <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
                   <div className="plan-source-head">
@@ -434,7 +512,25 @@ export function DayDetailsPage() {
                   </div>
                   <div className="line-list todo-list typed-list clean-list">
                     {group.items.map((item) => (
-                      <article className={`line-item plan-item status-${item.status.toLowerCase()}`} key={item.id}>
+                      <article
+                        className={`line-item plan-item draggable-plan-item status-${item.status.toLowerCase()} ${draggingItemId === item.id ? "dragging" : ""}`}
+                        key={item.id}
+                        data-plan-item-id={item.id}
+                      >
+                        <button
+                          type="button"
+                          className="drag-handle"
+                          disabled={!canManualReorder}
+                          onPointerDown={(event) => handleDragPointerDown(event, item.id)}
+                          onPointerMove={handleDragPointerMove}
+                          onPointerUp={handleDragPointerEnd}
+                          onPointerCancel={handleDragPointerEnd}
+                          onKeyDown={(event) => handleDragKeyDown(event, item.id)}
+                          title={canManualReorder ? "Перетащить пункт. Стрелки вверх/вниз тоже меняют порядок." : "Ручной порядок доступен только для открытого дня без сортировки по времени"}
+                          aria-label="Перетащить пункт"
+                        >
+                          ⋮⋮
+                        </button>
                         <button
                           type="button"
                           className={`status-cycle status-cycle-${item.status.toLowerCase()}`}

@@ -343,6 +343,7 @@ export function QuestsPage() {
           <Button type="button" onClick={openNewQuestForm} aria-expanded={formOpen}>
             {formOpen && !editing ? "Скрыть квест" : "Добавить квест"}
           </Button>
+          <span className="create-action-hint">Квест разложится на шаги и появится в календарном маршруте.</span>
         </div>
 
         {formOpen ? (

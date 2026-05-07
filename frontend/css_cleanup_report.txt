@@ -1,0 +1,10 @@
+Input lines: 2280
+Output lines: 9066
+Input bytes: 179758
+Output bytes: 188547
+Rules seen: 1523
+Empty rules removed: 6
+Declarations seen: 3915
+Overridden declarations removed: 32
+Comments removed: 3
+Parse errors after cleanup: 0

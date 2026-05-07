@@ -1,4 +1,5 @@
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../api/http";
 import type {
@@ -18,6 +19,7 @@ import { useAchievementWatcher } from "../context/AchievementContext";
 import { useGame } from "../context/GameContext";
 import { useToast } from "../context/ToastContext";
 import { formatDate, formatTime, itemStatusLabel, pct, planStatusLabel, signed, sourceLabel, todayISO } from "../utils/format";
+import { applyPlanItemOrder, animatePlanItemShift, capturePlanItemRects, readBooleanPreference, reorderItems, writeBooleanPreference, writePlanItemOrder } from "../utils/planItemUi";
 
 const sourceFilters: Array<{ value: SourceType | "ALL"; label: string }> = [
   { value: "ALL", label: "Все" },
@@ -33,6 +35,7 @@ const statusFilters: Array<{ value: DailyPlanItemStatus | "ALL"; label: string }
   { value: "COMPLETED", label: "Выполненные" },
   { value: "FAILED", label: "Не выполненные" }
 ];
+
 
 
 function todayPlanCacheKey(date: string) {
@@ -134,6 +137,61 @@ function HpXpLine({ xp, hp }: { xp: number; hp: number }) {
   );
 }
 
+function formatTimer(seconds: number) {
+  const safe = Math.max(0, seconds);
+  const minutes = Math.floor(safe / 60);
+  const rest = safe % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+}
+
+function FocusTimer() {
+  const total = 25 * 60;
+  const [remaining, setRemaining] = useState(total);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    if (!running) return undefined;
+    const intervalId = window.setInterval(() => {
+      setRemaining((value) => {
+        if (value <= 1) {
+          window.clearInterval(intervalId);
+          setRunning(false);
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [running]);
+
+  const progress = Math.round(((total - remaining) / total) * 100);
+
+  function toggleRunning() {
+    if (remaining === 0) {
+      setRemaining(total);
+      setRunning(true);
+      return;
+    }
+    setRunning((value) => !value);
+  }
+
+  return (
+    <div className="avatar-focus-timer" aria-label="Фокус-таймер">
+      <div className="timer-ring" style={{ "--timer-progress": `${progress}%` } as CSSProperties}>
+        <span>{formatTimer(remaining)}</span>
+      </div>
+      <div className="timer-copy">
+        <strong>Фокус</strong>
+        <small>{running ? "сессия идёт" : remaining === 0 ? "готово" : "25 минут"}</small>
+      </div>
+      <div className="timer-actions">
+        <Button type="button" variant="thin" onClick={toggleRunning}>{running ? "Пауза" : remaining === 0 ? "Снова" : "Старт"}</Button>
+        <Button type="button" variant="ghost" className="timer-reset-button" onClick={() => { setRunning(false); setRemaining(total); }}>Сброс</Button>
+      </div>
+    </div>
+  );
+}
+
 function StatusIcon({ status }: { status: DailyPlanItemStatus }) {
   return (
     <svg className="status-cycle-svg" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
@@ -152,7 +210,10 @@ function closeDayQuestion(completedCount: number) {
 
 export function TodayPage() {
   const today = todayISO();
-  const cachedPlan = useMemo(() => readCachedTodayPlan(today), [today]);
+  const cachedPlan = useMemo(() => {
+    const cached = readCachedTodayPlan(today);
+    return cached ? { ...cached, items: applyPlanItemOrder(cached.items, today) } : null;
+  }, [today]);
   const { profile, refreshProfile } = useGame();
   const { notify } = useToast();
   const { syncAchievements } = useAchievementWatcher();
@@ -176,7 +237,13 @@ export function TodayPage() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState(cachedPlan?.note ?? "");
   const [noteSaving, setNoteSaving] = useState(false);
+  const [draggingItemId, setDraggingItemId] = useState<number | null>(null);
+  const [twoColumnLayout, setTwoColumnLayout] = useState(() => readBooleanPreference("flowvisior:today-two-column-layout"));
+  const [focusItemId, setFocusItemId] = useState<number | null>(null);
   const filtersHostRef = useRef<HTMLDivElement | null>(null);
+  const focusTimerRef = useRef<number | null>(null);
+  const activeDragItemIdRef = useRef<number | null>(null);
+  const lastDragOverIdRef = useRef<number | null>(null);
 
   const loadPlan = useCallback(async (showLoader = true) => {
     if (showLoader) {
@@ -185,9 +252,10 @@ export function TodayPage() {
     }
     try {
       const data = await api.dailyPlans.byDate(today);
-      setPlan(data);
-      setNoteDraft(data.note ?? "");
-      writeCachedTodayPlan(today, data);
+      const orderedData = { ...data, items: applyPlanItemOrder(data.items, today) };
+      setPlan(orderedData);
+      setNoteDraft(orderedData.note ?? "");
+      writeCachedTodayPlan(today, orderedData);
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setPlan(null);
@@ -217,6 +285,10 @@ export function TodayPage() {
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, [filtersOpen]);
 
+  useEffect(() => () => {
+    if (focusTimerRef.current) window.clearTimeout(focusTimerRef.current);
+  }, []);
+
 
   const items = plan?.items ?? [];
   const counts = useMemo(() => countStatuses(items), [items]);
@@ -234,15 +306,92 @@ export function TodayPage() {
     return sortByTime ? sortByPlannedTime(filtered) : filtered;
   }, [items, search, sourceFilter, statusFilter, sortByTime]);
   const groupedItems = useMemo(() => groupedBySource(filteredItems), [filteredItems]);
+  const nextFocusItem = useMemo(() => sortByPlannedTime(filteredItems.filter((item) => item.status === "PENDING"))[0] ?? null, [filteredItems]);
+  const canManualReorder = Boolean(plan && !isClosed && !sortByTime);
+
+  function movePlanItem(activeId: number, overId: number) {
+    if (!canManualReorder) return;
+    const previousRects = capturePlanItemRects();
+    setPlan((current) => {
+      if (!current) return current;
+      const nextItems = reorderItems(current.items, activeId, overId);
+      if (nextItems === current.items) return current;
+      writePlanItemOrder(today, nextItems);
+      const next = { ...current, items: nextItems };
+      writeCachedTodayPlan(today, next);
+      return next;
+    });
+    animatePlanItemShift(previousRects);
+  }
+
+  function handleDragPointerDown(event: ReactPointerEvent<HTMLElement>, itemId: number) {
+    if (!canManualReorder) return;
+    event.preventDefault();
+    activeDragItemIdRef.current = itemId;
+    lastDragOverIdRef.current = itemId;
+    setDraggingItemId(itemId);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function handleDragPointerMove(event: ReactPointerEvent<HTMLElement>) {
+    const activeId = activeDragItemIdRef.current;
+    if (!canManualReorder || activeId === null) return;
+    event.preventDefault();
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const itemElement = target?.closest<HTMLElement>("[data-plan-item-id]");
+    const overId = Number(itemElement?.dataset.planItemId);
+    if (!Number.isFinite(overId) || overId === activeId || overId === lastDragOverIdRef.current) return;
+    lastDragOverIdRef.current = overId;
+    movePlanItem(activeId, overId);
+  }
+
+  function handleDragPointerEnd(event?: ReactPointerEvent<HTMLElement>) {
+    if (event && event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    }
+    activeDragItemIdRef.current = null;
+    lastDragOverIdRef.current = null;
+    setDraggingItemId(null);
+  }
+
+  function handleDragKeyDown(event: KeyboardEvent<HTMLElement>, itemId: number) {
+    if (!canManualReorder) return;
+    const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : 0;
+    if (direction === 0) return;
+    event.preventDefault();
+    const index = items.findIndex((item) => item.id === itemId);
+    const target = items[index + direction];
+    if (index < 0 || !target) return;
+    movePlanItem(itemId, target.id);
+  }
+
+  function toggleTwoColumnLayout() {
+    setTwoColumnLayout((value) => {
+      const next = !value;
+      writeBooleanPreference("flowvisior:today-two-column-layout", next);
+      return next;
+    });
+  }
+
+  function focusNextTask() {
+    if (!nextFocusItem) return;
+    setFocusItemId(nextFocusItem.id);
+    window.requestAnimationFrame(() => {
+      document.querySelector(`[data-plan-item-id="${nextFocusItem.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    if (focusTimerRef.current) window.clearTimeout(focusTimerRef.current);
+    focusTimerRef.current = window.setTimeout(() => setFocusItemId(null), 2600);
+  }
 
   async function startDay() {
     setBusy(true);
     setError(null);
     try {
       const next = await api.dailyPlans.startByDate(today);
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
-      writeCachedTodayPlan(today, next);
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, today) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
+      writeCachedTodayPlan(today, orderedNext);
       notify({ tone: "success", title: "День открыт" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось открыть день");
@@ -282,9 +431,10 @@ export function TodayPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.closeByDate(today);
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
-      writeCachedTodayPlan(today, next);
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, today) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
+      writeCachedTodayPlan(today, orderedNext);
       notify({ tone: "success", title: "День закрыт" });
       refreshProfile().catch(() => undefined);
       syncAchievements(false).catch(() => undefined);
@@ -300,9 +450,10 @@ export function TodayPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.updateNoteByDate(today, { note: noteDraft.trim() || null });
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
-      writeCachedTodayPlan(today, next);
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, today) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
+      writeCachedTodayPlan(today, orderedNext);
       notify({ tone: "success", title: "Заметка сохранена" });
       setNoteOpen(false);
     } catch (err) {
@@ -427,6 +578,7 @@ export function TodayPage() {
           <section className="section-line clean-section today-pre-character-card">
             <div className="today-pre-avatar-slot">
               <Avatar stats={profile?.gameStats} compact />
+              <FocusTimer />
             </div>
             <div className="today-pre-stats-slot">
               <p className="eyebrow">персонаж</p>
@@ -435,49 +587,6 @@ export function TodayPage() {
             </div>
           </section>
         </>
-      ) : null}
-
-      {!isClosed && !plan ? (
-        <section className="section-line task-create-panel drawer-host clean-section center-add-panel">
-          <div className="center-add-actions">
-            <Button type="button" onClick={() => setTaskDrawerOpen((value) => !value)} aria-expanded={taskDrawerOpen}>
-              {taskDrawerOpen ? "Скрыть задачу" : "Добавить задачу"}
-            </Button>
-          </div>
-
-          {taskDrawerOpen ? (
-            <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={() => setTaskDrawerOpen(false)}>
-              <form className="form-grid task-form task-drawer unified-form compact-create-form ordered-form centered-task-form modal-form-card" onSubmit={createTask} role="dialog" aria-modal="true" aria-label="Создание задачи" onMouseDown={(event) => event.stopPropagation()}>
-                <div className="modal-form-head">
-                  <div><p className="eyebrow">новая задача</p><strong>Добавить задачу</strong></div>
-                  <button type="button" className="dialog-close" onClick={() => setTaskDrawerOpen(false)} aria-label="Закрыть">×</button>
-                </div>
-              <Field label="Название">
-                <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} placeholder="Например: подготовить отчёт" />
-              </Field>
-              <Field label="Дата задачи">
-                <DateWheelInput value={taskForm.deadlineDate || today} onChange={(value) => setTaskForm({ ...taskForm, deadlineDate: value || today })} allowClear={false} />
-              </Field>
-              <div className="optional-toolbar">
-                <OptionButton active={taskOptions.time || Boolean(taskForm.plannedTime)} onClick={() => setTaskOptions((state) => ({ ...state, time: !state.time }))}>
-                  {taskForm.plannedTime ? `Время: ${formatTime(taskForm.plannedTime)}` : "Время"}
-                </OptionButton>
-                <OptionButton active={taskOptions.deadline || Boolean(taskForm.deadlineTime)} onClick={() => setTaskOptions((state) => ({ ...state, deadline: !state.deadline }))}>
-                  {taskForm.deadlineTime ? `Дедлайн: ${formatTime(taskForm.deadlineTime)}` : "Дедлайн"}
-                </OptionButton>
-                <OptionButton active={taskOptions.description || Boolean(taskForm.description)} onClick={() => setTaskOptions((state) => ({ ...state, description: !state.description }))}>
-                  Описание
-                </OptionButton>
-              </div>
-              {taskOptions.time ? <Field label="Плановое время"><TimeWheelInput value={taskForm.plannedTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, plannedTime: value })} /></Field> : null}
-              {taskOptions.deadline ? <Field label="Дедлайн"><TimeWheelInput value={taskForm.deadlineTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field> : null}
-              {taskOptions.description ? <Field label="Описание"><TextArea value={taskForm.description ?? ""} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></Field> : null}
-              <ErrorLine error={taskError} />
-              <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
-              </form>
-            </div>
-          ) : null}
-        </section>
       ) : null}
 
       <div className="today-grid">
@@ -505,6 +614,8 @@ export function TodayPage() {
                   ) : null}
                   <Button type="button" variant="ghost" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen}>{filtersOpen ? "Скрыть фильтры" : "Фильтры"}</Button>
                   <Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "По времени"}</Button>
+                  <Button type="button" variant="ghost" className={twoColumnLayout ? "toolbar-active" : ""} onClick={toggleTwoColumnLayout}>{twoColumnLayout ? "В один ряд" : "В два ряда"}</Button>
+                  <Button type="button" variant="ghost" className="focus-task-button" onClick={focusNextTask} disabled={!nextFocusItem}>Фокус</Button>
                 </div>
 
                 {taskDrawerOpen ? (
@@ -560,7 +671,7 @@ export function TodayPage() {
               {items.length === 0 ? <EmptyState title="Пока пусто" text="Создай задачу или открой нужный квест в календаре." /> : null}
               {items.length > 0 && filteredItems.length === 0 ? <EmptyState title="Ничего не найдено" text="Измени фильтры." /> : null}
 
-              <div className="grouped-plan-list">
+              <div className={`grouped-plan-list ${twoColumnLayout ? "two-column-enabled" : ""}`}>
                 {groupedItems.map((group) => (
                   <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
                     <div className="plan-source-head">
@@ -569,7 +680,25 @@ export function TodayPage() {
                     </div>
                     <div className="line-list todo-list typed-list clean-list">
                       {group.items.map((item) => (
-                        <article className={`line-item plan-item status-${item.status.toLowerCase()}`} key={item.id}>
+                        <article
+                          className={`line-item plan-item draggable-plan-item status-${item.status.toLowerCase()} ${draggingItemId === item.id ? "dragging" : ""} ${focusItemId === item.id ? "focus-pulse" : ""}`}
+                          key={item.id}
+                          data-plan-item-id={item.id}
+                        >
+                          <button
+                            type="button"
+                            className="drag-handle"
+                            disabled={!canManualReorder}
+                            onPointerDown={(event) => handleDragPointerDown(event, item.id)}
+                            onPointerMove={handleDragPointerMove}
+                            onPointerUp={handleDragPointerEnd}
+                            onPointerCancel={handleDragPointerEnd}
+                            onKeyDown={(event) => handleDragKeyDown(event, item.id)}
+                            title={canManualReorder ? "Перетащить пункт. Стрелки вверх/вниз тоже меняют порядок." : "Ручной порядок доступен без сортировки по времени"}
+                            aria-label="Перетащить пункт"
+                          >
+                            ⋮⋮
+                          </button>
                           <button
                             type="button"
                             className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
@@ -638,6 +767,7 @@ export function TodayPage() {
           <aside className="today-side">
             <section className="section-line character-panel clean-section">
               <Avatar stats={profile?.gameStats} compact variantIndex={1} />
+              <FocusTimer />
               <GameHud stats={profile?.gameStats} />
             </section>
           </aside>

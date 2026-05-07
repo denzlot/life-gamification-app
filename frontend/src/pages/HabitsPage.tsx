@@ -128,6 +128,7 @@ export function HabitsPage() {
           <Button type="button" onClick={openNewHabitForm} aria-expanded={formOpen}>
             {formOpen && !editing ? "Скрыть привычку" : "Добавить привычку"}
           </Button>
+          <span className="create-action-hint">Автоматически появится в днях по выбранному расписанию.</span>
         </div>
 
         {formOpen ? (
