@@ -1,4 +1,5 @@
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../api/http";
 import type {
@@ -34,6 +35,96 @@ const statusFilters: Array<{ value: DailyPlanItemStatus | "ALL"; label: string }
   { value: "FAILED", label: "Не выполненные" }
 ];
 
+
+
+function planItemOrderKey(date: string) {
+  return `flowvisior:plan-item-order:${date}`;
+}
+
+function readPlanItemOrder(date: string): number[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(planItemOrderKey(date));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((value): value is number => typeof value === "number") : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePlanItemOrder(date: string, items: DailyPlanItemResponse[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(planItemOrderKey(date), JSON.stringify(items.map((item) => item.id)));
+  } catch {
+    // Manual ordering is a UI preference; ignore storage limits/private mode.
+  }
+}
+
+function applyPlanItemOrder(items: DailyPlanItemResponse[], date: string) {
+  const order = readPlanItemOrder(date);
+  if (order.length === 0) return items;
+  const orderIndex = new Map(order.map((id, index) => [id, index]));
+  return [...items].sort((a, b) => {
+    const left = orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+    const right = orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+    return left - right;
+  });
+}
+
+function reorderItems(items: DailyPlanItemResponse[], activeId: number, overId: number) {
+  const from = items.findIndex((item) => item.id === activeId);
+  const to = items.findIndex((item) => item.id === overId);
+  if (from < 0 || to < 0 || from === to) return items;
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
+
+function capturePlanItemRects() {
+  if (typeof document === "undefined") return new Map<number, DOMRect>();
+  const rects = new Map<number, DOMRect>();
+  document.querySelectorAll<HTMLElement>("[data-plan-item-id]").forEach((element) => {
+    const id = Number(element.dataset.planItemId);
+    if (Number.isFinite(id)) rects.set(id, element.getBoundingClientRect());
+  });
+  return rects;
+}
+
+function animatePlanItemShift(previousRects: Map<number, DOMRect>) {
+  if (typeof document === "undefined" || previousRects.size === 0) return;
+  window.requestAnimationFrame(() => {
+    document.querySelectorAll<HTMLElement>("[data-plan-item-id]").forEach((element) => {
+      const id = Number(element.dataset.planItemId);
+      const previous = previousRects.get(id);
+      if (!previous) return;
+      const next = element.getBoundingClientRect();
+      const deltaX = previous.left - next.left;
+      const deltaY = previous.top - next.top;
+      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+      element.animate(
+        [{ transform: `translate(${deltaX}px, ${deltaY}px)` }, { transform: "translate(0, 0)" }],
+        { duration: 190, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+      );
+    });
+  });
+}
+
+function readBooleanPreference(key: string, fallback = false) {
+  if (typeof window === "undefined") return fallback;
+  return window.localStorage.getItem(key) === "1";
+}
+
+function writeBooleanPreference(key: string, value: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, value ? "1" : "0");
+  } catch {
+    // UI preference only.
+  }
+}
 
 function todayPlanCacheKey(date: string) {
   return `flowvisior:today-plan:${date}`;
@@ -134,6 +225,52 @@ function HpXpLine({ xp, hp }: { xp: number; hp: number }) {
   );
 }
 
+function formatTimer(seconds: number) {
+  const safe = Math.max(0, seconds);
+  const minutes = Math.floor(safe / 60);
+  const rest = safe % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+}
+
+function FocusTimer() {
+  const total = 25 * 60;
+  const [remaining, setRemaining] = useState(total);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    if (!running) return undefined;
+    const intervalId = window.setInterval(() => {
+      setRemaining((value) => {
+        if (value <= 1) {
+          window.clearInterval(intervalId);
+          setRunning(false);
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [running]);
+
+  const progress = Math.round(((total - remaining) / total) * 100);
+
+  return (
+    <div className="avatar-focus-timer" aria-label="Фокус-таймер">
+      <div className="timer-ring" style={{ "--timer-progress": `${progress}%` } as CSSProperties}>
+        <span>{formatTimer(remaining)}</span>
+      </div>
+      <div className="timer-copy">
+        <strong>Фокус</strong>
+        <small>{running ? "сессия идёт" : remaining === 0 ? "готово" : "25 минут"}</small>
+      </div>
+      <div className="timer-actions">
+        <button type="button" onClick={() => setRunning((value) => !value)}>{running ? "Пауза" : remaining === 0 ? "Снова" : "Старт"}</button>
+        <button type="button" onClick={() => { setRunning(false); setRemaining(total); }}>Сброс</button>
+      </div>
+    </div>
+  );
+}
+
 function StatusIcon({ status }: { status: DailyPlanItemStatus }) {
   return (
     <svg className="status-cycle-svg" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
@@ -152,7 +289,10 @@ function closeDayQuestion(completedCount: number) {
 
 export function TodayPage() {
   const today = todayISO();
-  const cachedPlan = useMemo(() => readCachedTodayPlan(today), [today]);
+  const cachedPlan = useMemo(() => {
+    const cached = readCachedTodayPlan(today);
+    return cached ? { ...cached, items: applyPlanItemOrder(cached.items, today) } : null;
+  }, [today]);
   const { profile, refreshProfile } = useGame();
   const { notify } = useToast();
   const { syncAchievements } = useAchievementWatcher();
@@ -176,7 +316,13 @@ export function TodayPage() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState(cachedPlan?.note ?? "");
   const [noteSaving, setNoteSaving] = useState(false);
+  const [draggingItemId, setDraggingItemId] = useState<number | null>(null);
+  const [twoColumnLayout, setTwoColumnLayout] = useState(() => readBooleanPreference("flowvisior:today-two-column-layout"));
+  const [focusItemId, setFocusItemId] = useState<number | null>(null);
   const filtersHostRef = useRef<HTMLDivElement | null>(null);
+  const focusTimerRef = useRef<number | null>(null);
+  const activeDragItemIdRef = useRef<number | null>(null);
+  const lastDragOverIdRef = useRef<number | null>(null);
 
   const loadPlan = useCallback(async (showLoader = true) => {
     if (showLoader) {
@@ -185,9 +331,10 @@ export function TodayPage() {
     }
     try {
       const data = await api.dailyPlans.byDate(today);
-      setPlan(data);
-      setNoteDraft(data.note ?? "");
-      writeCachedTodayPlan(today, data);
+      const orderedData = { ...data, items: applyPlanItemOrder(data.items, today) };
+      setPlan(orderedData);
+      setNoteDraft(orderedData.note ?? "");
+      writeCachedTodayPlan(today, orderedData);
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setPlan(null);
@@ -217,6 +364,10 @@ export function TodayPage() {
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, [filtersOpen]);
 
+  useEffect(() => () => {
+    if (focusTimerRef.current) window.clearTimeout(focusTimerRef.current);
+  }, []);
+
 
   const items = plan?.items ?? [];
   const counts = useMemo(() => countStatuses(items), [items]);
@@ -234,15 +385,81 @@ export function TodayPage() {
     return sortByTime ? sortByPlannedTime(filtered) : filtered;
   }, [items, search, sourceFilter, statusFilter, sortByTime]);
   const groupedItems = useMemo(() => groupedBySource(filteredItems), [filteredItems]);
+  const nextFocusItem = useMemo(() => sortByPlannedTime(filteredItems.filter((item) => item.status === "PENDING"))[0] ?? null, [filteredItems]);
+  const canManualReorder = Boolean(plan && !isClosed && !sortByTime);
+
+  function movePlanItem(activeId: number, overId: number) {
+    if (!canManualReorder) return;
+    const previousRects = capturePlanItemRects();
+    setPlan((current) => {
+      if (!current) return current;
+      const nextItems = reorderItems(current.items, activeId, overId);
+      if (nextItems === current.items) return current;
+      writePlanItemOrder(today, nextItems);
+      const next = { ...current, items: nextItems };
+      writeCachedTodayPlan(today, next);
+      return next;
+    });
+    animatePlanItemShift(previousRects);
+  }
+
+  function handleDragPointerDown(event: ReactPointerEvent<HTMLElement>, itemId: number) {
+    if (!canManualReorder) return;
+    event.preventDefault();
+    activeDragItemIdRef.current = itemId;
+    lastDragOverIdRef.current = itemId;
+    setDraggingItemId(itemId);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function handleDragPointerMove(event: ReactPointerEvent<HTMLElement>) {
+    const activeId = activeDragItemIdRef.current;
+    if (!canManualReorder || activeId === null) return;
+    event.preventDefault();
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const itemElement = target?.closest<HTMLElement>("[data-plan-item-id]");
+    const overId = Number(itemElement?.dataset.planItemId);
+    if (!Number.isFinite(overId) || overId === activeId || overId === lastDragOverIdRef.current) return;
+    lastDragOverIdRef.current = overId;
+    movePlanItem(activeId, overId);
+  }
+
+  function handleDragPointerEnd(event?: ReactPointerEvent<HTMLElement>) {
+    if (event && event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    }
+    activeDragItemIdRef.current = null;
+    lastDragOverIdRef.current = null;
+    setDraggingItemId(null);
+  }
+
+  function toggleTwoColumnLayout() {
+    setTwoColumnLayout((value) => {
+      const next = !value;
+      writeBooleanPreference("flowvisior:today-two-column-layout", next);
+      return next;
+    });
+  }
+
+  function focusNextTask() {
+    if (!nextFocusItem) return;
+    setFocusItemId(nextFocusItem.id);
+    window.requestAnimationFrame(() => {
+      document.querySelector(`[data-plan-item-id="${nextFocusItem.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    if (focusTimerRef.current) window.clearTimeout(focusTimerRef.current);
+    focusTimerRef.current = window.setTimeout(() => setFocusItemId(null), 2600);
+  }
 
   async function startDay() {
     setBusy(true);
     setError(null);
     try {
       const next = await api.dailyPlans.startByDate(today);
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
-      writeCachedTodayPlan(today, next);
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, today) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
+      writeCachedTodayPlan(today, orderedNext);
       notify({ tone: "success", title: "День открыт" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось открыть день");
@@ -282,9 +499,10 @@ export function TodayPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.closeByDate(today);
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
-      writeCachedTodayPlan(today, next);
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, today) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
+      writeCachedTodayPlan(today, orderedNext);
       notify({ tone: "success", title: "День закрыт" });
       refreshProfile().catch(() => undefined);
       syncAchievements(false).catch(() => undefined);
@@ -300,9 +518,10 @@ export function TodayPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.updateNoteByDate(today, { note: noteDraft.trim() || null });
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
-      writeCachedTodayPlan(today, next);
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, today) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
+      writeCachedTodayPlan(today, orderedNext);
       notify({ tone: "success", title: "Заметка сохранена" });
       setNoteOpen(false);
     } catch (err) {
@@ -427,6 +646,7 @@ export function TodayPage() {
           <section className="section-line clean-section today-pre-character-card">
             <div className="today-pre-avatar-slot">
               <Avatar stats={profile?.gameStats} compact />
+              <FocusTimer />
             </div>
             <div className="today-pre-stats-slot">
               <p className="eyebrow">персонаж</p>
@@ -505,6 +725,8 @@ export function TodayPage() {
                   ) : null}
                   <Button type="button" variant="ghost" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen}>{filtersOpen ? "Скрыть фильтры" : "Фильтры"}</Button>
                   <Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "По времени"}</Button>
+                  <Button type="button" variant="ghost" className={twoColumnLayout ? "toolbar-active" : ""} onClick={toggleTwoColumnLayout}>{twoColumnLayout ? "В один ряд" : "В два ряда"}</Button>
+                  <Button type="button" variant="ghost" className="focus-task-button" onClick={focusNextTask} disabled={!nextFocusItem}>Фокус</Button>
                 </div>
 
                 {taskDrawerOpen ? (
@@ -560,7 +782,7 @@ export function TodayPage() {
               {items.length === 0 ? <EmptyState title="Пока пусто" text="Создай задачу или открой нужный квест в календаре." /> : null}
               {items.length > 0 && filteredItems.length === 0 ? <EmptyState title="Ничего не найдено" text="Измени фильтры." /> : null}
 
-              <div className="grouped-plan-list">
+              <div className={`grouped-plan-list ${twoColumnLayout ? "two-column-enabled" : ""}`}>
                 {groupedItems.map((group) => (
                   <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
                     <div className="plan-source-head">
@@ -569,7 +791,25 @@ export function TodayPage() {
                     </div>
                     <div className="line-list todo-list typed-list clean-list">
                       {group.items.map((item) => (
-                        <article className={`line-item plan-item status-${item.status.toLowerCase()}`} key={item.id}>
+                        <article
+                          className={`line-item plan-item draggable-plan-item status-${item.status.toLowerCase()} ${draggingItemId === item.id ? "dragging" : ""} ${focusItemId === item.id ? "focus-pulse" : ""}`}
+                          key={item.id}
+                          data-plan-item-id={item.id}
+                        >
+                          <span
+                            className="drag-handle"
+                            role="button"
+                            tabIndex={canManualReorder ? 0 : -1}
+                            aria-disabled={!canManualReorder}
+                            onPointerDown={(event) => handleDragPointerDown(event, item.id)}
+                            onPointerMove={handleDragPointerMove}
+                            onPointerUp={handleDragPointerEnd}
+                            onPointerCancel={handleDragPointerEnd}
+                            title={canManualReorder ? "Перетащить пункт" : "Ручной порядок доступен без сортировки по времени"}
+                            aria-label="Перетащить пункт"
+                          >
+                            ⋮⋮
+                          </span>
                           <button
                             type="button"
                             className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
@@ -638,6 +878,7 @@ export function TodayPage() {
           <aside className="today-side">
             <section className="section-line character-panel clean-section">
               <Avatar stats={profile?.gameStats} compact variantIndex={1} />
+              <FocusTimer />
               <GameHud stats={profile?.gameStats} />
             </section>
           </aside>

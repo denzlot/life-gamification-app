@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/http";
 import type { CalendarDayResponse, CreateTaskRequest, DailyPlanItemResponse, DailyPlanItemStatus, DailyPlanResponse, SourceType } from "../api/types";
@@ -12,6 +12,96 @@ import { useToast } from "../context/ToastContext";
 import { formatDate, formatTime, itemStatusLabel, pct, planStatusLabel, signed, sourceLabel, todayISO } from "../utils/format";
 import { buildPreviewItems, summarizePreviewItems } from "../utils/planningPreview";
 
+
+
+function planItemOrderKey(date: string) {
+  return `flowvisior:plan-item-order:${date}`;
+}
+
+function readPlanItemOrder(date: string): number[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(planItemOrderKey(date));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((value): value is number => typeof value === "number") : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePlanItemOrder(date: string, items: DailyPlanItemResponse[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(planItemOrderKey(date), JSON.stringify(items.map((item) => item.id)));
+  } catch {
+    // Manual ordering is a UI preference; ignore storage limits/private mode.
+  }
+}
+
+function applyPlanItemOrder(items: DailyPlanItemResponse[], date: string) {
+  const order = readPlanItemOrder(date);
+  if (order.length === 0) return items;
+  const orderIndex = new Map(order.map((id, index) => [id, index]));
+  return [...items].sort((a, b) => {
+    const left = orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+    const right = orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+    return left - right;
+  });
+}
+
+function reorderItems(items: DailyPlanItemResponse[], activeId: number, overId: number) {
+  const from = items.findIndex((item) => item.id === activeId);
+  const to = items.findIndex((item) => item.id === overId);
+  if (from < 0 || to < 0 || from === to) return items;
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
+
+function capturePlanItemRects() {
+  if (typeof document === "undefined") return new Map<number, DOMRect>();
+  const rects = new Map<number, DOMRect>();
+  document.querySelectorAll<HTMLElement>("[data-plan-item-id]").forEach((element) => {
+    const id = Number(element.dataset.planItemId);
+    if (Number.isFinite(id)) rects.set(id, element.getBoundingClientRect());
+  });
+  return rects;
+}
+
+function animatePlanItemShift(previousRects: Map<number, DOMRect>) {
+  if (typeof document === "undefined" || previousRects.size === 0) return;
+  window.requestAnimationFrame(() => {
+    document.querySelectorAll<HTMLElement>("[data-plan-item-id]").forEach((element) => {
+      const id = Number(element.dataset.planItemId);
+      const previous = previousRects.get(id);
+      if (!previous) return;
+      const next = element.getBoundingClientRect();
+      const deltaX = previous.left - next.left;
+      const deltaY = previous.top - next.top;
+      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+      element.animate(
+        [{ transform: `translate(${deltaX}px, ${deltaY}px)` }, { transform: "translate(0, 0)" }],
+        { duration: 190, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+      );
+    });
+  });
+}
+
+function readBooleanPreference(key: string, fallback = false) {
+  if (typeof window === "undefined") return fallback;
+  return window.localStorage.getItem(key) === "1";
+}
+
+function writeBooleanPreference(key: string, value: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, value ? "1" : "0");
+  } catch {
+    // UI preference only.
+  }
+}
 
 function emptyCalendarDay(date: string): CalendarDayResponse {
   return {
@@ -130,6 +220,10 @@ export function DayDetailsPage() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
+  const [draggingItemId, setDraggingItemId] = useState<number | null>(null);
+  const [twoColumnLayout, setTwoColumnLayout] = useState(() => readBooleanPreference("flowvisior:details-two-column-layout"));
+  const activeDragItemIdRef = useRef<number | null>(null);
+  const lastDragOverIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (date === todayISO()) {
@@ -157,7 +251,8 @@ export function DayDetailsPage() {
         api.habits.list(),
         api.quests.activeSteps()
       ]);
-      const preview = dayPlan ? [] : buildPreviewItems(date, { tasks: taskList, habits: habitList, questSteps });
+      const orderedDayPlan = dayPlan ? { ...dayPlan, items: applyPlanItemOrder(dayPlan.items, date) } : null;
+      const preview = orderedDayPlan ? [] : buildPreviewItems(date, { tasks: taskList, habits: habitList, questSteps });
       const previewStats = summarizePreviewItems(preview);
       const calendarSummary = calendar.find((day) => day.date === date) ?? emptyCalendarDay(date);
 
@@ -174,8 +269,8 @@ export function DayDetailsPage() {
         questCompletedCount: previewStats.questCompletedCount
       } : calendarSummary);
       setPreviewItems(preview);
-      setPlan(dayPlan);
-      setNoteDraft(dayPlan?.note ?? "");
+      setPlan(orderedDayPlan);
+      setNoteDraft(orderedDayPlan?.note ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось открыть день");
     } finally {
@@ -196,6 +291,58 @@ export function DayDetailsPage() {
   const today = todayISO();
   const isPast = date < today;
   const isFuture = date > today;
+  const canManualReorder = Boolean(plan && !isClosed && !isPast && !isFuture && !sortByTime);
+
+  function movePlanItem(activeId: number, overId: number) {
+    if (!canManualReorder) return;
+    const previousRects = capturePlanItemRects();
+    setPlan((current) => {
+      if (!current) return current;
+      const nextItems = reorderItems(current.items, activeId, overId);
+      if (nextItems === current.items) return current;
+      writePlanItemOrder(date, nextItems);
+      return { ...current, items: nextItems };
+    });
+    animatePlanItemShift(previousRects);
+  }
+
+  function handleDragPointerDown(event: ReactPointerEvent<HTMLElement>, itemId: number) {
+    if (!canManualReorder) return;
+    event.preventDefault();
+    activeDragItemIdRef.current = itemId;
+    lastDragOverIdRef.current = itemId;
+    setDraggingItemId(itemId);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function handleDragPointerMove(event: ReactPointerEvent<HTMLElement>) {
+    const activeId = activeDragItemIdRef.current;
+    if (!canManualReorder || activeId === null) return;
+    event.preventDefault();
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const itemElement = target?.closest<HTMLElement>("[data-plan-item-id]");
+    const overId = Number(itemElement?.dataset.planItemId);
+    if (!Number.isFinite(overId) || overId === activeId || overId === lastDragOverIdRef.current) return;
+    lastDragOverIdRef.current = overId;
+    movePlanItem(activeId, overId);
+  }
+
+  function handleDragPointerEnd(event?: ReactPointerEvent<HTMLElement>) {
+    if (event && event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    }
+    activeDragItemIdRef.current = null;
+    lastDragOverIdRef.current = null;
+    setDraggingItemId(null);
+  }
+
+  function toggleTwoColumnLayout() {
+    setTwoColumnLayout((value) => {
+      const next = !value;
+      writeBooleanPreference("flowvisior:details-two-column-layout", next);
+      return next;
+    });
+  }
 
   async function startDay() {
     if (isPast) return;
@@ -203,8 +350,9 @@ export function DayDetailsPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.startByDate(date);
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, date) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
       notify({ tone: "success", title: "День открыт" });
       await load(false);
     } catch (err) {
@@ -220,8 +368,9 @@ export function DayDetailsPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.closeByDate(date);
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, date) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
       notify({ tone: "success", title: "День закрыт" });
       refreshProfile().catch(() => undefined);
       syncAchievements(false).catch(() => undefined);
@@ -263,8 +412,9 @@ export function DayDetailsPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.updateNoteByDate(date, { note: noteDraft.trim() || null });
-      setPlan(next);
-      setNoteDraft(next.note ?? "");
+      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, date) };
+      setPlan(orderedNext);
+      setNoteDraft(orderedNext.note ?? "");
       notify({ tone: "success", title: "Заметка сохранена" });
       setNoteOpen(false);
       await load(false);
@@ -422,10 +572,15 @@ export function DayDetailsPage() {
             <div className="plan-progress"><strong>{completedPct}%</strong><div className="meter"><span style={{ width: `${completedPct}%` }} /></div></div>
           </div>
           {isPast ? <p className="muted inline-note">Прошедший день открыт только для просмотра задач. Заметку можно обновить.</p> : null}
-          {items.length > 1 ? <div className="today-controls-row"><Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "Сортировать по времени"}</Button></div> : null}
+          {items.length > 1 ? (
+            <div className="today-controls-row">
+              <Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "Сортировать по времени"}</Button>
+              <Button type="button" variant="ghost" className={twoColumnLayout ? "toolbar-active" : ""} onClick={toggleTwoColumnLayout}>{twoColumnLayout ? "В один ряд" : "В два ряда"}</Button>
+            </div>
+          ) : null}
 
           {items.length > 0 ? (
-            <div className="grouped-plan-list details-list">
+            <div className={`grouped-plan-list details-list ${twoColumnLayout ? "two-column-enabled" : ""}`}>
               {groupedItems.map((group) => (
                 <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
                   <div className="plan-source-head">
@@ -434,7 +589,25 @@ export function DayDetailsPage() {
                   </div>
                   <div className="line-list todo-list typed-list clean-list">
                     {group.items.map((item) => (
-                      <article className={`line-item plan-item status-${item.status.toLowerCase()}`} key={item.id}>
+                      <article
+                        className={`line-item plan-item draggable-plan-item status-${item.status.toLowerCase()} ${draggingItemId === item.id ? "dragging" : ""}`}
+                        key={item.id}
+                        data-plan-item-id={item.id}
+                      >
+                        <span
+                          className="drag-handle"
+                          role="button"
+                          tabIndex={canManualReorder ? 0 : -1}
+                          aria-disabled={!canManualReorder}
+                          onPointerDown={(event) => handleDragPointerDown(event, item.id)}
+                          onPointerMove={handleDragPointerMove}
+                          onPointerUp={handleDragPointerEnd}
+                          onPointerCancel={handleDragPointerEnd}
+                          title={canManualReorder ? "Перетащить пункт" : "Ручной порядок доступен только для открытого дня без сортировки по времени"}
+                          aria-label="Перетащить пункт"
+                        >
+                          ⋮⋮
+                        </span>
                         <button
                           type="button"
                           className={`status-cycle status-cycle-${item.status.toLowerCase()}`}

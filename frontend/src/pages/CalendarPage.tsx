@@ -217,7 +217,6 @@ export function CalendarPage() {
   const [days, setDays] = useState<CalendarDayResponse[]>([]);
   const [quests, setQuests] = useState<QuestResponse[]>([]);
   const [selectedQuestId, setSelectedQuestId] = useState<number | null>(null);
-  const [questPickerOpen, setQuestPickerOpen] = useState(false);
   const [displayFiltersOpen, setDisplayFiltersOpen] = useState(false);
   const [displayMode, setDisplayMode] = useState<CalendarDisplayMode>("clean");
   const [showQuestRoute, setShowQuestRoute] = useState(false);
@@ -306,19 +305,17 @@ export function CalendarPage() {
   }, [selectedQuestId]);
 
   useEffect(() => {
-    if (!displayFiltersOpen && !showQuestRoute) return undefined;
+    if (!displayFiltersOpen) return undefined;
 
     function closeOnOutsideClick(event: MouseEvent) {
       const target = event.target;
       if (target instanceof Node && calendarOverlayRef.current?.contains(target)) return;
       setDisplayFiltersOpen(false);
-      setShowQuestRoute(false);
-      setQuestPickerOpen(false);
     }
 
     document.addEventListener("mousedown", closeOnOutsideClick);
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
-  }, [displayFiltersOpen, showQuestRoute]);
+  }, [displayFiltersOpen]);
 
   const cells = useMemo(() => {
     const byDate = new Map(days.map((day) => [day.date, overlayCalendarDay(day, planningCatalog)]));
@@ -370,7 +367,6 @@ export function CalendarPage() {
 
   function chooseQuest(id: number | null) {
     setSelectedQuestId(id);
-    setQuestPickerOpen(false);
   }
 
   return (
@@ -408,11 +404,7 @@ export function CalendarPage() {
                   type="button"
                   className={displayFiltersOpen ? "active" : ""}
                   onClick={() => {
-                    setDisplayFiltersOpen((value) => {
-                      const next = !value;
-                      if (next) setShowQuestRoute(false);
-                      return next;
-                    });
+                    setDisplayFiltersOpen((value) => !value);
                   }}
               >
                 Фильтры
@@ -420,7 +412,7 @@ export function CalendarPage() {
             </div>
 
             {displayFiltersOpen ? (
-                <div className="calendar-filter-popover calendar-inline-filter-panel filter-panel toolbar-popover--filters" aria-label="Фильтры отображения">
+                <div className="calendar-filter-popover calendar-inline-filter-panel filter-panel toolbar-popover toolbar-popover--filters" aria-label="Фильтры отображения">
                   <div className="filter-row">
                     <button type="button" className={displayMode === "clean" ? "active" : ""} onClick={() => setDisplayMode("clean")}>Чисто</button>
                     <button type="button" className={displayMode === "workload" ? "active" : ""} onClick={() => setDisplayMode("workload")}>Нагрузка</button>
@@ -431,7 +423,7 @@ export function CalendarPage() {
             ) : null}
 
             {showQuestRoute ? (
-                <div className="calendar-route-panel combined-route-panel calendar-route-dock">
+                <div className="calendar-route-panel combined-route-panel calendar-route-dock toolbar-popover toolbar-popover--route">
                   <div className="calendar-route-topline">
                     <span className="route-panel-label muted">Квест:</span>
                     {selectedQuest ? (
@@ -445,14 +437,18 @@ export function CalendarPage() {
                     )}
                   </div>
 
-                  <div className="calendar-route-quest-list">
-                    {quests.map((quest) => (
-                        <button type="button" key={quest.id} className={selectedQuestId === quest.id ? "active" : ""} onClick={() => chooseQuest(quest.id)}>
-                          <strong>{quest.title}</strong>
-                        </button>
-                    ))}
-                    {quests.length === 0 ? <p className="muted">Квестов пока нет.</p> : null}
-                    {selectedQuest ? <button type="button" className="clear-quest-button inline-clear" onClick={() => chooseQuest(null)}>Сбросить</button> : null}
+                  <div className="calendar-route-body route-picker-only">
+                    <div className="calendar-route-picker-block">
+                      <span className="route-block-title">Выбор квеста</span>
+                      <div className="calendar-route-quest-list">
+                        {quests.map((quest) => (
+                            <button type="button" key={quest.id} className={selectedQuestId === quest.id ? "active" : ""} onClick={() => chooseQuest(quest.id)}>
+                              <strong>{quest.title}</strong>
+                            </button>
+                        ))}
+                        {quests.length === 0 ? <p className="muted">Квестов пока нет.</p> : null}
+                      </div>
+                    </div>
                   </div>
 
                   <div className={`quest-pace-strip compact-pace-strip pace-${selectedQuest ? pace.tone : "idle"}`}>
