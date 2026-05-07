@@ -1,7 +1,7 @@
 import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/http";
-import type { CalendarDayResponse, CreateTaskRequest, DailyPlanItemResponse, DailyPlanItemStatus, DailyPlanResponse, QuestStepResponse } from "../api/types";
+import type { CalendarDayResponse, CreateTaskRequest, DailyPlanItemResponse, DailyPlanItemStatus, DailyPlanResponse, SourceType } from "../api/types";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
 import { DateWheelInput, Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
@@ -93,6 +93,19 @@ function sortByPlannedTime(items: DailyPlanItemResponse[]) {
   });
 }
 
+const itemGroups: Array<{ source: SourceType; title: string }> = [
+  { source: "TASK", title: "Задачи" },
+  { source: "HABIT", title: "Привычки" },
+  { source: "QUEST", title: "Квесты" },
+  { source: "MANUAL", title: "Пункты" }
+];
+
+function groupedBySource(items: DailyPlanItemResponse[]) {
+  return itemGroups
+    .map((group) => ({ ...group, items: items.filter((item) => item.sourceType === group.source) }))
+    .filter((group) => group.items.length > 0);
+}
+
 export function DayDetailsPage() {
   const { date = todayISO() } = useParams();
   const navigate = useNavigate();
@@ -134,7 +147,7 @@ export function DayDetailsPage() {
       setError(null);
     }
     try {
-      const [calendar, dayPlan, taskList, habitList, questList] = await Promise.all([
+      const [calendar, dayPlan, taskList, habitList, questSteps] = await Promise.all([
         api.calendar.month(year, month),
         api.dailyPlans.byDate(date).catch((err) => {
           if (err instanceof ApiError && err.status === 404) return null;
@@ -142,14 +155,8 @@ export function DayDetailsPage() {
         }),
         api.tasks.list(),
         api.habits.list(),
-        api.quests.list()
+        api.quests.activeSteps()
       ]);
-
-      const questSteps = (await Promise.all(
-        questList
-          .filter((quest) => quest.status === "ACTIVE")
-          .map((quest) => api.quests.steps(quest.id).catch(() => [] as QuestStepResponse[]))
-      )).flat();
       const preview = dayPlan ? [] : buildPreviewItems(date, { tasks: taskList, habits: habitList, questSteps });
       const previewStats = summarizePreviewItems(preview);
       const calendarSummary = calendar.find((day) => day.date === date) ?? emptyCalendarDay(date);
@@ -182,6 +189,7 @@ export function DayDetailsPage() {
 
   const items = plan?.items ?? previewItems;
   const visibleItems = useMemo(() => sortByTime ? sortByPlannedTime(items) : items, [items, sortByTime]);
+  const groupedItems = useMemo(() => groupedBySource(visibleItems), [visibleItems]);
   const counts = useMemo(() => countStatuses(items), [items]);
   const completedPct = pct(counts.COMPLETED, items.length);
   const isClosed = plan?.status === "CLOSED";
@@ -366,7 +374,7 @@ export function DayDetailsPage() {
 
       {!loading && !plan && isPast ? (
         <section className="section-line start-day-line clean-section read-only-day-note">
-          <p className="muted">Прошедший день доступен только для просмотра.</p>
+          <p className="muted">Прошедший день доступен только для просмотра задач. Заметки можно менять у уже созданных дней.</p>
         </section>
       ) : null}
 
@@ -413,36 +421,46 @@ export function DayDetailsPage() {
             </h2>
             <div className="plan-progress"><strong>{completedPct}%</strong><div className="meter"><span style={{ width: `${completedPct}%` }} /></div></div>
           </div>
-          {isPast ? <p className="muted inline-note">Прошедший день открыт только для просмотра.</p> : null}
+          {isPast ? <p className="muted inline-note">Прошедший день открыт только для просмотра задач. Заметку можно обновить.</p> : null}
           {items.length > 1 ? <div className="today-controls-row"><Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "Сортировать по времени"}</Button></div> : null}
 
           {items.length > 0 ? (
-            <div className="line-list todo-list details-list typed-list clean-list">
-              {visibleItems.map((item) => (
-                <article className={`line-item plan-item status-${item.status.toLowerCase()}`} key={item.id}>
-                  <button
-                    type="button"
-                    className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
-                    disabled={!plan || busyItemId === item.id || isClosed || isPast || !canConfirm(date)}
-                    onClick={() => cycleItem(item)}
-                    aria-label={`${cycleLabel(item.status)}: ${item.title}`}
-                  >
-                    <StatusIcon status={item.status} />
-                  </button>
-                  {item.description ? <button type="button" className={`description-toggle ${openDescriptionId === item.id ? "open" : ""}`} onClick={() => setOpenDescriptionId((current) => current === item.id ? null : item.id)} aria-label="Показать описание">›</button> : <span className="description-spacer" />}
-                  <div className="todo-main">
-                    <div className="item-title-line">
-                      {editingId === item.id ? (
-                        <TextInput className="inline-edit-input" autoFocus value={editTitle} onChange={(event) => setEditTitle(event.target.value)} onBlur={() => saveTitle(item)} onKeyDown={(event) => handleTitleKey(event, item)} />
-                      ) : (
-                        <strong className="editable-title" onClick={() => beginEdit(item)}>{item.title}</strong>
-                      )}
-                      <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
-                    </div>
-                    <p className="muted compact-meta">{itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}</p>
-                    {openDescriptionId === item.id && item.description ? <p className="item-description">{item.description}</p> : null}
+            <div className="grouped-plan-list details-list">
+              {groupedItems.map((group) => (
+                <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
+                  <div className="plan-source-head">
+                    <h3>{group.title}</h3>
+                    <span>{group.items.length}</span>
                   </div>
-                </article>
+                  <div className="line-list todo-list typed-list clean-list">
+                    {group.items.map((item) => (
+                      <article className={`line-item plan-item status-${item.status.toLowerCase()}`} key={item.id}>
+                        <button
+                          type="button"
+                          className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
+                          disabled={!plan || busyItemId === item.id || isClosed || isPast || !canConfirm(date)}
+                          onClick={() => cycleItem(item)}
+                          aria-label={`${cycleLabel(item.status)}: ${item.title}`}
+                        >
+                          <StatusIcon status={item.status} />
+                        </button>
+                        {item.description ? <button type="button" className={`description-toggle ${openDescriptionId === item.id ? "open" : ""}`} onClick={() => setOpenDescriptionId((current) => current === item.id ? null : item.id)} aria-label="Показать описание">›</button> : <span className="description-spacer" />}
+                        <div className="todo-main">
+                          <div className="item-title-line">
+                            {editingId === item.id ? (
+                              <TextInput className="inline-edit-input" autoFocus value={editTitle} onChange={(event) => setEditTitle(event.target.value)} onBlur={() => saveTitle(item)} onKeyDown={(event) => handleTitleKey(event, item)} />
+                            ) : (
+                              <strong className="editable-title" onClick={() => beginEdit(item)}>{item.title}</strong>
+                            )}
+                            <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
+                          </div>
+                          <p className="muted compact-meta">{itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}</p>
+                          {openDescriptionId === item.id && item.description ? <p className="item-description">{item.description}</p> : null}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           ) : null}

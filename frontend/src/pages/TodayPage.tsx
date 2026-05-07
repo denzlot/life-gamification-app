@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../api/http";
 import type {
@@ -111,6 +111,19 @@ function sortByPlannedTime(items: DailyPlanItemResponse[]) {
   });
 }
 
+const itemGroups: Array<{ source: SourceType; title: string }> = [
+  { source: "TASK", title: "Задачи" },
+  { source: "HABIT", title: "Привычки" },
+  { source: "QUEST", title: "Квесты" },
+  { source: "MANUAL", title: "Пункты" }
+];
+
+function groupedBySource(items: DailyPlanItemResponse[]) {
+  return itemGroups
+    .map((group) => ({ ...group, items: items.filter((item) => item.sourceType === group.source) }))
+    .filter((group) => group.items.length > 0);
+}
+
 
 function HpXpLine({ xp, hp }: { xp: number; hp: number }) {
   return (
@@ -163,6 +176,7 @@ export function TodayPage() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState(cachedPlan?.note ?? "");
   const [noteSaving, setNoteSaving] = useState(false);
+  const filtersHostRef = useRef<HTMLDivElement | null>(null);
 
   const loadPlan = useCallback(async (showLoader = true) => {
     if (showLoader) {
@@ -190,6 +204,19 @@ export function TodayPage() {
     loadPlan();
   }, [loadPlan]);
 
+  useEffect(() => {
+    if (!filtersOpen) return undefined;
+
+    function closeOnOutsideClick(event: MouseEvent) {
+      const target = event.target;
+      if (target instanceof Node && filtersHostRef.current?.contains(target)) return;
+      setFiltersOpen(false);
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [filtersOpen]);
+
 
   const items = plan?.items ?? [];
   const counts = useMemo(() => countStatuses(items), [items]);
@@ -206,6 +233,7 @@ export function TodayPage() {
     });
     return sortByTime ? sortByPlannedTime(filtered) : filtered;
   }, [items, search, sourceFilter, statusFilter, sortByTime]);
+  const groupedItems = useMemo(() => groupedBySource(filteredItems), [filteredItems]);
 
   async function startDay() {
     setBusy(true);
@@ -409,7 +437,7 @@ export function TodayPage() {
         </>
       ) : null}
 
-      {!isClosed ? (
+      {!isClosed && !plan ? (
         <section className="section-line task-create-panel drawer-host clean-section center-add-panel">
           <div className="center-add-actions">
             <Button type="button" onClick={() => setTaskDrawerOpen((value) => !value)} aria-expanded={taskDrawerOpen}>
@@ -468,11 +496,49 @@ export function TodayPage() {
                 </div>
               </div>
 
-              <div className="today-inline-toolbar inline-overlay-host">
+              <div className="today-inline-toolbar inline-overlay-host" ref={filtersHostRef}>
                 <div className="today-controls-row">
+                  {!isClosed ? (
+                    <Button type="button" onClick={() => setTaskDrawerOpen((value) => !value)} aria-expanded={taskDrawerOpen}>
+                      {taskDrawerOpen ? "Скрыть задачу" : "Добавить задачу"}
+                    </Button>
+                  ) : null}
                   <Button type="button" variant="ghost" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen}>{filtersOpen ? "Скрыть фильтры" : "Фильтры"}</Button>
                   <Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "По времени"}</Button>
                 </div>
+
+                {taskDrawerOpen ? (
+                  <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={() => setTaskDrawerOpen(false)}>
+                    <form className="form-grid task-form task-drawer unified-form compact-create-form ordered-form centered-task-form modal-form-card" onSubmit={createTask} role="dialog" aria-modal="true" aria-label="Создание задачи" onMouseDown={(event) => event.stopPropagation()}>
+                      <div className="modal-form-head">
+                        <div><p className="eyebrow">новая задача</p><strong>Добавить задачу</strong></div>
+                        <button type="button" className="dialog-close" onClick={() => setTaskDrawerOpen(false)} aria-label="Закрыть">×</button>
+                      </div>
+                      <Field label="Название">
+                        <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} placeholder="Например: подготовить отчёт" />
+                      </Field>
+                      <Field label="Дата задачи">
+                        <DateWheelInput value={taskForm.deadlineDate || today} onChange={(value) => setTaskForm({ ...taskForm, deadlineDate: value || today })} allowClear={false} />
+                      </Field>
+                      <div className="optional-toolbar">
+                        <OptionButton active={taskOptions.time || Boolean(taskForm.plannedTime)} onClick={() => setTaskOptions((state) => ({ ...state, time: !state.time }))}>
+                          {taskForm.plannedTime ? `Время: ${formatTime(taskForm.plannedTime)}` : "Время"}
+                        </OptionButton>
+                        <OptionButton active={taskOptions.deadline || Boolean(taskForm.deadlineTime)} onClick={() => setTaskOptions((state) => ({ ...state, deadline: !state.deadline }))}>
+                          {taskForm.deadlineTime ? `Дедлайн: ${formatTime(taskForm.deadlineTime)}` : "Дедлайн"}
+                        </OptionButton>
+                        <OptionButton active={taskOptions.description || Boolean(taskForm.description)} onClick={() => setTaskOptions((state) => ({ ...state, description: !state.description }))}>
+                          Описание
+                        </OptionButton>
+                      </div>
+                      {taskOptions.time ? <Field label="Плановое время"><TimeWheelInput value={taskForm.plannedTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, plannedTime: value })} /></Field> : null}
+                      {taskOptions.deadline ? <Field label="Дедлайн"><TimeWheelInput value={taskForm.deadlineTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field> : null}
+                      {taskOptions.description ? <Field label="Описание"><TextArea value={taskForm.description ?? ""} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></Field> : null}
+                      <ErrorLine error={taskError} />
+                      <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
+                    </form>
+                  </div>
+                ) : null}
 
                 {filtersOpen ? (
                   <div className="filter-panel drawer-panel toolbar-popover toolbar-popover--filters">
@@ -494,36 +560,46 @@ export function TodayPage() {
               {items.length === 0 ? <EmptyState title="Пока пусто" text="Создай задачу или открой нужный квест в календаре." /> : null}
               {items.length > 0 && filteredItems.length === 0 ? <EmptyState title="Ничего не найдено" text="Измени фильтры." /> : null}
 
-              <div className="line-list todo-list typed-list clean-list">
-                {filteredItems.map((item) => (
-                  <article className={`line-item plan-item status-${item.status.toLowerCase()}`} key={item.id}>
-                    <button
-                      type="button"
-                      className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
-                      onClick={() => cycleItem(item)}
-                      disabled={busyItemId === item.id || isClosed}
-                      aria-label={`${cycleLabel(item.status)}: ${item.title}`}
-                    >
-                      <StatusIcon status={item.status} />
-                    </button>
-                    {item.description ? (
-                      <button type="button" className={`description-toggle ${openDescriptionId === item.id ? "open" : ""}`} onClick={() => setOpenDescriptionId((current) => current === item.id ? null : item.id)} aria-label="Показать описание">›</button>
-                    ) : <span className="description-spacer" />}
-                    <div className="todo-main">
-                      <div className="item-title-line">
-                        {editingId === item.id ? (
-                          <TextInput className="inline-edit-input" autoFocus value={editTitle} onChange={(event) => setEditTitle(event.target.value)} onBlur={() => saveTitle(item)} onKeyDown={(event) => handleTitleKey(event, item)} />
-                        ) : (
-                          <strong className="editable-title" onClick={() => beginEdit(item)}>{item.title}</strong>
-                        )}
-                        <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
-                      </div>
-                      <p className="muted compact-meta">
-                        {itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}
-                      </p>
-                      {openDescriptionId === item.id && item.description ? <p className="item-description">{item.description}</p> : null}
+              <div className="grouped-plan-list">
+                {groupedItems.map((group) => (
+                  <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
+                    <div className="plan-source-head">
+                      <h3>{group.title}</h3>
+                      <span>{group.items.length}</span>
                     </div>
-                  </article>
+                    <div className="line-list todo-list typed-list clean-list">
+                      {group.items.map((item) => (
+                        <article className={`line-item plan-item status-${item.status.toLowerCase()}`} key={item.id}>
+                          <button
+                            type="button"
+                            className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
+                            onClick={() => cycleItem(item)}
+                            disabled={busyItemId === item.id || isClosed}
+                            aria-label={`${cycleLabel(item.status)}: ${item.title}`}
+                          >
+                            <StatusIcon status={item.status} />
+                          </button>
+                          {item.description ? (
+                            <button type="button" className={`description-toggle ${openDescriptionId === item.id ? "open" : ""}`} onClick={() => setOpenDescriptionId((current) => current === item.id ? null : item.id)} aria-label="Показать описание">›</button>
+                          ) : <span className="description-spacer" />}
+                          <div className="todo-main">
+                            <div className="item-title-line">
+                              {editingId === item.id ? (
+                                <TextInput className="inline-edit-input" autoFocus value={editTitle} onChange={(event) => setEditTitle(event.target.value)} onBlur={() => saveTitle(item)} onKeyDown={(event) => handleTitleKey(event, item)} />
+                              ) : (
+                                <strong className="editable-title" onClick={() => beginEdit(item)}>{item.title}</strong>
+                              )}
+                              <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
+                            </div>
+                            <p className="muted compact-meta">
+                              {itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}
+                            </p>
+                            {openDescriptionId === item.id && item.description ? <p className="item-description">{item.description}</p> : null}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
                 ))}
               </div>
 

@@ -118,8 +118,10 @@ public class QuestService {
                 && dailyPlanItemRepository.existsBySourceTypeAndSourceIdIn(ActivitySourceType.QUEST, stepIds);
 
         if (hasPlannedHistory) {
-            quest.archive();
-            return;
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Quest already has daily plan history and can only be archived"
+            );
         }
 
         questStepRepository.deleteByQuest(quest);
@@ -132,6 +134,16 @@ public class QuestService {
         Quest quest = getQuestForUser(questId, user);
 
         return questStepRepository.findByQuestOrderByStepNumberAsc(quest)
+                .stream()
+                .map(QuestStepResponse::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<QuestStepResponse> getActiveQuestSteps() {
+        User user = authenticatedUserService.getCurrentUser();
+
+        return questStepRepository.findByQuest_UserAndQuest_StatusOrderByQuest_IdAscStepNumberAsc(user, QuestStatus.ACTIVE)
                 .stream()
                 .map(QuestStepResponse::new)
                 .toList();

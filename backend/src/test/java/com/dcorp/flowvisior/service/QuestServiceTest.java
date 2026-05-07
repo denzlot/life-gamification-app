@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -42,7 +43,7 @@ class QuestServiceTest {
     private AuthenticatedUserService authenticatedUserService;
 
     @Test
-    void deleteQuestArchivesQuestWhenStepIsAlreadyUsedInDailyPlan() {
+    void deleteQuestRejectsQuestWhenStepIsAlreadyUsedInDailyPlan() {
         User user = new User("user", "{noop}password");
         Quest quest = quest(user);
         QuestStep step = mock(QuestStep.class);
@@ -54,9 +55,11 @@ class QuestServiceTest {
         when(dailyPlanItemRepository.existsBySourceTypeAndSourceIdIn(ActivitySourceType.QUEST, List.of(42L)))
                 .thenReturn(true);
 
-        service().deleteQuest(10L);
+        assertThatThrownBy(() -> service().deleteQuest(10L))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Quest already has daily plan history");
 
-        assertThat(quest.getStatus()).isEqualTo(QuestStatus.ARCHIVED);
+        assertThat(quest.getStatus()).isEqualTo(QuestStatus.ACTIVE);
         verify(questRepository, never()).delete(quest);
         verify(questStepRepository, never()).deleteByQuest(quest);
         verify(dailyPlanItemRepository, never()).deleteBySourceTypeAndSourceIdIn(ActivitySourceType.QUEST, List.of(42L));

@@ -8,7 +8,7 @@ import { EmptyState } from "../components/EmptyState";
 import { GameHud } from "../components/GameHud";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useGame } from "../context/GameContext";
-import { getCharacter, readSelectedCharacter } from "../utils/character";
+import { applyTheme, getCharacter, readSelectedCharacter, readTheme, type CharacterId } from "../utils/character";
 import { formatDateTime } from "../utils/format";
 
 export function ProfilePage() {
@@ -17,7 +17,26 @@ export function ProfilePage() {
   const [achLoading, setAchLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showChooser, setShowChooser] = useState(false);
-  const character = getCharacter(readSelectedCharacter());
+  const [selectedCharacterId, setSelectedCharacterId] = useState(() => readSelectedCharacter());
+  const [previewCharacterId, setPreviewCharacterId] = useState<typeof selectedCharacterId>(null);
+  const character = getCharacter(previewCharacterId ?? selectedCharacterId);
+
+  function toggleChooser() {
+    setShowChooser((value) => {
+      const next = !value;
+      if (!next) {
+        setPreviewCharacterId(null);
+        applyTheme(readTheme());
+      }
+      return next;
+    });
+  }
+
+  function confirmCharacter(id: CharacterId) {
+    setSelectedCharacterId(id);
+    setPreviewCharacterId(null);
+    setShowChooser(false);
+  }
 
   async function loadAchievements() {
     setAchLoading(true);
@@ -35,11 +54,17 @@ export function ProfilePage() {
     loadAchievements();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      applyTheme(readTheme());
+    };
+  }, []);
+
   return (
     <section className="page profile-page centered-page">
       <header className="page-header centered-title-header profile-title-header">
         <p className="eyebrow">профиль</p>
-        <h1>{profile?.username ?? "Игрок"}</h1>
+        <h1>Персонаж и прогресс</h1>
       </header>
 
       {loading ? <Loader label="Загружаем профиль" /> : null}
@@ -48,16 +73,17 @@ export function ProfilePage() {
       <section className="section-line clean-section profile-character-card">
         <div className="profile-character-body">
           <div className="profile-avatar-slot">
-            <Avatar stats={profile?.gameStats} compact />
+            <Avatar stats={profile?.gameStats} compact characterId={character.id} />
           </div>
           <div className="profile-stats-slot">
             <div className="profile-character-head">
               <div>
                 <p className="eyebrow">персонаж</p>
+                <span className="profile-username-chip">{profile?.username ?? "Игрок"}</span>
                 <h2>{character.name}</h2>
                 <p className="muted">{character.description}</p>
               </div>
-              <Button variant="ghost" onClick={() => setShowChooser((value) => !value)}>{showChooser ? "Скрыть" : "Сменить"}</Button>
+              <Button variant="ghost" onClick={toggleChooser}>{showChooser ? "Скрыть" : "Сменить"}</Button>
             </div>
             <GameHud stats={profile?.gameStats} />
           </div>
@@ -69,7 +95,8 @@ export function ProfilePage() {
             title="Выбери другого персонажа"
             description="Нажми на героя, чтобы сразу увидеть его тему. Подтверди выбор, когда всё подходит."
             initialCharacter={character.id}
-            onConfirm={() => setShowChooser(false)}
+            onPreview={setPreviewCharacterId}
+            onConfirm={confirmCharacter}
           />
         ) : null}
       </section>

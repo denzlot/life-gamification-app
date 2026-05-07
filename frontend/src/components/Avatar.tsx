@@ -1,19 +1,35 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { GameStats } from "../api/types";
-import { getDailyQuote, readSelectedCharacter, resolveAvatar } from "../utils/character";
+import { getDailyQuote, readSelectedCharacter, resolveAvatar, type CharacterId } from "../utils/character";
 import { avatarMood } from "../utils/hp";
 
-export function Avatar({ stats, compact = false, variantIndex = 1 }: { stats?: GameStats | null; compact?: boolean; variantIndex?: number }) {
+export function Avatar({
+  stats,
+  compact = false,
+  variantIndex = 1,
+  characterId: characterIdOverride
+}: {
+  stats?: GameStats | null;
+  compact?: boolean;
+  variantIndex?: number;
+  characterId?: CharacterId | null;
+}) {
   const [hitTick, setHitTick] = useState(0);
   const mood = avatarMood(stats);
-  const characterId = readSelectedCharacter();
+  const characterId = characterIdOverride ?? readSelectedCharacter();
   const resolved = resolveAvatar(characterId, stats);
   const quote = useMemo(() => getDailyQuote(characterId), [characterId]);
 
   function playHit() {
     setHitTick((value) => value + 1);
   }
+
+  useEffect(() => {
+    if (!hitTick) return undefined;
+    const timeoutId = window.setTimeout(() => setHitTick(0), 260);
+    return () => window.clearTimeout(timeoutId);
+  }, [hitTick]);
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === "Enter" || event.key === " ") {
@@ -24,7 +40,6 @@ export function Avatar({ stats, compact = false, variantIndex = 1 }: { stats?: G
 
   return (
     <figure
-      key={hitTick}
       className={`avatar-frame avatar-mood-${mood} avatar-${resolved.hpState.toLowerCase()} ${compact ? "avatar-compact" : ""} ${hitTick ? "avatar-hit" : ""}`}
       role="button"
       tabIndex={0}

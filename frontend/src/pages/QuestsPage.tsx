@@ -308,13 +308,19 @@ export function QuestsPage() {
   }
 
   async function remove(quest: QuestResponse) {
-    if (!window.confirm(`Полностью удалить квест «${quest.title}»? Это действие удалит сам квест, его шаги и связанные пункты из планов. Отменить удаление нельзя.`)) return;
+    if (!window.confirm(`Удалить квест «${quest.title}»? Если квест уже попадал в дневные планы, удаление будет отклонено: такой квест можно только отправить в архив.`)) return;
     setBusy(true);
     try {
       await api.quests.delete(quest.id);
       notify({ tone: "danger", title: "Квест удалён" });
       if (selectedId === quest.id) setSelectedId(null);
       await reload();
+    } catch (err) {
+      notify({
+        tone: "danger",
+        title: "Квест не удалён",
+        text: err instanceof Error ? err.message : "Квест с историей можно только архивировать."
+      });
     } finally {
       setBusy(false);
     }
@@ -447,7 +453,7 @@ export function QuestsPage() {
                 <div className="item-tail wide-tail">
                   <span>{quest.totalSteps} шагов</span>
                   <Button variant="thin" onClick={(event) => { event.stopPropagation(); startEdit(quest); }}>Изменить</Button>
-                  {quest.status === "ARCHIVED" ? (
+                  {quest.status === "COMPLETED" ? null : quest.status === "ARCHIVED" ? (
                     <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); restoreQuest(quest); }}>Вернуть</Button>
                   ) : (
                     <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); archiveQuest(quest); }}>В архив</Button>
@@ -464,6 +470,7 @@ export function QuestsPage() {
             <div>
               <p className="eyebrow">шаги</p>
               <h2>{selected ? selected.title : "Квест не выбран"}</h2>
+              {selected?.description ? <p className="muted quest-description-line">{selected.description}</p> : null}
             </div>
             <Button type="button" variant="ghost" onClick={() => setStepsView((view) => view === "list" ? "route" : "list")}>
               {stepsView === "list" ? "Маршрут" : "Список шагов"}
@@ -578,11 +585,12 @@ function QuestRouteView({ steps, quest, onSaved }: { steps: QuestStepResponse[];
   if (steps.length === 0) return null;
 
   return (
-    <div className="quest-route-board polished-route-board">
+    <div className="quest-route-board polished-route-board redesigned-route-board">
       <div className="quest-route-head">
         <div>
           <p className="eyebrow">маршрут</p>
           <strong>{completed}/{questTotal || steps.length} пройдено</strong>
+          {quest?.description ? <small className="route-quest-description">{quest.description}</small> : null}
         </div>
         <div className="quest-route-meter" aria-label={`Прогресс ${progress}%`}><span style={{ width: `${progress}%` }} /></div>
         <span className={pace.tone === "behind" ? "route-alert" : "route-ok"}>{paceLabel}</span>

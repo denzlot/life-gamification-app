@@ -5219,3 +5219,1183 @@ h1, h2, h3, .brand strong, .drawer-user strong {
   user-select: none;
   pointer-events: none;
 }
+
+/* Patch v19: compact workspace layout, unified overlays, theme-aware HP and character atmosphere. */
+:root {
+  --hp-great: #8f6bff;
+  --hp-normal: #b25a73;
+  --hp-tired: #d69a46;
+  --hp-exhausted: #d86155;
+  --hp-critical: #e24343;
+  --hp-ink: color-mix(in srgb, var(--surface-2), var(--bg) 28%);
+  --modal-width: 620px;
+}
+:root[data-theme="light"] {
+  --hp-great: #3d74a6;
+  --hp-normal: #6d7f92;
+  --hp-tired: #a87935;
+  --hp-exhausted: #b1584d;
+  --hp-critical: #9e3c41;
+  --hp-ink: #f8fbff;
+}
+:root[data-theme="rpg"] {
+  --hp-great: #d7b15d;
+  --hp-normal: #a89462;
+  --hp-tired: #b47b37;
+  --hp-exhausted: #9f5b3c;
+  --hp-critical: #b44949;
+  --hp-ink: #21180d;
+}
+:root[data-theme="vampire"] {
+  --hp-great: #d6a75b;
+  --hp-normal: #b73446;
+  --hp-tired: #9d5361;
+  --hp-exhausted: #8f2e42;
+  --hp-critical: #ef5365;
+  --hp-ink: #1b121b;
+}
+
+body {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bg), var(--accent) 3%), var(--bg) 42%),
+    linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg), #000 16%)) !important;
+}
+.main-view { padding-top: clamp(0.9rem, 2vw, 1.4rem) !important; }
+.page,
+.page.centered-page,
+.narrow-page.centered-page { max-width: 1180px !important; }
+.page-header,
+.centered-title-header,
+.day-hero,
+.today-hero,
+.calendar-title-header,
+.profile-title-header {
+  max-width: none !important;
+  margin: 0 0 0.8rem !important;
+  padding: 0.55rem 0 0.25rem !important;
+  text-align: left !important;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.7rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border), transparent 22%);
+}
+.page-header .eyebrow,
+.day-hero .eyebrow {
+  grid-column: 1 / -1;
+  margin-bottom: -0.2rem !important;
+}
+.page-header h1,
+.centered-title-header h1,
+.day-hero h1 {
+  font-size: clamp(1.1rem, 1.35vw, 1.42rem) !important;
+  letter-spacing: 0 !important;
+  margin: 0 !important;
+}
+.section-title-row h2,
+.inline-plan-title,
+.profile-character-head h2 { font-size: clamp(0.98rem, 1.08vw, 1.16rem) !important; }
+.day-status-row {
+  justify-self: end;
+  align-self: center;
+  margin: 0 !important;
+  font-size: 0.74rem;
+}
+.date-inline-switcher,
+.day-date-inline,
+.calendar-inline-switcher {
+  grid-column: 1 / 2;
+  max-width: none !important;
+  margin: 0 !important;
+  justify-content: flex-start !important;
+  gap: 0.65rem !important;
+}
+.date-inline-switcher h1 {
+  min-width: 0 !important;
+  width: auto !important;
+}
+.date-inline-switcher .nav-text-button,
+.date-inline-switcher a.nav-text-button,
+.date-inline-switcher button.nav-text-button {
+  font-size: 0.72rem !important;
+  letter-spacing: 0.08em !important;
+  color: var(--muted) !important;
+  border-bottom: 1px solid transparent !important;
+}
+.date-inline-switcher .nav-text-button:hover,
+.date-inline-switcher a.nav-text-button:hover,
+.date-inline-switcher button.nav-text-button:hover {
+  border-bottom-color: color-mix(in srgb, var(--accent), transparent 30%) !important;
+}
+.center-jump-button {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+  align-self: center;
+  min-height: 30px !important;
+  padding: 0.3rem 0.65rem !important;
+  border-radius: 999px !important;
+  font-size: 0.7rem !important;
+}
+.today-grid {
+  grid-template-columns: minmax(0, 1fr) 270px !important;
+  gap: 1rem !important;
+}
+.today-side { top: 86px !important; }
+.center-add-panel,
+.center-open-day-panel,
+.start-day-line {
+  max-width: none !important;
+  margin-bottom: 0.75rem !important;
+  padding: 0.7rem !important;
+}
+.plan-section,
+.calendar-panel,
+.profile-character-card,
+.profile-achievements-panel { padding-top: 0.9rem !important; }
+
+.form-modal-backdrop {
+  align-items: start !important;
+  padding-top: clamp(2.2rem, 8vh, 4.5rem) !important;
+}
+.modal-form-card,
+.form-modal-backdrop .task-drawer,
+.form-modal-backdrop .create-drawer-form,
+.form-modal-backdrop .quest-form,
+.form-modal-backdrop .unified-form {
+  width: min(var(--modal-width), calc(100vw - 2rem)) !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0.72rem !important;
+  padding: 1rem 1.05rem 1.05rem !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 3%), color-mix(in srgb, var(--surface), var(--bg) 10%)) !important;
+}
+.form-modal-backdrop .quest-form { --modal-width: 700px; }
+.modal-form-head {
+  position: relative;
+  min-height: 36px;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 34px !important;
+  align-items: start !important;
+  gap: 0.8rem !important;
+  padding-right: 0 !important;
+  margin-bottom: 0.15rem !important;
+}
+.modal-form-head .eyebrow { margin-bottom: 0.15rem !important; }
+.modal-form-head strong { font-size: 0.95rem !important; }
+.dialog-close {
+  justify-self: end !important;
+  align-self: start !important;
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  padding: 0 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  border: 1px solid color-mix(in srgb, var(--border), var(--text) 6%) !important;
+  background: color-mix(in srgb, var(--surface-2), transparent 18%) !important;
+  color: var(--muted) !important;
+  line-height: 1 !important;
+}
+.dialog-close:hover {
+  color: var(--text) !important;
+  border-color: color-mix(in srgb, var(--accent), transparent 42%) !important;
+}
+.modal-form-card > .field,
+.modal-form-card > .mini-form-grid,
+.modal-form-card > .optional-toolbar,
+.modal-form-card > .form-actions,
+.modal-form-card > .error-line,
+.form-modal-backdrop .field,
+.form-modal-backdrop .optional-toolbar,
+.form-modal-backdrop .form-actions { grid-column: 1 / -1 !important; }
+.optional-toolbar {
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  padding: 0.35rem 0 0 !important;
+}
+.optional-toolbar .option-chip {
+  min-height: 30px !important;
+  padding: 0.32rem 0.62rem !important;
+  border-radius: 999px !important;
+  font-size: 0.76rem !important;
+}
+.form-actions {
+  justify-content: flex-end !important;
+  margin-top: 0.15rem !important;
+}
+.form-actions .btn { min-width: 112px; }
+
+.toolbar-popover,
+.drawer-panel,
+.quest-picker-dialog,
+.wheel-popover {
+  border-radius: 14px !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 3%), color-mix(in srgb, var(--surface), var(--bg) 9%)) !important;
+  border-color: color-mix(in srgb, var(--border), var(--accent) 12%) !important;
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--shadow), #000 14%) !important;
+}
+.toolbar-popover { width: min(100%, 28rem) !important; }
+.toolbar-popover--route { width: min(100%, 48rem) !important; }
+.calendar-left-tools,
+.today-controls-row { justify-content: flex-start !important; }
+.filter-row button,
+.calendar-left-tools button,
+.quest-picker-button {
+  border-radius: 999px !important;
+  min-height: 31px !important;
+  font-size: 0.75rem !important;
+}
+
+.workload-mini-blocks { justify-content: flex-start; }
+.workload-chip {
+  min-width: 1.55rem;
+  justify-content: center;
+  border-width: 1px;
+  font-size: 0.6rem !important;
+}
+.workload-chip.done {
+  color: color-mix(in srgb, var(--good), var(--text) 24%) !important;
+  border-color: color-mix(in srgb, var(--good), transparent 42%) !important;
+  background: color-mix(in srgb, var(--good), transparent 86%) !important;
+}
+.workload-chip.pending {
+  color: color-mix(in srgb, var(--danger), var(--text) 18%) !important;
+  border-color: color-mix(in srgb, var(--danger), transparent 42%) !important;
+  background: color-mix(in srgb, var(--danger), transparent 88%) !important;
+}
+.workload-chip.pending i { color: var(--danger) !important; }
+
+.avatar-picture-wrap {
+  position: relative;
+  border-radius: 16px !important;
+  border: 1px solid color-mix(in srgb, var(--border), var(--hp-normal) 16%) !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--hp-normal), transparent 84%), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--hp-ink), var(--text) 3%), color-mix(in srgb, var(--surface), var(--bg) 18%)) !important;
+}
+.avatar-picture-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--text), transparent 94%) 48%, transparent),
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--text), transparent 96%) 0 1px, transparent 1px 10px);
+  opacity: 0.38;
+}
+.avatar-great .avatar-picture-wrap {
+  border-color: color-mix(in srgb, var(--hp-great), transparent 38%) !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--hp-great), transparent 78%), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--hp-ink), var(--hp-great) 8%), color-mix(in srgb, var(--surface), var(--bg) 18%)) !important;
+}
+.avatar-normal .avatar-picture-wrap { border-color: color-mix(in srgb, var(--hp-normal), transparent 42%) !important; }
+.avatar-tired .avatar-picture-wrap,
+.avatar-exhausted .avatar-picture-wrap {
+  border-color: color-mix(in srgb, var(--hp-tired), transparent 36%) !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--hp-tired), transparent 80%), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--hp-ink), var(--hp-tired) 7%), color-mix(in srgb, var(--surface), var(--bg) 18%)) !important;
+}
+.avatar-critical .avatar-picture-wrap {
+  border-color: color-mix(in srgb, var(--hp-critical), transparent 28%) !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--hp-critical), transparent 75%), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--hp-ink), var(--hp-critical) 10%), color-mix(in srgb, var(--surface), #000 12%)) !important;
+}
+.hp-meter span { background: linear-gradient(90deg, var(--hp-critical), var(--hp-normal), var(--hp-great)) !important; }
+:root[data-theme="vampire"] .avatar-picture-wrap::after {
+  background:
+    linear-gradient(160deg, transparent 0 48%, rgba(239, 83, 101, 0.08) 49% 51%, transparent 52%),
+    repeating-linear-gradient(90deg, rgba(214, 167, 91, 0.035) 0 1px, transparent 1px 13px);
+}
+:root[data-theme="rpg"] .avatar-picture-wrap::after {
+  background:
+    linear-gradient(45deg, rgba(215, 177, 93, 0.08), transparent 35%),
+    repeating-linear-gradient(135deg, rgba(215, 177, 93, 0.055) 0 1px, transparent 1px 12px);
+}
+:root[data-theme="light"] .avatar-picture-wrap::after {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.5), transparent 55%),
+    repeating-linear-gradient(90deg, rgba(45, 95, 134, 0.045) 0 1px, transparent 1px 14px);
+}
+.character-card { transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
+.character-card:hover { transform: translateY(-2px); }
+.character-theme-vampire.active { box-shadow: inset 0 0 0 1px rgba(239,83,101,0.34), 0 16px 46px rgba(70, 12, 26, 0.28) !important; }
+.character-theme-light.active { box-shadow: inset 0 0 0 1px rgba(61,116,166,0.28), 0 16px 42px rgba(120, 150, 180, 0.18) !important; }
+.character-theme-rpg.active,
+.character-theme-dark.active { box-shadow: inset 0 0 0 1px rgba(215,177,93,0.32), 0 16px 44px rgba(70, 52, 20, 0.26) !important; }
+
+@media (max-width: 920px) {
+  .page-header,
+  .centered-title-header,
+  .day-hero,
+  .today-hero,
+  .calendar-title-header,
+  .profile-title-header {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .day-status-row,
+  .center-jump-button {
+    justify-self: start;
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .today-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Patch v20: route dock, left action bars, grouped daily lists, profile header cleanup. */
+.center-add-actions,
+.center-add-panel,
+.center-open-day-panel,
+.start-day-line {
+  text-align: left !important;
+  justify-content: flex-start !important;
+  justify-items: start !important;
+}
+.task-create-panel .section-title-row,
+.today-controls-row,
+.calendar-left-tools,
+.archive-toggle-row {
+  justify-content: flex-start !important;
+}
+.today-inline-toolbar {
+  margin-top: -0.15rem !important;
+  margin-bottom: 0.7rem !important;
+}
+.today-controls-row {
+  align-items: center;
+  margin: 0 0 0.2rem !important;
+}
+.today-controls-row .btn:first-child {
+  min-width: 136px;
+}
+
+.grouped-plan-list {
+  display: grid;
+  gap: 0.85rem;
+}
+.plan-source-group {
+  display: grid;
+  gap: 0.35rem;
+}
+.plan-source-head {
+  min-height: 1.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-soft), transparent 18%);
+}
+.plan-source-head h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.plan-source-head span {
+  margin-left: auto;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.plan-source-group .line-list {
+  margin-top: 0 !important;
+}
+.group-task .plan-source-head { border-color: color-mix(in srgb, var(--info), transparent 72%); }
+.group-habit .plan-source-head { border-color: color-mix(in srgb, var(--good), transparent 72%); }
+.group-quest .plan-source-head { border-color: color-mix(in srgb, var(--accent), transparent 68%); }
+.group-manual .plan-source-head { border-color: color-mix(in srgb, var(--muted), transparent 72%); }
+
+.calendar-title-header {
+  margin-bottom: 0.55rem !important;
+  padding-top: 0.35rem !important;
+}
+.calendar-page .calendar-panel {
+  margin-top: 0 !important;
+}
+.calendar-header-actions {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+  align-self: center;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.calendar-header-actions .center-jump-button {
+  position: static !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+.calendar-route-toggle {
+  min-height: 30px;
+  max-width: 210px;
+  padding: 0.32rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 18%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface), var(--accent) 5%);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calendar-route-toggle.active,
+.calendar-route-toggle:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent), transparent 35%);
+  background: color-mix(in srgb, var(--accent), transparent 86%);
+}
+.calendar-toolbar-stack {
+  min-height: auto !important;
+}
+.calendar-route-dock {
+  position: static !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0.65rem 0 0.8rem !important;
+  padding: 0.85rem !important;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 14%) !important;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 3%), color-mix(in srgb, var(--surface), var(--bg) 9%)) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text), transparent 95%) !important;
+}
+.calendar-route-topline {
+  gap: 0.7rem !important;
+  align-items: center !important;
+}
+.calendar-route-quest-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.45rem;
+  margin: 0.15rem 0 0.25rem;
+}
+.calendar-route-quest-list button {
+  min-height: 54px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-2), transparent 20%);
+  color: var(--text);
+  text-align: left;
+}
+.calendar-route-quest-list button.active {
+  border-color: color-mix(in srgb, var(--accent), transparent 32%);
+  background: color-mix(in srgb, var(--accent), transparent 86%);
+}
+.calendar-route-quest-list strong,
+.calendar-route-quest-list span {
+  display: block;
+  min-width: 0;
+}
+.calendar-route-quest-list span {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.inline-clear {
+  color: var(--muted) !important;
+  font-size: 0.76rem;
+}
+
+.workload-chip {
+  min-width: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.workload-row.workload-count-row {
+  gap: 0.42rem !important;
+}
+.calendar-cell .reward-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.18rem !important;
+  max-width: 100%;
+  line-height: 1.05;
+}
+.calendar-cell .xp-token,
+.calendar-cell .hp-token {
+  font-size: 0.54rem !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.profile-title-header {
+  border-bottom: 0 !important;
+}
+.profile-username-chip {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0 0 0.35rem;
+  padding: 0.18rem 0.52rem;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 58%);
+  border-radius: 999px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent), transparent 90%);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.quest-description-line {
+  max-width: 62ch;
+  margin: 0.2rem 0 0 !important;
+  font-size: 0.84rem;
+}
+.redesigned-route-board {
+  display: grid;
+  gap: 0.85rem !important;
+  padding: 0.9rem !important;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--accent) 4%), color-mix(in srgb, var(--surface), var(--bg) 10%)) !important;
+}
+.redesigned-route-board .quest-route-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.7fr) minmax(120px, 0.3fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+}
+.route-quest-description {
+  display: block;
+  max-width: 58ch;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.redesigned-route-board .quest-route-track {
+  padding: 0.55rem !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--surface-2), transparent 20%) !important;
+}
+.redesigned-route-board .quest-route-focus {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--surface), var(--accent) 5%) !important;
+}
+.route-step-edit {
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--surface-2), transparent 16%) !important;
+}
+
+@media (max-width: 920px) {
+  .calendar-header-actions {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    flex-wrap: wrap;
+  }
+  .redesigned-route-board .quest-route-head,
+  .redesigned-route-board .quest-route-focus {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PATCH v21 — Comprehensive UI Polish
+   Fixes: headers, calendar filters, workload chips, route button,
+   2-col task list, animations, symmetry, button micro-interactions
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ─────────────────────────────────────────────── */
+@keyframes v21-pageIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes v21-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes v21-popIn {
+  0%   { opacity: 0; transform: scale(0.92) translateY(-6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes v21-slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes v21-checkPop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.4); }
+  75%  { transform: scale(0.85); }
+  100% { transform: scale(1); }
+}
+@keyframes v21-itemIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes v21-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent), transparent 55%); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ── 1. PAGE ENTRY ANIMATION ───────────────────────────────── */
+.page {
+  animation: v21-pageIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── 2. STAGGERED LIST ENTRY ───────────────────────────────── */
+.line-list .line-item {
+  animation: v21-itemIn 200ms ease-out both;
+}
+.line-list .line-item:nth-child(1)  { animation-delay: 30ms; }
+.line-list .line-item:nth-child(2)  { animation-delay: 60ms; }
+.line-list .line-item:nth-child(3)  { animation-delay: 90ms; }
+.line-list .line-item:nth-child(4)  { animation-delay: 115ms; }
+.line-list .line-item:nth-child(5)  { animation-delay: 135ms; }
+.line-list .line-item:nth-child(n+6){ animation-delay: 150ms; }
+
+.plan-source-group {
+  animation: v21-fadeIn 280ms ease-out both;
+  /* break-inside is set per-breakpoint in section 18 */
+}
+.plan-source-group:nth-child(1) { animation-delay: 40ms; }
+.plan-source-group:nth-child(2) { animation-delay: 90ms; }
+.plan-source-group:nth-child(3) { animation-delay: 130ms; }
+.plan-source-group:nth-child(4) { animation-delay: 165ms; }
+
+/* ── 3. BUTTON MICRO-INTERACTIONS ──────────────────────────── */
+.btn {
+  transition:
+    transform 110ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease !important;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 5px 18px color-mix(in srgb, #000, transparent 62%) !important;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: none !important;
+  transition-duration: 55ms !important;
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 5px 20px color-mix(in srgb, var(--accent), transparent 60%) !important;
+}
+.btn-success:hover:not(:disabled) {
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--good), transparent 68%) !important;
+}
+.btn-danger:hover:not(:disabled) {
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--danger), transparent 68%) !important;
+}
+
+.filter-row button,
+.option-chip,
+.calendar-filter-row button,
+.filter-row button.active {
+  transition: transform 100ms ease, border-color 140ms ease, background 140ms ease, color 140ms ease !important;
+}
+.filter-row button:active,
+.option-chip:active,
+.calendar-filter-row button:active {
+  transform: scale(0.94) !important;
+}
+
+/* ── 4. STATUS CYCLE ANIMATION ─────────────────────────────── */
+.status-cycle {
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.status-cycle:hover:not(:disabled) {
+  transform: scale(1.18) !important;
+}
+.status-cycle:active:not(:disabled) {
+  transform: scale(0.88) !important;
+}
+/* Pop animation when item is marked completed */
+.plan-item.status-completed .status-cycle {
+  animation: v21-checkPop 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.plan-item.status-completed {
+  animation: v21-fadeIn 280ms ease both;
+}
+
+/* ── 5. DRAWER / MODAL ANIMATIONS ──────────────────────────── */
+.toolbar-popover {
+  animation: v21-popIn 180ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+  transform-origin: top left;
+}
+.drawer-panel,
+.task-drawer,
+.day-note-editor {
+  animation: v21-slideDown 180ms ease-out !important;
+}
+.modal-form-card {
+  animation: v21-popIn 240ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+.modal-backdrop.form-modal-backdrop {
+  animation: v21-fadeIn 160ms ease !important;
+}
+
+/* ── 6. NAV HOVER EFFECTS ──────────────────────────────────── */
+.top-nav a {
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    border-color 120ms ease,
+    transform 100ms ease !important;
+}
+.top-nav a:hover {
+  transform: translateY(-1px) !important;
+}
+.top-nav a:active {
+  transform: translateY(0) !important;
+}
+.today-nav-link:hover {
+  box-shadow: 0 3px 12px rgba(0,0,0,0.22) !important;
+}
+
+/* ── 7. CALENDAR CELL HOVER ────────────────────────────────── */
+.calendar-cell {
+  transition:
+    background 120ms ease,
+    transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 120ms ease,
+    z-index 0ms !important;
+  position: relative;
+}
+.calendar-cell:hover {
+  transform: scale(1.035) !important;
+  z-index: 3 !important;
+  background: color-mix(in srgb, var(--surface-2), transparent 15%) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.28) !important;
+}
+
+/* ── 8. LIST ITEM HOVER ────────────────────────────────────── */
+.line-item.clickable {
+  transition: background 120ms ease, padding-left 140ms ease !important;
+  border-radius: 6px;
+}
+.line-item.clickable:hover {
+  padding-left: 0.4rem !important;
+  background: rgba(255,255,255,0.018) !important;
+}
+.line-item.clickable:hover strong,
+.line-item.selected strong {
+  color: var(--accent) !important;
+}
+
+/* ── 9. INPUT FOCUS ANIMATION ──────────────────────────────── */
+.input {
+  transition: border-color 150ms ease, box-shadow 200ms ease, background 150ms ease !important;
+}
+.input:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent), transparent 82%) !important;
+  border-color: color-mix(in srgb, var(--accent), transparent 28%) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LAYOUT FIXES
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 10. TODAY HERO — clean left-aligned header ────────────── */
+/* Remove centering overrides from previous patches */
+.today-hero {
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  text-align: left !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  grid-template-rows: auto auto !important;
+  align-items: end !important;
+  column-gap: 1.4rem !important;
+  row-gap: 0.1rem !important;
+  margin-bottom: 1.5rem !important;
+}
+.today-hero > .eyebrow {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  margin: 0 0 0.05rem !important;
+}
+.today-hero > .date-inline-switcher,
+.today-hero > .day-date-inline {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+.today-hero > .day-status-row {
+  grid-column: 2 !important;
+  grid-row: 1 / 3 !important;
+  align-self: center !important;
+  justify-self: end !important;
+  justify-content: flex-end !important;
+  margin-top: 0 !important;
+}
+
+/* ── 11. CALENDAR HEADER — route button back in place ──────── */
+.calendar-title-header {
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  text-align: left !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  grid-template-rows: auto auto !important;
+  align-items: end !important;
+  column-gap: 1.4rem !important;
+  row-gap: 0.1rem !important;
+  margin-bottom: 1rem !important;
+  padding-top: 0 !important;
+}
+.calendar-title-header > .eyebrow {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  margin: 0 0 0.05rem !important;
+}
+.calendar-title-header > .date-inline-switcher,
+.calendar-title-header > .calendar-inline-switcher {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+/* Calendar actions: right-side, spanning both header rows */
+.calendar-header-actions {
+  grid-column: 2 !important;
+  grid-row: 1 / 3 !important;
+  align-self: center !important;
+  justify-self: end !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  flex-wrap: nowrap !important;
+  position: static !important;
+}
+
+/* ── 12. DATE INLINE SWITCHER — left-align the row ─────────── */
+/* Remove centering that was for the old centered layout */
+.day-date-inline,
+.calendar-inline-switcher {
+  max-width: none !important;
+  margin-inline: 0 !important;
+  justify-content: flex-start !important;
+}
+.date-inline-switcher {
+  justify-content: flex-start !important;
+}
+
+/* ── 13. "ТЕКУЩИЙ МЕСЯЦ" JUMP BUTTON ────────────────────────── */
+.center-jump-button {
+  margin: 0 !important;
+  width: auto !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 0 0.75rem !important;
+  border-radius: 8px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  position: static !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+/* ── 14. ROUTE TOGGLE — proper pill shape ───────────────────── */
+.calendar-route-toggle {
+  min-height: 30px !important;
+  height: 30px !important;
+  max-width: 160px !important;
+  padding: 0 0.8rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.07em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  border-radius: 8px !important;
+  transition: all 150ms ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* ── 15. CALENDAR FILTERS — redesign as segment control ─────── */
+.calendar-toolbar-stack {
+  margin-bottom: 0.6rem !important;
+}
+.calendar-left-tools.filter-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  margin-bottom: 0.55rem !important;
+  padding: 0 !important;
+}
+/* The single "Фильтры" button → looks like a label */
+.calendar-left-tools.filter-row > button {
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0 0.7rem !important;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.3rem !important;
+  transition: all 140ms ease !important;
+}
+.calendar-left-tools.filter-row > button::before {
+  content: "⊞";
+  font-size: 0.72rem !important;
+  opacity: 0.75;
+}
+/* Filter popover: inline segment control feel */
+.calendar-inline-filter-panel {
+  padding: 0.55rem 0.7rem !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+.calendar-inline-filter-panel .filter-row {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0.3rem !important;
+}
+.calendar-inline-filter-panel .filter-row button {
+  min-height: 30px !important;
+  height: 30px !important;
+  justify-content: center !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* ── 16. WORKLOAD CHIP — strip all box remnants ─────────────── */
+.workload-mini-blocks {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+.workload-row.workload-count-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.28rem !important;
+}
+.workload-chip,
+.workload-chip.done,
+.workload-chip.pending,
+.workload-chip.total {
+  /* Nuclear reset — overrides all previous patches */
+  all: unset !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.12rem !important;
+  font-size: 0.58rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  font-family: var(--font-mono) !important;
+}
+.workload-chip i,
+.workload-chip.done i,
+.workload-chip.pending i,
+.workload-chip.total i {
+  all: unset !important;
+  display: inline !important;
+  font-style: normal !important;
+  font-size: 0.58rem !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+.workload-chip.done,
+.workload-chip.done i { color: var(--good) !important; }
+.workload-chip.pending,
+.workload-chip.pending i { color: var(--warn) !important; }
+
+/* ── 17. ADD QUEST / ADD HABIT BUTTON — symmetric placement ─── */
+/* These buttons are in section-line panels; they should feel 
+   anchored, not floating. Keep left-align but add context. */
+.create-drawer-section.entity-form-panel {
+  display: grid !important;
+  gap: 0 !important;
+}
+.center-add-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  justify-content: flex-start !important;
+  padding: 0.7rem 0 !important;
+  margin: 0 !important;
+}
+
+/* ── 18. TODAY TASK LIST — 2-column on large screens ────────── */
+/* Groups flow into 2 CSS columns; group headers don't break.
+   .details-list is excluded (DayDetailsPage uses a narrower layout) */
+@media (min-width: 1060px) {
+  .grouped-plan-list:not(.details-list) {
+    columns: 2;
+    column-gap: 2rem;
+  }
+  .grouped-plan-list:not(.details-list) .plan-source-group {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* For very large screens: tasks within a group also in 2 cols */
+@media (min-width: 1500px) {
+  .grouped-plan-list:not(.details-list) {
+    columns: 1;
+  }
+  .grouped-plan-list:not(.details-list) .plan-source-group .line-list.todo-list.clean-list {
+    columns: 2;
+    column-gap: 1.6rem;
+  }
+  .grouped-plan-list:not(.details-list) .plan-source-group .line-list.todo-list.clean-list .line-item.plan-item {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+  }
+}
+
+/* ── 19. PLAN SECTION HEADER — compact and symmetric ─────────── */
+.compact-plan-title-row.plan-title-row {
+  align-items: center !important;
+  gap: 1rem !important;
+  flex-wrap: nowrap !important;
+  margin-bottom: 0.85rem !important;
+}
+.compact-plan-title-row .inline-plan-title {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.1rem !important;
+}
+.compact-plan-title-row .inline-plan-title > span {
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  color: var(--muted) !important;
+}
+
+/* ── 20. HABITS / QUESTS PAGE HEADER — simple and clean ─────── */
+/* These have only eyebrow + h1. Already okay but let's tighten. */
+.centered-title-header:not(.calendar-title-header) {
+  max-width: none !important;
+  margin-inline: 0 !important;
+  text-align: left !important;
+  margin-bottom: 1.2rem !important;
+  display: block !important;
+}
+.centered-title-header:not(.calendar-title-header) .eyebrow {
+  display: block !important;
+  margin-bottom: 0.2rem !important;
+}
+.centered-title-header:not(.calendar-title-header) h1 {
+  margin: 0 !important;
+}
+
+/* ── 21. SECTION TITLE ROW — button always right-aligned ─────── */
+.split-header .header-actions,
+.section-title-row .header-actions {
+  align-self: center !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── 22. PLAN SOURCE GROUP HEADER ──────────────────────────── */
+.plan-source-head {
+  padding: 0.35rem 0 !important;
+  margin-bottom: 0.15rem !important;
+}
+
+/* ── 23. TODAY CONTROLS ROW — balanced toolbar ─────────────── */
+.today-controls-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  flex-wrap: wrap !important;
+  margin: 0.15rem 0 0.5rem !important;
+}
+
+/* ── 24. RESPONSIVE — mobile stack ─────────────────────────── */
+@media (max-width: 700px) {
+  .today-hero,
+  .calendar-title-header {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+    gap: 0.25rem !important;
+  }
+  .today-hero > .day-status-row,
+  .calendar-header-actions {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    justify-self: start !important;
+  }
+  .grouped-plan-list:not(.details-list) {
+    columns: 1 !important;
+  }
+}
+
+/* ── 25. BRAND MARK ANIMATION ──────────────────────────────── */
+.brand-mark {
+  transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.brand:hover .brand-mark {
+  transform: scale(1.08) !important;
+}
+.brand {
+  transition: opacity 140ms ease !important;
+}
+.brand:active {
+  opacity: 0.78 !important;
+}
+
+/* ── 26. ACHIEVEMENT / PROFILE PAGE ENTRY ──────────────────── */
+.narrow-page,
+.day-screen-page {
+  animation: v21-pageIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+/* ── 27. TOAST NOTIFICATION ────────────────────────────────── */
+.toast-container > * {
+  animation: v21-slideDown 220ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+/* ── 28. CARD / PANEL PULSE ON LOAD ────────────────────────── */
+.section-line.character-panel.clean-section {
+  animation: v21-fadeIn 320ms ease-out both !important;
+}
+
+/* ── 29. CALENDAR CELL — today highlight pulse ──────────────── */
+.calendar-cell.today {
+  animation: v21-pulse-ring 1.8s ease-out 0.4s !important;
+}
+
+/* ── 30. QUEST STEP LINE — subtle entry ─────────────────────── */
+.quest-step-line {
+  animation: v21-fadeIn 200ms ease-out both !important;
+}
+

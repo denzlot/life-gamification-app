@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { applyTheme, CHARACTER_EVENT, readTheme, THEME_STORAGE_KEY, type ThemeName } from "../utils/character";
+import { applyTheme, CHARACTER_EVENT, readTheme, type ThemeName } from "../utils/character";
 
 const themes: Array<{ name: ThemeName; label: string; icon: string }> = [
   { name: "dark", label: "Тёмная", icon: "◐" },
@@ -13,7 +13,6 @@ export function ThemeSwitchButton() {
 
   useEffect(() => {
     applyTheme(theme);
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
   useEffect(() => {

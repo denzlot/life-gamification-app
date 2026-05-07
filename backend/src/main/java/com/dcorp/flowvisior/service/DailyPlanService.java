@@ -149,13 +149,10 @@ public class DailyPlanService {
 
         DailyPlan dailyPlan = dailyPlanRepository.findByUserAndPlanDate(user, planDate)
                 .orElseGet(() -> {
-                    DailyPlanStatus initialStatus = planDate.isBefore(LocalDate.now())
-                            ? DailyPlanStatus.CLOSED
-                            : DailyPlanStatus.PLANNED;
-                    DailyPlan next = new DailyPlan(user, planDate, initialStatus);
-                    if (initialStatus == DailyPlanStatus.CLOSED) {
-                        next.close(0, 0, 0, 0, 0, false);
+                    if (planDate.isBefore(LocalDate.now())) {
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Daily plan not found");
                     }
+                    DailyPlan next = new DailyPlan(user, planDate, DailyPlanStatus.PLANNED);
                     return dailyPlanRepository.save(next);
                 });
 

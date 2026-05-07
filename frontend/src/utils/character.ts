@@ -109,11 +109,15 @@ export function readTheme(): ThemeName {
 }
 
 export function applyTheme(theme: ThemeName) {
-  if (typeof document !== "undefined") {
-    document.documentElement.setAttribute("data-theme", theme);
-  }
+  previewTheme(theme);
   if (typeof window !== "undefined") {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }
+}
+
+export function previewTheme(theme: ThemeName) {
+  if (typeof document !== "undefined") {
+    document.documentElement.setAttribute("data-theme", theme);
   }
 }
 

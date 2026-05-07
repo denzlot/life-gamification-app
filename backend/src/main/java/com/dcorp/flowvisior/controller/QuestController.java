@@ -51,6 +51,11 @@ public class QuestController {
         questService.deleteQuest(id);
     }
 
+    @GetMapping("/steps/active")
+    public List<QuestStepResponse> getActiveQuestSteps() {
+        return questService.getActiveQuestSteps();
+    }
+
     @GetMapping("/{id}/steps")
     public List<QuestStepResponse> getQuestSteps(@PathVariable Long id) {
         return questService.getQuestSteps(id);

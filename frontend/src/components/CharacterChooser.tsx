@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "./Button";
-import { applyTheme, characterCatalog, getCharacter, type CharacterId, saveSelectedCharacter } from "../utils/character";
+import { characterCatalog, getCharacter, previewTheme, type CharacterId, saveSelectedCharacter } from "../utils/character";
 
 interface CharacterChooserProps {
   onConfirm?: (id: CharacterId) => void;
+  onPreview?: (id: CharacterId) => void;
   title?: string;
   description?: string;
   initialCharacter?: CharacterId | null;
@@ -12,6 +13,7 @@ interface CharacterChooserProps {
 
 export function CharacterChooser({
   onConfirm,
+  onPreview,
   title = "Выбери персонажа",
   description = "Нажми на героя, чтобы сразу увидеть его тему. Подтверждение завершит выбор.",
   initialCharacter = null,
@@ -21,7 +23,8 @@ export function CharacterChooser({
 
   function chooseCharacter(id: CharacterId) {
     setSelectedId(id);
-    applyTheme(getCharacter(id).theme);
+    onPreview?.(id);
+    previewTheme(getCharacter(id).theme);
   }
 
   function confirmSelection() {
