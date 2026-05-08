@@ -3,6 +3,7 @@ import { api } from "../api/http";
 import type { CreateHabitRequest, HabitResponse } from "../api/types";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
+import { FormModal } from "../components/FormModal";
 import { Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useToast } from "../context/ToastContext";
@@ -132,7 +133,7 @@ export function HabitsPage() {
         </div>
 
         {formOpen ? (
-          <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={resetForm}>
+          <FormModal onClose={resetForm}>
             <form className="form-grid unified-form compact-create-form create-drawer-form modal-form-card" onSubmit={submit} role="dialog" aria-modal="true" aria-label={editing ? "Редактирование привычки" : "Новая привычка"} onMouseDown={(event) => event.stopPropagation()}>
               <div className="modal-form-head">
                 <div><p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новая привычка"}</p><strong>{editing ? "Изменить привычку" : "Добавить привычку"}</strong></div>
@@ -171,7 +172,7 @@ export function HabitsPage() {
               {editing ? <Button type="button" variant="ghost" onClick={resetForm}>Отмена</Button> : null}
             </div>
             </form>
-          </div>
+          </FormModal>
         ) : null}
       </section>
 

@@ -4,6 +4,7 @@ import { api, ApiError } from "../api/http";
 import type { CalendarDayResponse, CreateTaskRequest, DailyPlanItemResponse, DailyPlanItemStatus, DailyPlanResponse, SourceType } from "../api/types";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
+import { FormModal } from "../components/FormModal";
 import { DateWheelInput, Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useAchievementWatcher } from "../context/AchievementContext";
@@ -205,6 +206,37 @@ export function DayDetailsPage() {
   const isFuture = date > today;
   const canManualReorder = Boolean(plan && !isClosed && !isPast && !isFuture && !sortByTime);
 
+  function shouldReorderAtPointer(activeId: number, overId: number, overElement: HTMLElement, pointerY: number) {
+    const from = items.findIndex((item) => item.id === activeId);
+    const to = items.findIndex((item) => item.id === overId);
+    if (from < 0 || to < 0 || from === to) return false;
+
+    const rect = overElement.getBoundingClientRect();
+    const midpointY = rect.top + rect.height / 2;
+    return from < to ? pointerY > midpointY : pointerY < midpointY;
+  }
+
+  function findReorderTarget(pointerY: number) {
+    const activeId = activeDragItemIdRef.current;
+    if (activeId === null) return null;
+
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-plan-item-id]"))
+      .filter((element) => Number(element.dataset.planItemId) !== activeId);
+    if (elements.length === 0) return null;
+
+    let nearest: { id: number; element: HTMLElement; distance: number } | null = null;
+    for (const element of elements) {
+      const id = Number(element.dataset.planItemId);
+      if (!Number.isFinite(id)) continue;
+      const rect = element.getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      const distance = Math.abs(pointerY - centerY);
+      if (!nearest || distance < nearest.distance) nearest = { id, element, distance };
+    }
+
+    return nearest;
+  }
+
   function movePlanItem(activeId: number, overId: number) {
     if (!canManualReorder) return;
     const previousRects = capturePlanItemRects();
@@ -231,10 +263,12 @@ export function DayDetailsPage() {
     const activeId = activeDragItemIdRef.current;
     if (!canManualReorder || activeId === null) return;
     event.preventDefault();
-    const target = document.elementFromPoint(event.clientX, event.clientY);
-    const itemElement = target?.closest<HTMLElement>("[data-plan-item-id]");
-    const overId = Number(itemElement?.dataset.planItemId);
+    const target = findReorderTarget(event.clientY);
+    const itemElement = target?.element;
+    const overId = target?.id ?? Number.NaN;
+    if (!itemElement) return;
     if (!Number.isFinite(overId) || overId === activeId || overId === lastDragOverIdRef.current) return;
+    if (!shouldReorderAtPointer(activeId, overId, itemElement, event.clientY)) return;
     lastDragOverIdRef.current = overId;
     movePlanItem(activeId, overId);
   }
@@ -458,7 +492,7 @@ export function DayDetailsPage() {
             <Button type="button" variant="ghost" onClick={() => setTaskDrawerOpen((value) => !value)}>{taskDrawerOpen ? "Скрыть" : "Добавить задачу"}</Button>
           </div>
           {taskDrawerOpen ? (
-            <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={() => setTaskDrawerOpen(false)}>
+            <FormModal onClose={() => setTaskDrawerOpen(false)}>
               <form className="form-grid task-drawer unified-form compact-create-form modal-form-card" onSubmit={createTask} role="dialog" aria-modal="true" aria-label="Создание задачи" onMouseDown={(event) => event.stopPropagation()}>
                 <div className="modal-form-head">
                   <div><p className="eyebrow">новая задача</p><strong>{isFuture ? "Задача на выбранный день" : "Добавить задачу"}</strong></div>
@@ -479,7 +513,7 @@ export function DayDetailsPage() {
               <ErrorLine error={taskError} />
               <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
               </form>
-            </div>
+            </FormModal>
           ) : null}
         </section>
       ) : null}
@@ -503,7 +537,7 @@ export function DayDetailsPage() {
           ) : null}
 
           {items.length > 0 ? (
-            <div className={`grouped-plan-list details-list ${twoColumnLayout ? "two-column-enabled" : ""}`}>
+            <div className={`grouped-plan-list details-list ${twoColumnLayout ? "two-column-enabled" : ""} ${draggingItemId !== null ? "is-reordering" : ""}`}>
               {groupedItems.map((group) => (
                 <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
                   <div className="plan-source-head">

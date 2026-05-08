@@ -1,5 +1,4 @@
 import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../api/http";
 import type {
@@ -12,6 +11,7 @@ import type {
 import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
+import { FormModal } from "../components/FormModal";
 import { DateWheelInput, Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { GameHud } from "../components/GameHud";
 import { ErrorLine, Loader } from "../components/Loader";
@@ -144,10 +144,20 @@ function formatTimer(seconds: number) {
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
+const TIMER_PRESETS = [5, 15, 25, 45, 60];
+const TIMER_RADIUS = 38;
+const TIMER_CIRCUMFERENCE = 2 * Math.PI * TIMER_RADIUS;
+
 function FocusTimer() {
-  const total = 25 * 60;
+  const [minutes, setMinutes] = useState(25);
+  const total = minutes * 60;
   const [remaining, setRemaining] = useState(total);
   const [running, setRunning] = useState(false);
+  const [justFinished, setJustFinished] = useState(false);
+
+  useEffect(() => {
+    if (!running) setRemaining(total);
+  }, [running, total]);
 
   useEffect(() => {
     if (!running) return undefined;
@@ -156,6 +166,7 @@ function FocusTimer() {
         if (value <= 1) {
           window.clearInterval(intervalId);
           setRunning(false);
+          setJustFinished(true);
           return 0;
         }
         return value - 1;
@@ -164,29 +175,85 @@ function FocusTimer() {
     return () => window.clearInterval(intervalId);
   }, [running]);
 
-  const progress = Math.round(((total - remaining) / total) * 100);
+  useEffect(() => {
+    if (!justFinished) return undefined;
+    const t = window.setTimeout(() => setJustFinished(false), 3000);
+    return () => window.clearTimeout(t);
+  }, [justFinished]);
+
+  const elapsed = total - remaining;
+  const strokeDashoffset = TIMER_CIRCUMFERENCE * (1 - elapsed / total);
 
   function toggleRunning() {
     if (remaining === 0) {
       setRemaining(total);
       setRunning(true);
+      setJustFinished(false);
       return;
     }
     setRunning((value) => !value);
   }
 
+  function chooseMinutes(value: number) {
+    const next = Math.min(240, Math.max(1, Math.round(value || 1)));
+    setMinutes(next);
+    setRunning(false);
+    setJustFinished(false);
+    setRemaining(next * 60);
+  }
+
+  const statusLabel = running ? "сессия идёт" : justFinished ? "✓ готово!" : `${minutes} мин`;
+
   return (
-    <div className="avatar-focus-timer" aria-label="Фокус-таймер">
-      <div className="timer-ring" style={{ "--timer-progress": `${progress}%` } as CSSProperties}>
-        <span>{formatTimer(remaining)}</span>
+    <div className={`avatar-focus-timer ${running ? "timer-running" : ""} ${justFinished ? "timer-done" : ""}`} aria-label="Фокус-таймер">
+      <div className="timer-ring-svg-wrap">
+        <svg className="timer-ring-svg" viewBox="0 0 88 88" aria-hidden="true">
+          <circle className="timer-ring-bg" cx="44" cy="44" r={TIMER_RADIUS} />
+          <circle
+            className="timer-ring-track"
+            cx="44" cy="44" r={TIMER_RADIUS}
+            strokeDasharray={TIMER_CIRCUMFERENCE}
+            strokeDashoffset={strokeDashoffset}
+            style={{ transition: running ? "stroke-dashoffset 1.02s linear" : "stroke-dashoffset 0.38s cubic-bezier(0.22, 1, 0.36, 1)" }}
+          />
+          {justFinished && (
+            <circle className="timer-ring-done-pulse" cx="44" cy="44" r={TIMER_RADIUS} />
+          )}
+        </svg>
+        <span className="timer-ring-label">{formatTimer(remaining)}</span>
       </div>
       <div className="timer-copy">
         <strong>Фокус</strong>
-        <small>{running ? "сессия идёт" : remaining === 0 ? "готово" : "25 минут"}</small>
+        <small className={justFinished ? "timer-done-text" : ""}>{statusLabel}</small>
+      </div>
+      <div className="timer-presets" aria-label="Длительность">
+        {TIMER_PRESETS.map((p) => (
+          <button
+            key={p}
+            type="button"
+            className={`timer-preset-btn ${minutes === p && !running ? "active" : ""}`}
+            onClick={() => chooseMinutes(p)}
+            disabled={running}
+            title={`${p} минут`}
+          >
+            {p}
+          </button>
+        ))}
+        <input
+          className="timer-custom-input"
+          type="number"
+          min={1}
+          max={240}
+          value={minutes}
+          onChange={(event) => chooseMinutes(Number(event.target.value))}
+          disabled={running}
+          aria-label="Своя длительность в минутах"
+          title="Своё время"
+        />
       </div>
       <div className="timer-actions">
         <Button type="button" variant="thin" onClick={toggleRunning}>{running ? "Пауза" : remaining === 0 ? "Снова" : "Старт"}</Button>
-        <Button type="button" variant="ghost" className="timer-reset-button" onClick={() => { setRunning(false); setRemaining(total); }}>Сброс</Button>
+        <Button type="button" variant="ghost" className="timer-reset-button" onClick={() => { setRunning(false); setJustFinished(false); setRemaining(total); }}>Сброс</Button>
       </div>
     </div>
   );
@@ -309,6 +376,37 @@ export function TodayPage() {
   const nextFocusItem = useMemo(() => sortByPlannedTime(filteredItems.filter((item) => item.status === "PENDING"))[0] ?? null, [filteredItems]);
   const canManualReorder = Boolean(plan && !isClosed && !sortByTime);
 
+  function shouldReorderAtPointer(activeId: number, overId: number, overElement: HTMLElement, pointerY: number) {
+    const from = items.findIndex((item) => item.id === activeId);
+    const to = items.findIndex((item) => item.id === overId);
+    if (from < 0 || to < 0 || from === to) return false;
+
+    const rect = overElement.getBoundingClientRect();
+    const midpointY = rect.top + rect.height / 2;
+    return from < to ? pointerY > midpointY : pointerY < midpointY;
+  }
+
+  function findReorderTarget(pointerY: number) {
+    const activeId = activeDragItemIdRef.current;
+    if (activeId === null) return null;
+
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-plan-item-id]"))
+      .filter((element) => Number(element.dataset.planItemId) !== activeId);
+    if (elements.length === 0) return null;
+
+    let nearest: { id: number; element: HTMLElement; distance: number } | null = null;
+    for (const element of elements) {
+      const id = Number(element.dataset.planItemId);
+      if (!Number.isFinite(id)) continue;
+      const rect = element.getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      const distance = Math.abs(pointerY - centerY);
+      if (!nearest || distance < nearest.distance) nearest = { id, element, distance };
+    }
+
+    return nearest;
+  }
+
   function movePlanItem(activeId: number, overId: number) {
     if (!canManualReorder) return;
     const previousRects = capturePlanItemRects();
@@ -337,10 +435,12 @@ export function TodayPage() {
     const activeId = activeDragItemIdRef.current;
     if (!canManualReorder || activeId === null) return;
     event.preventDefault();
-    const target = document.elementFromPoint(event.clientX, event.clientY);
-    const itemElement = target?.closest<HTMLElement>("[data-plan-item-id]");
-    const overId = Number(itemElement?.dataset.planItemId);
+    const target = findReorderTarget(event.clientY);
+    const itemElement = target?.element;
+    const overId = target?.id ?? Number.NaN;
+    if (!itemElement) return;
     if (!Number.isFinite(overId) || overId === activeId || overId === lastDragOverIdRef.current) return;
+    if (!shouldReorderAtPointer(activeId, overId, itemElement, event.clientY)) return;
     lastDragOverIdRef.current = overId;
     movePlanItem(activeId, overId);
   }
@@ -553,6 +653,57 @@ export function TodayPage() {
     if (event.key === "Escape") setEditingId(null);
   }
 
+  function renderPlanItem(item: DailyPlanItemResponse) {
+    return (
+      <article
+        className={`line-item plan-item draggable-plan-item status-${item.status.toLowerCase()} ${draggingItemId === item.id ? "dragging" : ""} ${focusItemId === item.id ? "focus-pulse" : ""}`}
+        key={item.id}
+        data-plan-item-id={item.id}
+      >
+        <button
+          type="button"
+          className="drag-handle"
+          disabled={!canManualReorder}
+          onPointerDown={(event) => handleDragPointerDown(event, item.id)}
+          onPointerMove={handleDragPointerMove}
+          onPointerUp={handleDragPointerEnd}
+          onPointerCancel={handleDragPointerEnd}
+          onKeyDown={(event) => handleDragKeyDown(event, item.id)}
+          title={canManualReorder ? "Перетащить пункт. Стрелки вверх/вниз тоже меняют порядок." : "Ручной порядок доступен без сортировки по времени"}
+          aria-label="Перетащить пункт"
+        >
+          ⋮⋮
+        </button>
+        <button
+          type="button"
+          className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
+          onClick={() => cycleItem(item)}
+          disabled={busyItemId === item.id || isClosed}
+          aria-label={`${cycleLabel(item.status)}: ${item.title}`}
+        >
+          <StatusIcon status={item.status} />
+        </button>
+        {item.description ? (
+          <button type="button" className={`description-toggle ${openDescriptionId === item.id ? "open" : ""}`} onClick={() => setOpenDescriptionId((current) => current === item.id ? null : item.id)} aria-label="Показать описание">›</button>
+        ) : <span className="description-spacer" />}
+        <div className="todo-main">
+          <div className="item-title-line">
+            {editingId === item.id ? (
+              <TextInput className="inline-edit-input" autoFocus value={editTitle} onChange={(event) => setEditTitle(event.target.value)} onBlur={() => saveTitle(item)} onKeyDown={(event) => handleTitleKey(event, item)} />
+            ) : (
+              <strong className="editable-title" onClick={() => beginEdit(item)}>{item.title}</strong>
+            )}
+            <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
+          </div>
+          <p className="muted compact-meta">
+            {itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}
+          </p>
+          {openDescriptionId === item.id && item.description ? <p className="item-description">{item.description}</p> : null}
+        </div>
+      </article>
+    );
+  }
+
   return (
     <section className="page today-page compact-today-page">
       <header className="day-hero today-hero">
@@ -619,7 +770,7 @@ export function TodayPage() {
                 </div>
 
                 {taskDrawerOpen ? (
-                  <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={() => setTaskDrawerOpen(false)}>
+                  <FormModal onClose={() => setTaskDrawerOpen(false)}>
                     <form className="form-grid task-form task-drawer unified-form compact-create-form ordered-form centered-task-form modal-form-card" onSubmit={createTask} role="dialog" aria-modal="true" aria-label="Создание задачи" onMouseDown={(event) => event.stopPropagation()}>
                       <div className="modal-form-head">
                         <div><p className="eyebrow">новая задача</p><strong>Добавить задачу</strong></div>
@@ -648,7 +799,7 @@ export function TodayPage() {
                       <ErrorLine error={taskError} />
                       <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
                     </form>
-                  </div>
+                  </FormModal>
                 ) : null}
 
                 {filtersOpen ? (
@@ -671,62 +822,21 @@ export function TodayPage() {
               {items.length === 0 ? <EmptyState title="Пока пусто" text="Создай задачу или открой нужный квест в календаре." /> : null}
               {items.length > 0 && filteredItems.length === 0 ? <EmptyState title="Ничего не найдено" text="Измени фильтры." /> : null}
 
-              <div className={`grouped-plan-list ${twoColumnLayout ? "two-column-enabled" : ""}`}>
+              <div className={`grouped-plan-list ${twoColumnLayout ? "two-column-enabled" : ""} ${draggingItemId !== null ? "is-reordering" : ""}`}>
                 {groupedItems.map((group) => (
                   <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
                     <div className="plan-source-head">
                       <h3>{group.title}</h3>
                       <span>{group.items.length}</span>
                     </div>
-                    <div className="line-list todo-list typed-list clean-list">
-                      {group.items.map((item) => (
-                        <article
-                          className={`line-item plan-item draggable-plan-item status-${item.status.toLowerCase()} ${draggingItemId === item.id ? "dragging" : ""} ${focusItemId === item.id ? "focus-pulse" : ""}`}
-                          key={item.id}
-                          data-plan-item-id={item.id}
-                        >
-                          <button
-                            type="button"
-                            className="drag-handle"
-                            disabled={!canManualReorder}
-                            onPointerDown={(event) => handleDragPointerDown(event, item.id)}
-                            onPointerMove={handleDragPointerMove}
-                            onPointerUp={handleDragPointerEnd}
-                            onPointerCancel={handleDragPointerEnd}
-                            onKeyDown={(event) => handleDragKeyDown(event, item.id)}
-                            title={canManualReorder ? "Перетащить пункт. Стрелки вверх/вниз тоже меняют порядок." : "Ручной порядок доступен без сортировки по времени"}
-                            aria-label="Перетащить пункт"
-                          >
-                            ⋮⋮
-                          </button>
-                          <button
-                            type="button"
-                            className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
-                            onClick={() => cycleItem(item)}
-                            disabled={busyItemId === item.id || isClosed}
-                            aria-label={`${cycleLabel(item.status)}: ${item.title}`}
-                          >
-                            <StatusIcon status={item.status} />
-                          </button>
-                          {item.description ? (
-                            <button type="button" className={`description-toggle ${openDescriptionId === item.id ? "open" : ""}`} onClick={() => setOpenDescriptionId((current) => current === item.id ? null : item.id)} aria-label="Показать описание">›</button>
-                          ) : <span className="description-spacer" />}
-                          <div className="todo-main">
-                            <div className="item-title-line">
-                              {editingId === item.id ? (
-                                <TextInput className="inline-edit-input" autoFocus value={editTitle} onChange={(event) => setEditTitle(event.target.value)} onBlur={() => saveTitle(item)} onKeyDown={(event) => handleTitleKey(event, item)} />
-                              ) : (
-                                <strong className="editable-title" onClick={() => beginEdit(item)}>{item.title}</strong>
-                              )}
-                              <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
-                            </div>
-                            <p className="muted compact-meta">
-                              {itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}
-                            </p>
-                            {openDescriptionId === item.id && item.description ? <p className="item-description">{item.description}</p> : null}
+                    <div className={`plan-source-body ${twoColumnLayout ? "two-plan-columns" : ""}`}>
+                      {(twoColumnLayout ? [group.items.slice(0, Math.ceil(group.items.length / 2)), group.items.slice(Math.ceil(group.items.length / 2))] : [group.items])
+                        .filter((columnItems) => columnItems.length > 0)
+                        .map((columnItems, columnIndex) => (
+                          <div className="line-list todo-list typed-list clean-list plan-column-list" key={`${group.source}-${columnIndex}`}>
+                            {columnItems.map((item) => renderPlanItem(item))}
                           </div>
-                        </article>
-                      ))}
+                        ))}
                     </div>
                   </section>
                 ))}

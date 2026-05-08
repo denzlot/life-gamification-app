@@ -8,6 +8,7 @@ import type {
 } from "../api/types";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
+import { FormModal } from "../components/FormModal";
 import { DateWheelInput, Field, NumberWheelInput, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useAchievementWatcher } from "../context/AchievementContext";
@@ -347,7 +348,7 @@ export function QuestsPage() {
         </div>
 
         {formOpen ? (
-          <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={cancelEdit}>
+          <FormModal onClose={cancelEdit}>
             <form className="form-grid unified-form quest-form compact-create-form create-drawer-form modal-form-card" onSubmit={submit} role="dialog" aria-modal="true" aria-label={editing ? "Редактирование квеста" : "Новый квест"} onMouseDown={(event) => event.stopPropagation()}>
               <div className="modal-form-head">
                 <div><p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новый квест"}</p><strong>{editing ? "Изменить квест" : "Добавить квест"}</strong></div>
@@ -427,7 +428,7 @@ export function QuestsPage() {
               {editing ? <Button type="button" variant="ghost" onClick={cancelEdit}>Отмена</Button> : null}
             </div>
             </form>
-          </div>
+          </FormModal>
         ) : null}
       </section>
 

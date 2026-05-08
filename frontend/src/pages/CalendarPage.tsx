@@ -61,8 +61,21 @@ function questDayLabel(total: number, completed: number, dayDate: string, today:
   return `${total} ${shortStepWord(total)}`;
 }
 
-function CalendarWorkload({ day }: { day: CalendarDayResponse }) {
+function CalendarWorkload({ day, today }: { day: CalendarDayResponse; today: string }) {
   const pending = Math.max(0, day.totalCount - day.completedCount);
+  const closedDay = day.status === "CLOSED";
+
+  if (!closedDay) {
+    const tone = day.date > today ? "future" : "planned";
+    return (
+      <span className="workload-mini-blocks" aria-label={`Нагрузка: запланировано ${day.totalCount}`}>
+        <span className="workload-row workload-count-row">
+          <span className={`workload-chip total ${tone}`}><i>#</i>{day.totalCount}</span>
+        </span>
+      </span>
+    );
+  }
+
   return (
       <span className="workload-mini-blocks" aria-label={`Нагрузка: выполнено ${day.completedCount}, не выполнено ${pending}`}>
       <span className="workload-row workload-count-row">
@@ -219,7 +232,6 @@ export function CalendarPage() {
   const [selectedQuestId, setSelectedQuestId] = useState<number | null>(null);
   const [displayFiltersOpen, setDisplayFiltersOpen] = useState(false);
   const [displayMode, setDisplayMode] = useState<CalendarDisplayMode>("clean");
-  const [showQuestRoute, setShowQuestRoute] = useState(false);
   const [questSteps, setQuestSteps] = useState<QuestStepResponse[]>([]);
   const [planningCatalog, setPlanningCatalog] = useState<PlanningCatalog>({ tasks: [], habits: [], questSteps: [] });
   const [loading, setLoading] = useState(true);
@@ -347,10 +359,11 @@ export function CalendarPage() {
   const today = todayISO();
   const weekdayHeader = useMemo(() => shiftedWeekdays(cursor), [cursor]);
   const selectedQuest = useMemo(() => quests.find((quest) => quest.id === selectedQuestId) ?? null, [quests, selectedQuestId]);
+  const routeActive = Boolean(selectedQuest);
   const stepStatsByDate = useMemo(() => groupQuestSteps(questSteps), [questSteps]);
   const pace = useMemo(() => computePace(selectedQuest, questSteps, stepStatsByDate, today), [selectedQuest, questSteps, stepStatsByDate, today]);
   const showWorkload = displayMode === "workload" || displayMode === "full";
-  const showRewards = displayMode === "rewards";
+  const showRewards = displayMode === "rewards" || displayMode === "full";
   const monthSteps = useMemo(() => {
     const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
     return questSteps.filter((step) => step.scheduledDate.startsWith(monthKey));
@@ -380,133 +393,122 @@ export function CalendarPage() {
           </div>
           <div className="calendar-header-actions">
             <button type="button" className="center-jump-button" onClick={() => setCursor(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}>текущий месяц</button>
-            <button
-                type="button"
-                className={`calendar-route-toggle ${showQuestRoute ? "active" : ""}`}
-                onMouseDown={(event) => event.stopPropagation()}
-                onClick={() => {
-                  setShowQuestRoute((value) => {
-                    const next = !value;
-                    if (next) setDisplayFiltersOpen(false);
-                    return next;
-                  });
-                }}
-            >
-              {selectedQuest ? selectedQuest.title : "Маршрут"}
-            </button>
           </div>
         </header>
 
-        <section className="section-line calendar-panel stylish-calendar-panel clean-section compact-calendar-shell">
-          <div className="calendar-toolbar-stack inline-overlay-host" ref={calendarOverlayRef}>
-            <div className="calendar-left-tools filter-row" aria-label="Настройки календаря">
-              <button
-                  type="button"
-                  className={displayFiltersOpen ? "active" : ""}
-                  onClick={() => {
-                    setDisplayFiltersOpen((value) => !value);
-                  }}
-              >
-                Фильтры
-              </button>
+        <div className="calendar-body-layout">
+          <section className="section-line calendar-panel stylish-calendar-panel clean-section compact-calendar-shell">
+            <div className="calendar-toolbar-stack inline-overlay-host" ref={calendarOverlayRef}>
+              <div className="calendar-left-tools filter-row" aria-label="Настройки календаря">
+                <div className="calendar-filter-control inline-overlay-host">
+                  <button
+                      type="button"
+                      className={displayFiltersOpen ? "active" : ""}
+                      onClick={() => setDisplayFiltersOpen((value) => !value)}
+                  >
+                    Фильтры
+                  </button>
+                  {displayFiltersOpen ? (
+                      <div className="calendar-filter-popover calendar-inline-filter-panel filter-panel toolbar-popover toolbar-popover--filters" aria-label="Фильтры отображения">
+                        <div className="filter-row">
+                          <button type="button" className={displayMode === "clean" ? "active" : ""} onClick={() => setDisplayMode("clean")}>Чисто</button>
+                          <button type="button" className={displayMode === "workload" ? "active" : ""} onClick={() => setDisplayMode("workload")}>Нагрузка</button>
+                          <button type="button" className={displayMode === "rewards" ? "active" : ""} onClick={() => setDisplayMode("rewards")}>Итог</button>
+                          <button type="button" className={displayMode === "full" ? "active" : ""} onClick={() => setDisplayMode("full")}>Всё</button>
+                        </div>
+                      </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
 
-            {displayFiltersOpen ? (
-                <div className="calendar-filter-popover calendar-inline-filter-panel filter-panel toolbar-popover toolbar-popover--filters" aria-label="Фильтры отображения">
-                  <div className="filter-row">
-                    <button type="button" className={displayMode === "clean" ? "active" : ""} onClick={() => setDisplayMode("clean")}>Чисто</button>
-                    <button type="button" className={displayMode === "workload" ? "active" : ""} onClick={() => setDisplayMode("workload")}>Нагрузка</button>
-                    <button type="button" className={displayMode === "rewards" ? "active" : ""} onClick={() => setDisplayMode("rewards")}>Итог</button>
-                    <button type="button" className={displayMode === "full" ? "active" : ""} onClick={() => setDisplayMode("full")}>Всё</button>
-                  </div>
-                </div>
+            {loading ? <Loader /> : <ErrorLine error={error} />}
+            {!loading && selectedQuest && questSteps.length === 0 && !stepsLoading ? <EmptyState title="У выбранного квеста нет шагов" /> : null}
+
+            <div className="calendar-grid compact-calendar pretty-calendar refined-calendar quest-calendar-grid smaller-calendar-grid">
+              {weekdayHeader.map((name, index) => <div className="weekday" key={`${name}-${index}`}>{name}</div>)}
+              {cells.map((day) => {
+                const questStats = selectedQuest ? (stepStatsByDate[day.date] ?? { total: 0, completed: 0, skipped: 0, pending: 0 }) : { total: 0, completed: 0, skipped: 0, pending: 0 };
+                const hasQuestSteps = Boolean(selectedQuest && questStats.total > 0);
+                const isNeedDay = Boolean(selectedQuest && pace.needDate === day.date && pace.needCount > 0);
+                const isPastDue = Boolean(selectedQuest && day.date < today && questStats.pending > 0);
+                const showPastCompleted = day.date < today && day.status === "CLOSED" && day.totalCount > 0;
+                return (
+                    <Link
+                        className={`calendar-cell status-${String(day.status).toLowerCase()} ${day.date === today ? "today" : ""} ${hasQuestSteps ? "has-quest-steps" : ""} ${isPastDue ? "quest-behind-day" : ""} ${isNeedDay ? `quest-need-day need-${pace.tone}` : ""}`}
+                        key={day.date}
+                        to={dayLink(day.date, today)}
+                    >
+                  <span className="calendar-top">
+                    <strong>{Number(day.date.slice(8, 10))}</strong>
+                    <small>{pastClosedStatus(day, today)}</small>
+                  </span>
+                      {showPastCompleted ? <span className="calendar-line completed-day-line">выполнено {day.completedCount}/{day.totalCount}</span> : null}
+                      {hasQuestSteps ? <span className="quest-step-line">{questDayLabel(questStats.total, questStats.completed, day.date, today)}</span> : null}
+                      {isNeedDay ? <span className={`need-badge need-${pace.tone}`}>надо {pace.needCount}</span> : null}
+                      {showWorkload && day.totalCount > 0 ? <CalendarWorkload day={day} today={today} /> : null}
+                      {showRewards && (day.xpEarned || day.hpDelta) ? <span className="reward-line"><span className="xp-token">XP {signed(day.xpEarned)}</span><span className="hp-token">HP {signed(day.hpDelta)}</span></span> : null}
+                    </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          <aside className="calendar-quest-sidebar">
+            <div className="calendar-sidebar-head">
+              <p className="eyebrow">маршрут</p>
+              <strong>{selectedQuest ? selectedQuest.title : "Выбери квест"}</strong>
+            </div>
+
+            {loading ? <Loader /> : null}
+            {quests.length === 0 && !loading ? (
+              <p className="muted calendar-sidebar-empty">Квестов пока нет. Создай квест — и здесь появится маршрут.</p>
             ) : null}
 
-            {showQuestRoute ? (
-                <div className="calendar-route-panel combined-route-panel calendar-route-dock toolbar-popover toolbar-popover--route">
-                  <div className="calendar-route-topline">
-                    <span className="route-panel-label muted">Квест:</span>
-                    {selectedQuest ? (
-                        <div className="calendar-stats-row quest-calendar-stats compact-stats-row">
-                          <span>{monthCompleted}/{monthSteps.length} в месяце</span>
-                          <span>{monthPending} в плане</span>
-                          {monthSkipped ? <span>{monthSkipped} пропущено</span> : null}
-                        </div>
-                    ) : (
-                        <span className="muted">выбери квест, чтобы увидеть маршрут</span>
-                    )}
-                  </div>
+            <div className="calendar-route-quest-list sidebar-quest-list">
+              {quests.map((quest) => (
+                <button type="button" key={quest.id} className={`sidebar-quest-btn ${selectedQuestId === quest.id ? "active" : ""}`} onClick={() => chooseQuest(quest.id)}>
+                  <strong>{quest.title}</strong>
+                  <span>{quest.totalSteps} {shortStepWord(quest.totalSteps)} · до {quest.targetDate ?? "цели"}</span>
+                </button>
+              ))}
+            </div>
 
-                  <div className="calendar-route-body route-picker-only">
-                    <div className="calendar-route-picker-block">
-                      <span className="route-block-title">Выбор квеста</span>
-                      <div className="calendar-route-quest-list">
-                        {quests.map((quest) => (
-                            <button type="button" key={quest.id} className={selectedQuestId === quest.id ? "active" : ""} onClick={() => chooseQuest(quest.id)}>
-                              <strong>{quest.title}</strong>
-                            </button>
-                        ))}
-                        {quests.length === 0 ? <p className="muted">Квестов пока нет.</p> : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={`quest-pace-strip compact-pace-strip pace-${selectedQuest ? pace.tone : "idle"}`}>
-                    <div className="pace-status">
-                      <span>Темп</span>
-                      <strong>{selectedQuest ? (pace.behind > 0 ? `отставание: ${pace.behind} ${shortStepWord(pace.behind)}` : pace.ahead > 0 ? `опережение: ${pace.ahead} ${shortStepWord(pace.ahead)}` : "по плану") : "выбери квест"}</strong>
-                    </div>
-                    <div>
-                      <span>Пройдено</span>
-                      <strong>{selectedQuest ? `${completedTotal}/${selectedQuest.totalSteps}` : "—"}</strong>
-                    </div>
-                    <div>
-                      <span>Следующий шаг</span>
-                      <strong>{selectedQuest ? (nextPending ? `#${nextPending.stepNumber} · ${nextPending.scheduledDate}` : "финиш") : "—"}</strong>
-                    </div>
-                    <div>
-                      <span>До цели</span>
-                      <strong>{selectedQuest ? (daysLeft === null ? "—" : daysLeft >= 0 ? `${daysLeft} дн.` : `+${Math.abs(daysLeft)} дн.`) : "—"}</strong>
-                    </div>
-                  </div>
+            {selectedQuest ? (
+              <div className={`quest-sidebar-pace pace-${pace.tone}`}>
+                {stepsLoading ? <Loader label="Загружаем шаги" /> : null}
+                <ErrorLine error={stepsError} />
+                <div className="sidebar-pace-row">
+                  <span>Темп</span>
+                  <strong className="pace-value">{pace.behind > 0 ? `−${pace.behind} ${shortStepWord(pace.behind)}` : pace.ahead > 0 ? `+${pace.ahead} ${shortStepWord(pace.ahead)}` : "по плану"}</strong>
                 </div>
+                <div className="sidebar-pace-row">
+                  <span>Месяц</span>
+                  <strong>{monthCompleted}/{monthSteps.length}</strong>
+                </div>
+                <div className="sidebar-pace-row">
+                  <span>В плане</span>
+                  <strong>{monthPending}</strong>
+                </div>
+                <div className="sidebar-pace-row">
+                  <span>Следующий шаг</span>
+                  <strong>{nextPending ? `#${nextPending.stepNumber} · ${nextPending.scheduledDate}` : "финиш"}</strong>
+                </div>
+                <div className="sidebar-pace-row">
+                  <span>До цели</span>
+                  <strong>{daysLeft === null ? "—" : daysLeft >= 0 ? `${daysLeft} дн.` : `+${Math.abs(daysLeft)} дн.`}</strong>
+                </div>
+                <div className="sidebar-pace-row">
+                  <span>Всего выполнено</span>
+                  <strong>{completedTotal} / {selectedQuest.totalSteps}</strong>
+                </div>
+                <div className="sidebar-progress-bar">
+                  <div className="meter"><span style={{ width: `${Math.round((completedTotal / selectedQuest.totalSteps) * 100)}%` }} /></div>
+                </div>
+              </div>
             ) : null}
-          </div>
-
-          {loading ? <Loader /> : <ErrorLine error={error} />}
-          {stepsLoading ? <Loader label="Загружаем шаги квеста" /> : null}
-          <ErrorLine error={stepsError} />
-          {!loading && showQuestRoute && quests.length === 0 ? <EmptyState title="Квестов пока нет" text="Создай квест, и календарь покажет его маршрут." /> : null}
-          {!loading && showQuestRoute && selectedQuest && questSteps.length === 0 && !stepsLoading ? <EmptyState title="У выбранного квеста нет шагов" /> : null}
-
-          <div className="calendar-grid compact-calendar pretty-calendar refined-calendar quest-calendar-grid smaller-calendar-grid">
-            {weekdayHeader.map((name, index) => <div className="weekday" key={`${name}-${index}`}>{name}</div>)}
-            {cells.map((day) => {
-              const questStats = selectedQuest ? (stepStatsByDate[day.date] ?? { total: 0, completed: 0, skipped: 0, pending: 0 }) : { total: 0, completed: 0, skipped: 0, pending: 0 };
-              const hasQuestSteps = Boolean(showQuestRoute && selectedQuest && questStats.total > 0);
-              const isNeedDay = Boolean(showQuestRoute && selectedQuest && pace.needDate === day.date && pace.needCount > 0);
-              const isPastDue = Boolean(showQuestRoute && selectedQuest && day.date < today && questStats.pending > 0);
-              const showPastCompleted = day.date < today && day.status === "CLOSED" && day.totalCount > 0;
-              return (
-                  <Link
-                      className={`calendar-cell status-${String(day.status).toLowerCase()} ${day.date === today ? "today" : ""} ${hasQuestSteps ? "has-quest-steps" : ""} ${isPastDue ? "quest-behind-day" : ""} ${isNeedDay ? `quest-need-day need-${pace.tone}` : ""}`}
-                      key={day.date}
-                      to={dayLink(day.date, today)}
-                  >
-                <span className="calendar-top">
-                  <strong>{Number(day.date.slice(8, 10))}</strong>
-                  <small>{pastClosedStatus(day, today)}</small>
-                </span>
-                    {showPastCompleted ? <span className="calendar-line completed-day-line">выполнено {day.completedCount}/{day.totalCount}</span> : null}
-                    {hasQuestSteps ? <span className="quest-step-line">{questDayLabel(questStats.total, questStats.completed, day.date, today)}</span> : null}
-                    {isNeedDay ? <span className={`need-badge need-${pace.tone}`}>надо {pace.needCount}</span> : null}
-                    {showWorkload && day.totalCount > 0 ? <CalendarWorkload day={day} /> : null}
-                    {showRewards && (day.xpEarned || day.hpDelta) ? <span className="reward-line"><span className="xp-token">XP {signed(day.xpEarned)}</span><span className="hp-token">HP {signed(day.hpDelta)}</span></span> : null}
-                  </Link>
-              );
-            })}
-          </div>
-        </section>
+          </aside>
+        </div>
       </section>
   );
 }

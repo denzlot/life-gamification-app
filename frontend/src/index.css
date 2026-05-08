@@ -915,8 +915,22 @@ strong { font-weight: 600; }
 .create-drawer-form { display: grid; grid-column: 1 / -1; border: 1px solid var(--border-soft); background: color-mix(in srgb, var(--surface), #000 8%); }
 .form-eyebrow { grid-column: 1 / -1; margin: 0; }
 .habit-designer-panel .weekday-picker,
-.create-drawer-form .weekday-picker { justify-content: flex-start; }
-.create-drawer-form .weekday-picker button { min-height: 34px; }
+.create-drawer-form .weekday-picker {
+  justify-content: flex-start;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  grid-template-columns: none !important;
+  width: 100%;
+  gap: 0.35rem !important;
+}
+.create-drawer-form .weekday-picker button {
+  min-height: 1.85rem !important;
+  padding: 0.22rem 0.72rem !important;
+  font-size: 0.78rem !important;
+  border-radius: 999px !important;
+  min-width: auto !important;
+  width: auto !important;
+}
 @media (max-width: 980px) {
   .today-grid,
   .quest-flow-toolbar,
@@ -1866,8 +1880,6 @@ body { background: linear-gradient(135deg, color-mix(in srgb, var(--bg), var(--a
 .drawer-panel,
 .task-drawer,
 .day-note-editor { animation: v21-slideDown 180ms ease-out !important; }
-.modal-form-card { animation: v21-popIn 240ms cubic-bezier(0.22, 1, 0.36, 1) !important; }
-.modal-backdrop.form-modal-backdrop { animation: v21-fadeIn 160ms ease !important; }
 .top-nav a { transition: color 120ms ease, background 120ms ease, border-color 120ms ease, transform 100ms ease !important; }
 .top-nav a:hover { transform: translateY(-1px) !important; }
 .top-nav a:active { transform: translateY(0) !important; }
@@ -1991,13 +2003,27 @@ body { background: linear-gradient(135deg, color-mix(in srgb, var(--bg), var(--a
 .create-action-hint { color: var(--muted); font-size: 0.78rem; line-height: 1.35; }
 .btn.toolbar-active,
 .btn.focus-task-button:not(:disabled):hover { border-color: color-mix(in srgb, var(--accent), transparent 35%) !important; background: color-mix(in srgb, var(--accent), transparent 87%) !important; color: var(--text) !important; }
-.draggable-plan-item { grid-template-columns: auto auto auto minmax(0, 1fr) !important; transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1), background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, opacity 120ms ease !important; will-change: transform; }
+.draggable-plan-item {
+  grid-template-columns: auto auto auto minmax(0, 1fr) !important;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease, background 160ms ease, border-color 160ms ease, opacity 140ms ease !important;
+  will-change: transform, box-shadow;
+}
 .drag-handle { width: 1.25rem; height: 1.85rem; display: inline-grid; place-items: center; align-self: center; color: color-mix(in srgb, var(--muted), transparent 10%); cursor: grab; user-select: none; border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1; transition: color 120ms ease, background 120ms ease, transform 120ms ease; }
 .drag-handle:hover { color: var(--text); background: color-mix(in srgb, var(--accent), transparent 88%); transform: translateY(-1px); }
 .drag-handle[draggable="false"] { cursor: not-allowed; opacity: 0.38; }
-.draggable-plan-item.dragging { opacity: 0.64; transform: scale(0.988); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 48%); }
+.draggable-plan-item.dragging {
+  position: relative;
+  z-index: 20;
+  opacity: 0.96;
+  transform: scale(1.026) rotate(-0.25deg) translateY(-3px);
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.32),
+    0 8px 20px rgba(0,0,0,0.18),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 22%);
+  border-color: color-mix(in srgb, var(--accent), transparent 24%) !important;
+  background: color-mix(in srgb, var(--surface-2), var(--accent) 7%) !important;
+}
 .draggable-plan-item.focus-pulse { animation: v22-focusPulse 1.15s ease-in-out 2 both !important; }
-.modal-form-card { position: relative; z-index: 1; }
 button,
 .btn,
 .filter-row button,
@@ -2012,136 +2038,102 @@ button,
   .draggable-plan-item { grid-template-columns: auto auto auto minmax(0, 1fr) !important; }
 }
 
-/* Maintained layout fixes: creation dialogs, two-column plan lists, wheels, timer, drag, and centered header. */
-.top-bar.centered-top-bar,
-.top-bar {
-  position: sticky;
-  top: 0;
-  min-height: 72px;
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(520px, 760px) minmax(180px, 1fr);
-  align-items: center;
-  padding: 0 clamp(1rem, 3vw, 2rem);
-  overflow: visible;
-  z-index: 80;
+/* Active frontend maintenance layer: modal portal, calendar overlays, timer, workload, and reordering. */
+:root {
+  --modal-width: 740px;
+  --modal-radius: 20px;
 }
-.brand { justify-self: start; }
-.top-menu { justify-self: end; margin-left: 0; position: relative; z-index: 20; }
-.top-nav.balanced-nav {
-  position: static;
-  transform: none;
-  width: 100%;
-  max-width: 760px;
-  justify-self: center;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.45rem;
-  z-index: 10;
-}
-.top-nav .nav-side { display: flex; gap: 0.35rem; min-width: 0; }
-.top-nav .nav-side-left { justify-content: flex-end; }
-.top-nav .nav-side-right { justify-content: flex-start; }
-.top-nav a {
-  position: relative !important;
-  min-height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  padding: 0.56rem 0.86rem !important;
-  border: 1px solid transparent !important;
-  border-radius: 13px !important;
-  background: transparent;
-  color: var(--muted);
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.018);
-}
-.top-nav a:hover {
-  color: var(--text) !important;
-  background: color-mix(in srgb, var(--surface-2), var(--text) 4%) !important;
-  border-color: color-mix(in srgb, var(--border), var(--accent) 18%) !important;
-}
-.top-nav a.active,
-.top-nav .today-nav-link.active {
-  color: var(--text) !important;
-  background: color-mix(in srgb, var(--accent), transparent 88%) !important;
-  border-color: color-mix(in srgb, var(--accent), transparent 42%) !important;
-}
-.top-nav .today-nav-link {
-  min-width: 110px;
-  background: color-mix(in srgb, var(--surface-2), var(--text) 3%);
-  border-color: color-mix(in srgb, var(--border), transparent 22%) !important;
-}
-.center-add-panel,
-.create-drawer-section.entity-form-panel,
-.create-drawer-section {
-  max-width: 760px;
-  margin: 0 0 0.95rem !important;
-  padding: 0.55rem 0 0.8rem !important;
-  border-top: 0 !important;
-  border-bottom: 0 !important;
-  text-align: left !important;
-  justify-self: start;
-}
-.center-add-actions {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  flex-wrap: wrap;
-  gap: 0.75rem !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  text-align: left !important;
-}
-.create-action-hint { max-width: 32rem; text-align: left; }
-.center-add-panel .center-add-actions .btn,
-.create-drawer-section .center-add-actions .btn { min-width: 0; }
-.modal-backdrop.form-modal-backdrop,
+
 .form-modal-backdrop {
-  position: static !important;
-  inset: auto !important;
-  z-index: auto !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
   display: block !important;
-  width: 100% !important;
-  height: auto !important;
-  min-height: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
   padding: 0 !important;
-  margin: 0.82rem 0 0 !important;
-  overflow: visible !important;
-  background: transparent !important;
-  backdrop-filter: none !important;
-  box-shadow: none !important;
-  animation: none !important;
-}
-.form-modal-backdrop::before { content: none !important; display: none !important; }
-.modal-form-card,
-.form-modal-backdrop .task-drawer,
-.form-modal-backdrop .create-drawer-form,
-.form-modal-backdrop .quest-form,
-.form-modal-backdrop .unified-form {
-  position: relative;
-  z-index: 1;
-  width: min(700px, 100%) !important;
-  max-width: 100% !important;
-  max-height: none !important;
-  overflow: visible !important;
   margin: 0 !important;
+  overflow: auto !important;
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--accent), transparent 88%), transparent 24rem),
+    color-mix(in srgb, var(--bg), transparent 10%) !important;
+  backdrop-filter: blur(18px) saturate(1.08) !important;
+  animation: fv-modal-backdrop-in 160ms ease-out both !important;
+}
+
+.form-modal-positioner {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 3vw, 2.25rem);
+}
+
+.form-modal-shell {
+  width: min(820px, calc(100vw - 2rem));
+  display: grid;
+  justify-items: center;
+}
+
+.form-modal-backdrop .modal-form-card {
+  position: relative !important;
+  z-index: 1 !important;
+  width: min(var(--modal-width), 100%) !important;
+  max-width: min(var(--modal-width), 100%) !important;
+  max-height: min(86vh, 840px) !important;
+  overflow: auto !important;
+  margin: 0 !important;
+  padding: clamp(1rem, 2.2vw, 1.35rem) !important;
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   align-items: start !important;
-  gap: 0.85rem 1rem !important;
-  border-radius: 18px !important;
-  box-shadow: 0 18px 60px color-mix(in srgb, var(--shadow), #000 12%) !important;
+  gap: 0.9rem 1rem !important;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 24%) !important;
+  border-radius: var(--modal-radius) !important;
+  background:
+    radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--accent), transparent 86%), transparent 16rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 4%), color-mix(in srgb, var(--surface), var(--bg) 10%)) !important;
+  box-shadow: 0 28px 90px color-mix(in srgb, var(--shadow), #000 26%), inset 0 1px 0 color-mix(in srgb, var(--text), transparent 92%) !important;
+  animation: fv-modal-card-in 220ms cubic-bezier(0.18, 0.9, 0.2, 1.08) both !important;
 }
-.form-modal-backdrop .quest-form { width: min(760px, 100%) !important; }
+
+.form-modal-backdrop .quest-form { --modal-width: 820px; }
 .form-modal-backdrop .modal-form-head,
 .form-modal-backdrop .optional-toolbar,
 .form-modal-backdrop .form-actions,
 .form-modal-backdrop .error-line,
 .form-modal-backdrop .weekday-picker,
-.form-modal-backdrop .field:has(.textarea) { grid-column: 1 / -1 !important; }
+.form-modal-backdrop .mini-form-grid,
+.form-modal-backdrop .field:has(.textarea) {
+  grid-column: 1 / -1 !important;
+}
+
+.form-modal-backdrop .modal-form-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  padding-bottom: 0.15rem !important;
+}
+
+.form-modal-backdrop .modal-form-head strong { font-size: 1.08rem; }
+.form-modal-backdrop .dialog-close {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border), var(--text) 6%);
+  background: color-mix(in srgb, var(--surface-2), transparent 8%);
+  color: var(--muted);
+}
+
+.form-modal-backdrop .dialog-close:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent), transparent 38%);
+}
+
+.form-modal-backdrop .optional-toolbar,
 .form-modal-backdrop .form-actions { justify-content: flex-start !important; }
+.form-modal-backdrop .form-actions .btn { min-width: 7rem; }
 .form-modal-backdrop .wheel-field { position: relative !important; width: 100%; overflow: visible !important; }
 .form-modal-backdrop .wheel-popover {
   position: static !important;
@@ -2149,101 +2141,160 @@ button,
   width: 100% !important;
   max-width: none !important;
   margin-top: 0.5rem !important;
-  box-shadow: none !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border), transparent 20%) !important;
 }
 .form-modal-backdrop .wheel-columns { max-height: none !important; }
 .form-modal-backdrop .wheel-column { height: 140px !important; }
 .form-modal-backdrop .time-wheel .wheel-columns.two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 .form-modal-backdrop .date-wheel .wheel-columns.three-columns { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-.grouped-plan-list { display: grid; gap: 0.9rem; }
-.grouped-plan-list .plan-source-group { min-width: 0; }
-.grouped-plan-list .line-list.todo-list.clean-list { display: grid; gap: 0; }
-@media (min-width: 1020px) {
-  .grouped-plan-list.two-column-enabled .line-list.todo-list.clean-list {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 0 1.2rem !important;
-  }
-  .grouped-plan-list.two-column-enabled .line-item.plan-item { min-width: 0; }
-}
-@media (max-width: 1019px) {
-  .grouped-plan-list.two-column-enabled .line-list.todo-list.clean-list { grid-template-columns: 1fr !important; }
-}
-.drag-handle {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  width: 1.35rem;
-  height: 1.85rem;
-  display: inline-grid;
-  place-items: center;
-  align-self: center;
-  color: color-mix(in srgb, var(--muted), transparent 8%);
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-  border-radius: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  line-height: 1;
-  transition: color 120ms ease, background 120ms ease, transform 120ms ease;
-}
-.drag-handle:hover:not(:disabled),
-.drag-handle:focus-visible:not(:disabled) { color: var(--text); background: color-mix(in srgb, var(--accent), transparent 88%); outline: none; transform: translateY(-1px); }
-.drag-handle:disabled { cursor: not-allowed; opacity: 0.38; }
-.draggable-plan-item { transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1), background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, opacity 120ms ease !important; }
-.draggable-plan-item.dragging { opacity: 0.72; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 48%); }
-.avatar-focus-timer {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.6rem 0.75rem;
-  align-items: center;
-  padding: 0.75rem;
-  border: 1px solid var(--border-soft);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface), var(--bg) 8%);
-}
-.timer-ring {
-  --timer-progress: 0%;
-  width: 3.05rem;
-  height: 3.05rem;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: conic-gradient(var(--accent) var(--timer-progress), color-mix(in srgb, var(--border), transparent 15%) 0), color-mix(in srgb, var(--surface-2), var(--text) 4%);
-}
-.timer-ring span { width: calc(100% - 0.46rem); height: calc(100% - 0.46rem); display: grid; place-items: center; border-radius: inherit; background: var(--surface); color: var(--text); font-family: var(--font-mono); font-size: 0.72rem; }
-.timer-copy { display: grid; gap: 0.05rem; min-width: 0; }
-.timer-copy small { color: var(--muted); }
-.timer-actions { grid-column: 1 / -1; display: flex; gap: 0.45rem; flex-wrap: wrap; }
-.timer-actions .btn { min-width: 4.6rem; }
-.timer-actions .timer-reset-button { min-height: 32px; }
-.calendar-route-schedule-block,
-.route-step-preview-list { display: none !important; }
-.calendar-route-body.route-picker-only { grid-template-columns: 1fr !important; }
-.calendar-route-quest-list button.active { color: var(--text) !important; }
-@media (max-width: 900px) {
-  .top-bar.centered-top-bar,
-  .top-bar {
-    height: auto;
-    min-height: 72px;
-    grid-template-columns: 1fr auto;
-    grid-template-areas: "brand menu" "nav nav";
-    row-gap: 0.55rem;
-    padding-top: 0.7rem;
-    padding-bottom: 0.7rem;
-  }
-  .brand { grid-area: brand; }
-  .top-menu { grid-area: menu; justify-self: end; }
-  .top-nav.balanced-nav { grid-area: nav; max-width: none; }
-  .modal-form-card,
-  .form-modal-backdrop .task-drawer,
-  .form-modal-backdrop .create-drawer-form,
-  .form-modal-backdrop .quest-form,
-  .form-modal-backdrop .unified-form { grid-template-columns: 1fr !important; }
+.form-modal-backdrop .mini-form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.85rem 1rem !important;
 }
 
-/* Hard reset for removed legacy CSS-column hacks: the two-row toggle uses grid now. */
+.calendar-header-actions,
+.calendar-route-control,
+.calendar-toolbar-stack,
+.calendar-filter-control {
+  overflow: visible !important;
+}
+
+.calendar-route-control,
+.calendar-filter-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.calendar-toolbar-stack {
+  position: relative;
+  min-height: 2.2rem !important;
+  margin-bottom: 0.6rem !important;
+}
+
+.calendar-filter-popover.toolbar-popover {
+  position: absolute !important;
+  top: 0 !important;
+  left: calc(100% + 0.55rem) !important;
+  width: min(25rem, calc(100vw - 3rem)) !important;
+  max-width: min(25rem, calc(100vw - 3rem)) !important;
+  padding: 0.72rem !important;
+  z-index: 75 !important;
+  transform-origin: left top !important;
+  animation: fv-slide-right-pop 170ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+.calendar-filter-popover .filter-row {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0.35rem !important;
+}
+.calendar-filter-popover .filter-row button { min-width: 0 !important; padding-inline: 0.54rem !important; }
+
+.calendar-route-picker-popover.toolbar-popover--route {
+  position: absolute !important;
+  top: calc(100% + 0.5rem) !important;
+  right: 0 !important;
+  left: auto !important;
+  width: min(22rem, calc(100vw - 2rem)) !important;
+  max-width: min(22rem, calc(100vw - 2rem)) !important;
+  max-height: min(62vh, 31rem) !important;
+  overflow: auto !important;
+  padding: 0.8rem !important;
+  z-index: 90 !important;
+  border-radius: 18px !important;
+  transform-origin: top right !important;
+}
+
+.calendar-route-picker-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-soft), transparent 22%);
+}
+.calendar-route-picker-head > div { display: grid; gap: 0.12rem; min-width: 0; }
+.calendar-route-picker-head strong { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compact-route-quest-list { display: grid !important; gap: 0.42rem !important; margin-top: 0.65rem !important; }
+.compact-route-quest-list button {
+  width: 100% !important;
+  min-height: 3.1rem !important;
+  display: grid !important;
+  gap: 0.12rem !important;
+  padding: 0.58rem 0.68rem !important;
+  text-align: left !important;
+}
+.compact-route-quest-list span { color: var(--muted); font-size: 0.68rem; }
+.calendar-pace-summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.42rem 0.5rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-2), transparent 18%);
+}
+.calendar-pace-summary span { color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.calendar-pace-summary strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 0.78rem; }
+.calendar-pace-summary.pace-behind .pace-status strong { color: var(--danger); }
+.calendar-pace-summary.pace-ahead .pace-status strong { color: var(--good); }
+
+.workload-chip.done,
+.workload-chip.done i { color: var(--good) !important; }
+.workload-chip.pending,
+.workload-chip.pending i {
+  color: var(--danger) !important;
+}
+.workload-chip.total.future,
+.workload-chip.total.future i {
+  color: var(--info) !important;
+}
+.workload-chip.total.planned,
+.workload-chip.total.planned i {
+  color: var(--accent) !important;
+}
+.workload-chip.pending {
+  border-color: color-mix(in srgb, var(--danger), transparent 36%) !important;
+  background: color-mix(in srgb, var(--danger), transparent 90%) !important;
+}
+.workload-chip.total.future {
+  border-color: color-mix(in srgb, var(--info), transparent 36%) !important;
+  background: color-mix(in srgb, var(--info), transparent 90%) !important;
+}
+.workload-chip.total.planned {
+  border-color: color-mix(in srgb, var(--accent), transparent 42%) !important;
+  background: color-mix(in srgb, var(--accent), transparent 92%) !important;
+}
+
+.calendar-cell .reward-line {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.16rem !important;
+  width: 100% !important;
+  margin-top: auto !important;
+}
+.calendar-cell .xp-token,
+.calendar-cell .hp-token {
+  display: inline-flex !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  padding: 0.12rem 0.24rem !important;
+  border-radius: 999px !important;
+  border: 1px solid color-mix(in srgb, var(--border), var(--text) 6%) !important;
+  background: color-mix(in srgb, var(--surface-2), transparent 18%) !important;
+  font-size: 0.56rem !important;
+  line-height: 1.05 !important;
+  white-space: nowrap !important;
+}
+.quest-calendar-grid .calendar-cell,
+.smaller-calendar-grid .calendar-cell {
+  height: auto !important;
+  min-height: 5.55rem !important;
+  overflow: hidden !important;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto !important;
+}
+
 .grouped-plan-list,
 .grouped-plan-list .plan-source-group,
 .grouped-plan-list .line-list.todo-list.clean-list {
@@ -2253,10 +2304,768 @@ button,
   -webkit-column-break-inside: auto !important;
   page-break-inside: auto !important;
 }
+.grouped-plan-list { display: grid; gap: 0.9rem; }
+.grouped-plan-list.two-column-enabled .line-list.todo-list.clean-list {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+}
+.plan-source-body { display: grid; gap: 0; min-width: 0; }
+.plan-column-list { min-width: 0; }
+.plan-column-list > .line-item:first-child,
+.plan-source-body.two-plan-columns .plan-column-list:nth-child(2) > .line-item:first-child { border-top: 0 !important; }
 @media (min-width: 1020px) {
-  .grouped-plan-list.two-column-enabled .line-list.todo-list.clean-list {
-    display: grid !important;
+  .plan-source-body.two-plan-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 0 1.2rem !important;
+    gap: 0 1.15rem !important;
+    align-items: start !important;
+  }
+  .details-list.two-column-enabled .line-list.todo-list.clean-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0 1.15rem !important;
+  }
+}
+
+.drag-handle {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  width: 1.35rem;
+  height: 1.9rem;
+  display: inline-grid;
+  place-items: center;
+  align-self: center;
+  color: color-mix(in srgb, var(--muted), transparent 8%);
+  cursor: grab;
+  user-select: none;
+  touch-action: none !important;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+.drag-handle:hover:not(:disabled),
+.drag-handle:focus-visible:not(:disabled) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent), transparent 88%);
+  outline: none;
+  transform: translateY(-1px);
+}
+.drag-handle:active { cursor: grabbing; }
+.drag-handle:disabled { cursor: not-allowed; opacity: 0.38; }
+.draggable-plan-item {
+  grid-template-columns: auto auto auto minmax(0, 1fr) !important;
+  transition: transform 240ms cubic-bezier(0.18, 0.9, 0.2, 1), background 160ms ease, border-color 160ms ease, box-shadow 180ms ease, opacity 140ms ease !important;
+  will-change: transform;
+}
+.draggable-plan-item.dragging {
+  position: relative;
+  z-index: 20;
+  opacity: 0.96;
+  transform: scale(1.026) rotate(-0.25deg) translateY(-3px);
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.32),
+    0 8px 20px rgba(0,0,0,0.18),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 22%);
+  border-color: color-mix(in srgb, var(--accent), transparent 24%) !important;
+  background: color-mix(in srgb, var(--surface-2), var(--accent) 7%) !important;
+}
+.grouped-plan-list.is-reordering .draggable-plan-item:not(.dragging) {
+  transition-duration: 300ms !important;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+.draggable-plan-item.focus-pulse { animation: v22-focusPulse 1.15s ease-in-out 2 both !important; }
+
+
+
+
+
+
+
+@keyframes fv-modal-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fv-modal-card-in { from { opacity: 0; transform: translateY(18px) scale(0.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes fv-slide-right-pop { from { opacity: 0; transform: translateX(-8px) scale(0.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes v22-focusPulse { 0%, 100% { box-shadow: inset 0 0 0 1px transparent, 0 0 0 rgba(0,0,0,0); } 45% { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 30%), 0 0 0 6px color-mix(in srgb, var(--accent), transparent 84%); } }
+
+@media (max-width: 900px) {
+  .form-modal-backdrop .modal-form-card,
+  .form-modal-backdrop .mini-form-grid { grid-template-columns: 1fr !important; }
+  
+}
+
+@media (max-width: 720px) {
+  .calendar-filter-popover.toolbar-popover {
+    top: calc(100% + 0.45rem) !important;
+    left: 0 !important;
+    width: min(25rem, calc(100vw - 2rem)) !important;
+  }
+  .calendar-route-picker-popover.toolbar-popover--route {
+    right: auto !important;
+    left: 0 !important;
+    width: min(22rem, calc(100vw - 2rem)) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .form-modal-positioner { padding: 0.75rem; place-items: end center; }
+  .form-modal-shell { width: 100%; }
+  .form-modal-backdrop .modal-form-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    border-radius: 22px 22px 0 0 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form-modal-backdrop,
+  .form-modal-backdrop .modal-form-card,
+  .toolbar-popover,
+  .draggable-plan-item,
+  .calendar-cell,
+  .btn {
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* Final UI repair layer: navigation, creation panels, timer, modal wheels, and pointer-tolerant drag. */
+.top-bar.centered-top-bar,
+.top-bar {
+  position: sticky !important;
+  top: 0 !important;
+  min-height: 76px !important;
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1fr) minmax(520px, 720px) minmax(220px, 1fr) !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  padding: 0 clamp(1.1rem, 3vw, 2.4rem) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--border), transparent 14%) !important;
+  background: color-mix(in srgb, var(--bg), transparent 4%) !important;
+  backdrop-filter: blur(16px) saturate(1.04);
+  overflow: visible !important;
+  z-index: 90 !important;
+}
+
+.brand {
+  grid-column: 1 !important;
+  justify-self: start !important;
+  gap: 0.7rem !important;
+}
+
+.top-nav.balanced-nav {
+  grid-column: 2 !important;
+  justify-self: center !important;
+  width: 100% !important;
+  max-width: 720px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  padding: 0.18rem !important;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 25%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface), transparent 20%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text), transparent 94%);
+  overflow: visible !important;
+}
+
+.top-nav .nav-side {
+  display: flex !important;
+  gap: 0.28rem !important;
+  min-width: 0 !important;
+}
+
+.top-nav .nav-side-left { justify-content: flex-end !important; }
+.top-nav .nav-side-right { justify-content: flex-start !important; }
+
+.top-nav a {
+  min-width: 0 !important;
+  min-height: 36px !important;
+  padding: 0.48rem 0.82rem !important;
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease, transform 120ms ease, box-shadow 140ms ease !important;
+}
+
+.top-nav a::before,
+.top-nav a::after {
+  content: none !important;
+  display: none !important;
+}
+
+.top-nav a:hover {
+  color: var(--text) !important;
+  background: color-mix(in srgb, var(--surface-2), var(--text) 4%) !important;
+  border-color: color-mix(in srgb, var(--border), var(--accent) 16%) !important;
+  transform: translateY(-1px) !important;
+}
+
+.top-nav a.active {
+  color: var(--text) !important;
+  background: color-mix(in srgb, var(--accent), transparent 86%) !important;
+  border-color: color-mix(in srgb, var(--accent), transparent 38%) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text), transparent 90%) !important;
+}
+
+.top-nav .today-nav-link {
+  min-width: 96px !important;
+  justify-content: center !important;
+  color: var(--text) !important;
+  background: color-mix(in srgb, var(--surface-2), var(--text) 3%) !important;
+  border-color: color-mix(in srgb, var(--border), transparent 20%) !important;
+}
+
+.top-menu {
+  grid-column: 3 !important;
+  justify-self: end !important;
+  position: relative !important;
+  z-index: 25 !important;
+}
+
+.top-menu .btn,
+.top-menu .btn-ghost {
+  min-height: 40px !important;
+  padding: 0.5rem 0.95rem !important;
+  border-radius: 14px !important;
+  background: color-mix(in srgb, var(--surface-2), transparent 10%) !important;
+  border-color: color-mix(in srgb, var(--border), var(--accent) 10%) !important;
+  color: var(--text) !important;
+  box-shadow: 0 8px 26px color-mix(in srgb, var(--shadow), transparent 70%) !important;
+}
+
+.drawer-menu {
+  right: 0 !important;
+  left: auto !important;
+  top: calc(100% + 0.65rem) !important;
+}
+
+.create-drawer-section,
+.create-drawer-section.entity-form-panel,
+.center-add-panel {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 0 1rem !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  justify-self: stretch !important;
+}
+
+.center-add-actions {
+  justify-content: flex-start !important;
+  justify-items: start !important;
+  text-align: left !important;
+  margin: 0 !important;
+}
+
+.center-add-actions .btn,
+.create-drawer-section .center-add-actions .btn {
+  min-width: 0 !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.form-modal-backdrop .modal-form-card {
+  overflow: visible !important;
+}
+
+.form-modal-backdrop .wheel-field {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.form-modal-backdrop .wheel-popover {
+  position: absolute !important;
+  top: calc(100% + 0.5rem) !important;
+  left: 0 !important;
+  right: auto !important;
+  z-index: 1200 !important;
+  width: min(420px, calc(100vw - 3rem)) !important;
+  max-width: min(420px, calc(100vw - 3rem)) !important;
+  max-height: min(58vh, 440px) !important;
+  overflow: auto !important;
+  margin: 0 !important;
+  padding: 0.85rem !important;
+  border-radius: 16px !important;
+  box-shadow: 0 22px 70px color-mix(in srgb, var(--shadow), #000 18%) !important;
+  animation: fv-modal-wheel-pop 160ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+.form-modal-backdrop .date-wheel.wheel-popover {
+  width: min(540px, calc(100vw - 3rem)) !important;
+  max-width: min(540px, calc(100vw - 3rem)) !important;
+}
+
+.form-modal-backdrop .number-wheel.wheel-popover {
+  width: min(320px, calc(100vw - 3rem)) !important;
+  max-width: min(320px, calc(100vw - 3rem)) !important;
+}
+
+.form-modal-backdrop .wheel-columns {
+  max-height: 15rem !important;
+}
+
+.form-modal-backdrop .wheel-column {
+  height: 12rem !important;
+}
+
+.drag-handle {
+  cursor: grab !important;
+}
+
+.draggable-plan-item {
+  border-radius: 12px;
+  transition:
+    transform 280ms cubic-bezier(0.18, 0.9, 0.2, 1),
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 200ms ease,
+    opacity 140ms ease !important;
+}
+
+.draggable-plan-item.dragging {
+  position: relative;
+  z-index: 20;
+  opacity: 0.96;
+  transform: scale(1.026) rotate(-0.25deg) translateY(-3px);
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.32),
+    0 8px 20px rgba(0,0,0,0.18),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 22%);
+  border-color: color-mix(in srgb, var(--accent), transparent 24%) !important;
+  background: color-mix(in srgb, var(--surface-2), var(--accent) 7%) !important;
+}
+
+.grouped-plan-list.is-reordering .draggable-plan-item:not(.dragging) {
+  transition-duration: 300ms !important;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+@keyframes fv-modal-wheel-pop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 980px) {
+  .top-bar.centered-top-bar,
+  .top-bar {
+    grid-template-columns: 1fr auto !important;
+    grid-template-areas: "brand menu" "nav nav" !important;
+    min-height: 72px !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  .brand { grid-area: brand !important; }
+  .top-menu { grid-area: menu !important; }
+  .top-nav.balanced-nav {
+    grid-area: nav !important;
+    grid-template-columns: 1fr !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    max-width: none !important;
+    overflow-x: auto !important;
+  }
+}
+
+
+/* ================================================================
+   CLEAN SYSTEM: Timer · Drag · Weekday · Calendar sidebar
+   (Single authoritative source - no overrides above)
+   ================================================================ */
+
+/* === FOCUS TIMER: SVG ring === */
+.avatar-focus-timer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  gap: 0.65rem 1rem;
+  align-items: center;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 10%);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent), transparent 88%), transparent 9rem),
+    color-mix(in srgb, var(--surface), var(--bg) 6%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text), transparent 95%);
+}
+
+.timer-ring-svg-wrap {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
+  flex-shrink: 0;
+  grid-row: 1 / 3;
+}
+
+.timer-ring-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+.timer-ring-bg {
+  fill: none;
+  stroke: color-mix(in srgb, var(--border), var(--surface) 30%);
+  stroke-width: 5.5;
+}
+
+.timer-ring-track {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent), transparent 55%));
+}
+
+.timer-running .timer-ring-track {
+  stroke: color-mix(in srgb, var(--accent-2), var(--accent) 40%);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent-2), transparent 45%));
+}
+
+.timer-done .timer-ring-track {
+  stroke: var(--good);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--good), transparent 42%));
+}
+
+@keyframes timer-done-pulse {
+  0%   { r: 38; opacity: 0.8; stroke-width: 3; }
+  100% { r: 47; opacity: 0;   stroke-width: 1; }
+}
+
+.timer-ring-done-pulse {
+  fill: none;
+  stroke: var(--good);
+  stroke-width: 3;
+  opacity: 0;
+  animation: timer-done-pulse 1.1s ease-out 3;
+}
+
+.timer-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  pointer-events: none;
+}
+
+.timer-done .timer-ring-label { color: var(--good); }
+
+.timer-copy {
+  display: grid;
+  gap: 0.06rem;
+  min-width: 0;
+  align-self: center;
+}
+
+.timer-copy strong { color: var(--text); font-size: 0.95rem; }
+.timer-copy small  { color: var(--muted); font-size: 0.78rem; transition: color 300ms ease; }
+.timer-done-text   { color: var(--good) !important; }
+
+.timer-presets {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.timer-preset-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.28rem 0.64rem;
+  font-size: 0.76rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.timer-preset-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent), transparent 40%);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent), transparent 88%);
+}
+
+.timer-preset-btn.active {
+  border-color: color-mix(in srgb, var(--accent), transparent 28%);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent), transparent 80%);
+}
+
+.timer-preset-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.timer-custom-input {
+  appearance: none;
+  width: 3.2rem;
+  min-height: 1.85rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface), transparent 5%);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 120ms ease;
+}
+
+.timer-custom-input:focus   { border-color: color-mix(in srgb, var(--accent), transparent 28%); }
+.timer-custom-input:disabled { opacity: 0.4; }
+
+.timer-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.timer-actions .btn { width: 100%; min-width: 0; }
+
+/* === DRAG: lifted card with FLIP animation === */
+.draggable-plan-item {
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    opacity 150ms ease;
+  will-change: transform, box-shadow;
+}
+
+.draggable-plan-item.dragging {
+  position: relative;
+  z-index: 20;
+  opacity: 0.96;
+  transform: scale(1.028) rotate(-0.28deg) translateY(-4px);
+  box-shadow:
+    0 24px 64px rgba(0,0,0,0.35),
+    0 8px 24px rgba(0,0,0,0.22),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 20%);
+  border-color: color-mix(in srgb, var(--accent), transparent 22%) !important;
+  background: color-mix(in srgb, var(--surface-2), var(--accent) 8%) !important;
+}
+
+.grouped-plan-list.is-reordering .draggable-plan-item:not(.dragging) {
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* === WEEKDAY PICKER: compact pills in modal === */
+.form-modal-backdrop .weekday-picker,
+.modal-form-card .weekday-picker {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.32rem !important;
+  grid-template-columns: none !important;
+  width: auto !important;
+  max-width: 100% !important;
+  justify-content: flex-start !important;
+  padding: 0.1rem 0 !important;
+}
+
+.form-modal-backdrop .weekday-picker button,
+.modal-form-card .weekday-picker button {
+  min-height: 1.85rem !important;
+  height: auto !important;
+  padding: 0.22rem 0.78rem !important;
+  font-size: 0.78rem !important;
+  border-radius: 999px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+}
+
+/* === CALENDAR: persistent sidebar layout === */
+.calendar-body-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 1.2rem;
+  align-items: start;
+  margin-top: 0.5rem;
+}
+
+.calendar-quest-sidebar {
+  position: sticky;
+  top: 88px;
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--surface), var(--bg) 4%);
+  animation: v21-fadeIn 280ms ease-out both;
+}
+
+.calendar-sidebar-head {
+  display: grid;
+  gap: 0.08rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.calendar-sidebar-head .eyebrow {
+  font-size: 0.66rem;
+  margin-bottom: 0;
+  letter-spacing: 0.1em;
+}
+
+.calendar-sidebar-head strong {
+  color: var(--text);
+  font-size: 0.94rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-sidebar-empty {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.sidebar-quest-list {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.sidebar-quest-btn {
+  display: grid;
+  gap: 0.1rem;
+  text-align: left;
+  padding: 0.58rem 0.75rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 130ms ease, background 130ms ease;
+}
+
+.sidebar-quest-btn strong {
+  color: var(--text);
+  font-size: 0.84rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.sidebar-quest-btn span {
+  font-size: 0.7rem;
+  color: var(--muted-2);
+}
+
+.sidebar-quest-btn:hover {
+  border-color: color-mix(in srgb, var(--accent), transparent 40%);
+  background: color-mix(in srgb, var(--accent), transparent 91%);
+}
+
+.sidebar-quest-btn.active {
+  border-color: color-mix(in srgb, var(--accent), transparent 22%);
+  background: color-mix(in srgb, var(--accent), transparent 84%);
+}
+
+.quest-sidebar-pace {
+  display: grid;
+  gap: 0.38rem;
+  padding: 0.7rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-2), transparent 25%);
+  animation: v21-fadeIn 240ms ease-out both;
+}
+
+.sidebar-pace-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.sidebar-pace-row span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+.sidebar-pace-row strong {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.quest-sidebar-pace.pace-behind .sidebar-pace-row:first-child strong { color: var(--danger); }
+.quest-sidebar-pace.pace-ahead  .sidebar-pace-row:first-child strong { color: var(--good); }
+.quest-sidebar-pace.pace-even   .sidebar-pace-row:first-child strong { color: var(--accent-2); }
+
+.sidebar-progress-bar .meter { height: 3px; margin-top: 0.15rem; }
+
+/* Dark filter/route popups */
+.toolbar-popover,
+.filter-panel.drawer-panel {
+  background: color-mix(in srgb, var(--bg), var(--surface) 20%) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.55) !important;
+}
+
+/* Responsive */
+@media (max-width: 1080px) {
+  .calendar-body-layout {
+    grid-template-columns: 1fr;
+  }
+  .calendar-quest-sidebar {
+    position: static;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+  .calendar-sidebar-head {
+    grid-column: 1 / -1;
+  }
+  .quest-sidebar-pace {
+    grid-column: 1 / -1;
   }
 }
