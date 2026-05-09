@@ -1,0 +1,27 @@
+/* Shared button styles will be extracted here gradually. */
+
+/* Buttons rules migrated from legacy.css. */
+.btn { border: 1px solid transparent; color: var(--text); background: var(--surface-2); display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; }
+.btn:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent), transparent 45%); }
+.btn-primary { background: color-mix(in srgb, var(--accent), transparent 18%); border-color: color-mix(in srgb, var(--accent), transparent 22%); color: white; }
+.btn-ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+.btn-ghost:hover:not(:disabled) { color: var(--text); background: rgba(255, 255, 255, 0.025); }
+.btn-danger { background: color-mix(in srgb, var(--danger), transparent 88%); border-color: color-mix(in srgb, var(--danger), transparent 45%); color: #ffd8d8; }
+.btn-success { background: color-mix(in srgb, var(--good), transparent 88%); border-color: color-mix(in srgb, var(--good), transparent 45%); color: #d9ffe7; }
+.btn-thin { background: transparent; border-color: var(--border); color: var(--muted); }
+
+.btn { letter-spacing: 0; }
+
+.btn { min-height: 37px; padding: 0.43rem 0.74rem; border-radius: 10px; font-size: 0.96rem; font-weight: 600; }
+.btn-thin { min-height: 32px; padding: 0.34rem 0.58rem; font-size: 0.86rem; border-radius: 9px; }
+@media (max-width: 720px) {
+.btn { min-height: 35px; padding: 0.38rem 0.62rem; }
+}
+.btn { transition: transform 110ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 140ms ease, background 140ms ease, color 140ms ease, box-shadow 140ms ease !important; }
+.btn:hover:not(:disabled) { transform: translateY(-2px) !important; box-shadow: 0 5px 18px color-mix(in srgb, #000, transparent 62%) !important; }
+.btn:active:not(:disabled) { transform: translateY(0) scale(0.97) !important; box-shadow: none !important; transition-duration: 55ms !important; }
+.btn-primary:hover:not(:disabled) { box-shadow: 0 5px 20px color-mix(in srgb, var(--accent), transparent 60%) !important; }
+.btn-success:hover:not(:disabled) { box-shadow: 0 5px 18px color-mix(in srgb, var(--good), transparent 68%) !important; }
+.btn-danger:hover:not(:disabled) { box-shadow: 0 5px 18px color-mix(in srgb, var(--danger), transparent 68%) !important; }
+.btn.toolbar-active,
+.btn.focus-task-button:not(:disabled):hover { border-color: color-mix(in srgb, var(--accent), transparent 35%) !important; background: color-mix(in srgb, var(--accent), transparent 87%) !important; color: var(--text) !important; }

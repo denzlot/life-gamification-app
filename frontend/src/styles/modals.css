@@ -1,0 +1,222 @@
+/* Modal, modal wheel, and compact modal weekday overrides migrated from legacy.css.
+   These keep the existing !important guards until each modal is visually verified. */
+
+/* Active frontend maintenance layer: modal portal, calendar overlays, timer, and workload. */
+
+.form-modal-backdrop { position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
+  display: block !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: auto !important;
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--accent), transparent 88%), transparent 24rem),
+    color-mix(in srgb, var(--bg), transparent 10%) !important;
+  backdrop-filter: blur(18px) saturate(1.08) !important;
+  animation: fv-modal-backdrop-in 160ms ease-out both !important; }
+/* Top-aligned so modal height changes (reveal sections) don’t re-center the card and cause vertical jitter. */
+.form-modal-positioner { min-height: 100%;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: clamp(1.25rem, 4vh, 2.75rem) clamp(1rem, 3vw, 2.25rem); }
+.form-modal-shell { width: min(820px, calc(100vw - 2rem));
+  display: grid;
+  justify-items: center;
+  align-self: start; }
+.form-modal-backdrop .modal-form-card { position: relative !important; z-index: 1 !important; width: min(var(--modal-width), 100%) !important; max-width: min(var(--modal-width), 100%) !important; max-height: min(86vh, 840px) !important; margin: 0 !important; padding: clamp(1rem, 2.2vw, 1.35rem) !important; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; align-items: start !important; gap: 0.9rem 1rem !important; border: 1px solid color-mix(in srgb, var(--border), var(--accent) 24%) !important; border-radius: var(--modal-radius) !important; background: radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--accent), transparent 86%), transparent 16rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 4%), color-mix(in srgb, var(--surface), var(--bg) 10%)) !important; box-shadow: 0 28px 90px color-mix(in srgb, var(--shadow), #000 26%), inset 0 1px 0 color-mix(in srgb, var(--text), transparent 92%) !important; animation: fv-modal-card-in 220ms cubic-bezier(0.18, 0.9, 0.2, 1.08) both !important; }
+
+.form-modal-backdrop .modal-form-head,
+.form-modal-backdrop .optional-toolbar,
+.form-modal-backdrop .form-actions,
+.form-modal-backdrop .error-line,
+.form-modal-backdrop .weekday-picker,
+.form-modal-backdrop .mini-form-grid,
+.form-modal-backdrop .field:has(.textarea) { grid-column: 1 / -1 !important; }
+.form-modal-backdrop .optional-toolbar { margin-bottom: 0.4rem !important; }
+.form-modal-backdrop .form-actions { margin-top: 0.55rem !important; }
+
+/* Time + deadline: flex slots animate width (max-width) in sync with option-reveal height — avoid width:0, it kills the grid 0fr→1fr transition. */
+.form-modal-backdrop .modal-twin-row {
+  grid-column: 1 / -1 !important;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.85rem 1rem;
+}
+/* Collapsed row: cancel one parent row-gap so toolbar ↔ next block spacing matches a single gap (matches modal-form-card row gap). */
+.form-modal-backdrop .modal-twin-row--empty {
+  gap: 0;
+  margin-bottom: -0.9rem;
+}
+.form-modal-backdrop .modal-twin-row > .option-reveal {
+  box-sizing: border-box;
+  min-width: 0;
+  transition:
+    flex-grow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    flex-shrink 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    flex-basis 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    max-width 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.form-modal-backdrop .modal-twin-row > .option-reveal:not(.is-open) {
+  flex-grow: 0;
+  flex-shrink: 1;
+  flex-basis: 0;
+  max-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.form-modal-backdrop .modal-twin-row--pair > .option-reveal.is-open {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: calc(50% - 0.5rem);
+  max-width: calc(50% - 0.5rem);
+}
+.form-modal-backdrop .modal-twin-row--time-only > .option-reveal.is-open,
+.form-modal-backdrop .modal-twin-row--deadline-only > .option-reveal.is-open {
+  flex-grow: 0;
+  flex-shrink: 1;
+  flex-basis: calc(50% - 0.5rem);
+  max-width: calc(50% - 0.5rem);
+}
+.form-modal-backdrop .modal-form-head { display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  padding-bottom: 0.15rem !important; }
+.form-modal-backdrop .modal-form-head strong { font-size: 1.08rem; }
+.form-modal-backdrop .dialog-close { flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border), var(--text) 6%);
+  background: color-mix(in srgb, var(--surface-2), transparent 8%);
+  color: var(--muted); }
+.form-modal-backdrop .dialog-close:hover { color: var(--text);
+  border-color: color-mix(in srgb, var(--accent), transparent 38%); }
+
+.form-modal-backdrop .wheel-field { width: 100%; }
+.form-modal-backdrop .wheel-popover { inset: auto !important; margin-top: 0.5rem !important; }
+
+.form-modal-backdrop .time-wheel .wheel-columns.two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.form-modal-backdrop .date-wheel .wheel-columns.three-columns { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+.form-modal-backdrop .mini-form-grid { display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.85rem 1rem !important; }
+
+.compact-route-quest-list { display: grid !important; gap: 0.42rem !important; margin-top: 0.65rem !important; }
+.compact-route-quest-list button { width: 100% !important;
+  min-height: 3.1rem !important;
+  display: grid !important;
+  gap: 0.12rem !important;
+  padding: 0.58rem 0.68rem !important;
+  text-align: left !important; }
+.compact-route-quest-list span { color: var(--muted); font-size: 0.68rem; }
+
+@keyframes fv-modal-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fv-modal-card-in { from { opacity: 0; transform: translateY(18px) scale(0.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes fv-slide-right-pop { from { opacity: 0; transform: translateX(-8px) scale(0.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes v22-focusPulse { 0%, 100% { box-shadow: inset 0 0 0 1px transparent, 0 0 0 rgba(0,0,0,0); } 45% { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 30%), 0 0 0 6px color-mix(in srgb, var(--accent), transparent 84%); } }
+@media (max-width: 900px) {
+.form-modal-backdrop .modal-form-card,
+.form-modal-backdrop .mini-form-grid { grid-template-columns: 1fr !important; }
+.form-modal-backdrop .modal-twin-row--pair > .option-reveal.is-open,
+.form-modal-backdrop .modal-twin-row--time-only > .option-reveal.is-open,
+.form-modal-backdrop .modal-twin-row--deadline-only > .option-reveal.is-open {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 100%;
+  max-width: 100%;
+}
+}
+
+@media (max-width: 620px) {
+.form-modal-positioner { padding: 0.75rem; place-items: end center; }
+.form-modal-shell { width: 100%; }
+.form-modal-backdrop .modal-form-card { width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    border-radius: 22px 22px 0 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+.form-modal-backdrop,
+.form-modal-backdrop .modal-form-card,
+.toolbar-popover,
+.calendar-cell,
+.btn { animation: none !important;
+    transition-duration: 1ms !important; }
+.form-modal-backdrop .modal-twin-row > .option-reveal {
+  transition: none;
+}
+}
+/* Final UI repair layer: navigation, creation panels, timer, and modal wheels. */
+
+.create-drawer-section,
+.create-drawer-section.entity-form-panel,
+.center-add-panel { width: 100% !important;
+  max-width: none !important;
+  margin: 0 0 1rem !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  justify-self: stretch !important; }
+.center-add-actions { justify-content: flex-start !important;
+  justify-items: start !important;
+  text-align: left !important;
+  margin: 0 !important; }
+.center-add-actions .btn,
+.create-drawer-section .center-add-actions .btn { min-width: 0 !important; }
+.form-modal-backdrop .modal-form-card { overflow: visible !important; }
+.form-modal-backdrop .wheel-field { position: relative !important;
+  overflow: visible !important; }
+.form-modal-backdrop .wheel-popover { position: absolute !important;
+  top: calc(100% + 0.5rem) !important;
+  left: 0 !important;
+  right: auto !important;
+  z-index: 1200 !important;
+  width: min(420px, calc(100vw - 3rem)) !important;
+  max-width: min(420px, calc(100vw - 3rem)) !important;
+  max-height: min(58vh, 440px) !important;
+  overflow: auto !important;
+  margin: 0 !important;
+  padding: 0.85rem !important;
+  border-radius: 16px !important;
+  box-shadow: 0 22px 70px color-mix(in srgb, var(--shadow), #000 18%) !important;
+  animation: fv-modal-wheel-pop 160ms cubic-bezier(0.22, 1, 0.36, 1) both !important; }
+.form-modal-backdrop .date-wheel.wheel-popover { width: min(540px, calc(100vw - 3rem)) !important;
+  max-width: min(540px, calc(100vw - 3rem)) !important; }
+.form-modal-backdrop .number-wheel.wheel-popover { width: min(320px, calc(100vw - 3rem)) !important;
+  max-width: min(320px, calc(100vw - 3rem)) !important; }
+.form-modal-backdrop .wheel-columns { max-height: 15rem !important; }
+.form-modal-backdrop .wheel-column { height: 12rem !important; }
+@keyframes fv-modal-wheel-pop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* === WEEKDAY PICKER: compact pills in modal === */
+.form-modal-backdrop .weekday-picker,
+.modal-form-card .weekday-picker { display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.32rem !important;
+  grid-template-columns: none !important;
+  width: auto !important;
+  max-width: 100% !important;
+  justify-content: flex-start !important;
+  padding: 0.1rem 0 !important; }
+.form-modal-backdrop .weekday-picker button,
+.modal-form-card .weekday-picker button { min-height: 1.85rem !important;
+  height: auto !important;
+  padding: 0.22rem 0.78rem !important;
+  font-size: 0.78rem !important;
+  border-radius: 999px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  flex: 0 0 auto !important; }
+
+/* Modal head alignment migrated from legacy.css. */
+.modal-form-head { justify-content: space-between; }
+.modal-form-head strong { color: var(--text); }

@@ -4,6 +4,7 @@ import type { AchievementResponse } from "../api/types";
 import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { CharacterChooser } from "../components/CharacterChooser";
+import { RevealSection } from "../components/RevealSection";
 import { EmptyState } from "../components/EmptyState";
 import { GameHud } from "../components/GameHud";
 import { ErrorLine, Loader } from "../components/Loader";
@@ -89,7 +90,7 @@ export function ProfilePage() {
           </div>
         </div>
 
-        {showChooser ? (
+        <RevealSection open={showChooser} className="option-reveal--wide profile-embed-chooser">
           <CharacterChooser
             embedded
             title="Выбери другого персонажа"
@@ -98,7 +99,7 @@ export function ProfilePage() {
             onPreview={setPreviewCharacterId}
             onConfirm={confirmCharacter}
           />
-        ) : null}
+        </RevealSection>
       </section>
 
       <section className="section-line clean-section profile-achievements-panel">

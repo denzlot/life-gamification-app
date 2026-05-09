@@ -1,0 +1,132 @@
+/* Shared create/open panels migrated from legacy.css.
+   These classes are used by Today, DayDetails and Habits, so they stay outside page files. */
+
+.center-add-panel { max-width: 760px; margin: 0 auto 0.95rem; padding: 0.4rem 0 0.85rem !important; border-top: 0 !important; border-bottom: 0 !important; text-align: center; }
+.center-add-panel::after { display: none !important; }
+.center-add-actions .btn { min-width: 164px; }
+.center-add-panel .center-add-actions .btn,
+.create-drawer-section .center-add-actions .btn { color: var(--text); background: color-mix(in srgb, var(--surface-2), var(--text) 7%); border-color: color-mix(in srgb, var(--border), var(--text) 7%); }
+.center-add-panel .center-add-actions .btn:hover:not(:disabled),
+.create-drawer-section .center-add-actions .btn:hover:not(:disabled) { background: color-mix(in srgb, var(--surface-2), var(--text) 12%); }
+
+.centered-task-form,
+.create-drawer-form { margin: 0.82rem auto 0; max-width: 760px; text-align: left; }
+
+.create-drawer-section { margin-left: auto; margin-right: auto; padding-top: 0.45rem !important; }
+
+.form-eyebrow { grid-column: 1 / -1; margin: 0; }
+.habit-designer-panel .weekday-picker,
+.create-drawer-form .weekday-picker { justify-content: flex-start;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  grid-template-columns: none !important;
+  width: 100%;
+  gap: 0.35rem !important; }
+.create-drawer-form .weekday-picker button { min-height: 1.85rem !important;
+  padding: 0.22rem 0.72rem !important;
+  font-size: 0.78rem !important;
+  border-radius: 999px !important;
+  min-width: auto !important;
+  width: auto !important; }
+
+.center-add-panel .center-add-actions .btn,
+.create-drawer-section .center-add-actions .btn,
+.compact-create-form .form-actions .btn,
+.create-drawer-form .form-actions .btn,
+.task-drawer .form-actions .btn,
+.drawer-panel .form-actions .btn { color: var(--text) !important; background: color-mix(in srgb, var(--surface-2), var(--text) 7%) !important; border-color: color-mix(in srgb, var(--border), var(--text) 7%) !important; box-shadow: none !important; }
+.center-add-panel .center-add-actions .btn:hover:not(:disabled),
+.create-drawer-section .center-add-actions .btn:hover:not(:disabled),
+.compact-create-form .form-actions .btn:hover:not(:disabled),
+.create-drawer-form .form-actions .btn:hover:not(:disabled),
+.task-drawer .form-actions .btn:hover:not(:disabled),
+.drawer-panel .form-actions .btn:hover:not(:disabled) { background: color-mix(in srgb, var(--surface-2), var(--text) 12%) !important; }
+
+.center-open-day-panel,
+.start-day-line { max-width: 680px; margin-left: auto; margin-right: auto; text-align: center; display: grid; justify-items: center; gap: 0.75rem; }
+
+.create-drawer-section { max-width: 760px; margin: 0 auto 0.95rem !important; padding: 0.4rem 0 0.85rem !important; border-top: 0 !important; border-bottom: 0 !important; text-align: center; }
+.create-drawer-section::after { display: none !important; }
+
+.form-grid.unified-form > .field,
+.form-grid.task-form > .field,
+.form-grid.quest-form > .field,
+.form-grid.compact-create-form > .field,
+.create-drawer-form .weekday-picker,
+.create-drawer-form .optional-toolbar,
+.task-drawer .optional-toolbar { margin: 0; }
+.form-grid.unified-form,
+.form-grid.task-form,
+.form-grid.quest-form,
+.form-grid.compact-create-form { gap: 0.9rem 1rem !important; }
+
+.center-open-day-panel { border-top: 0 !important; padding-top: 0.2rem !important; }
+
+.center-add-actions,
+.center-add-panel,
+.center-open-day-panel,
+.start-day-line { text-align: left !important; justify-content: flex-start !important; justify-items: start !important; }
+
+.create-drawer-section.entity-form-panel { display: grid !important; gap: 0 !important; }
+.center-add-actions { display: flex !important; align-items: center !important; margin: 0 !important; }
+
+.create-drawer-section.entity-form-panel,
+.create-drawer-section { padding: 0.72rem 0.9rem !important; min-height: 0 !important; border-style: dashed !important; }
+.center-add-actions { justify-content: flex-start !important; padding: 0 !important; gap: 0.8rem !important; flex-wrap: wrap; }
+.create-action-hint { color: var(--muted); font-size: 0.78rem; line-height: 1.35; }
+
+/* Shared create form layout migrated from legacy.css. */
+.entity-form-panel,
+.task-create-panel,
+.plan-section,
+.calendar-panel { text-align: left; }
+.entity-form-panel > .eyebrow,
+.task-create-panel .section-title-row,
+.plan-title-row { text-align: left; }
+.form-grid.unified-form,
+.form-grid.task-form,
+.form-grid.quest-form,
+.form-grid.compact-create-form { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.form-grid.unified-form > .field:first-child,
+.task-drawer > .field:first-child,
+.quest-form > .field:first-child { grid-column: 1 / -1; max-width: none; margin: 0; }
+
+/* Shared create form responsive layout migrated from legacy.css. */
+@media (max-width: 720px) {
+.form-grid.unified-form,
+.form-grid.task-form,
+.form-grid.quest-form,
+.form-grid.compact-create-form { grid-template-columns: 1fr; }
+}
+
+/* Compact create form gap migrated from legacy.css. */
+.compact-create-form { gap: 0.85rem; }
+
+/* Centered create form layout migrated from legacy.css. */
+.center-add-panel { border-bottom-color: var(--border); }
+.centered-task-form,
+.quest-boost-panel { text-align: left; margin: 0.8rem auto 0; max-width: 720px; }
+.task-form { grid-template-columns: minmax(0, 1fr) auto; }
+
+/* Center add panel spacing migrated from legacy.css. */
+.center-add-panel { margin-bottom: 0.9rem; }
+
+/* Open-day panel centering migrated from legacy.css. */
+.start-day-line.center-open-day-panel,
+.center-open-day-panel { text-align: center !important; justify-items: center !important; justify-content: center !important; }
+
+/* Entity form grid defaults migrated from legacy.css. */
+.unified-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.entity-form-panel { border-color: color-mix(in srgb, var(--accent), transparent 72%); }
+
+/* Quick add and start-day line migrated from legacy.css. */
+.quick-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.85rem; align-items: center; margin: 1rem 0; }
+.start-day-line { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.35rem; }
+
+/* Create panel responsive width migrated from legacy.css. */
+@media (max-width: 980px) {
+.today-grid,
+.quest-flow-toolbar,
+.quest-pace-strip { grid-template-columns: 1fr; }
+.center-add-panel { max-width: none; }
+}

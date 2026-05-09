@@ -1,0 +1,16 @@
+/* Toast notification styles migrated from legacy.css. */
+.toast-stack { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 100; display: grid; gap: 0.75rem; width: min(360px, calc(100vw - 2.4rem)); }
+
+.toast { padding: 1rem; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface), #000 18%); box-shadow: 0 16px 50px var(--shadow); border-radius: 18px; }
+
+.toast-success { border-color: color-mix(in srgb, var(--good), transparent 45%); }
+
+.toast-danger { border-color: color-mix(in srgb, var(--danger), transparent 45%); }
+
+.toast-info { border-color: color-mix(in srgb, var(--info), transparent 45%); }
+
+.toast-title { font-weight: 700; }
+
+.toast-text { color: var(--muted); margin-top: 0.25rem; }
+
+.toast-container > * { animation: v21-slideDown 220ms cubic-bezier(0.22, 1, 0.36, 1) both !important; }

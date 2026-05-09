@@ -1,0 +1,16 @@
+/* habits page styles will be moved here during staged cleanup. */
+
+/* Habits controls extracted from legacy.css. */
+.status-active strong { color: color-mix(in srgb, var(--good), var(--text) 45%); }
+.status-paused { opacity: 0.72; }
+.weekday-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.45rem; padding: 0.25rem 0 0.15rem; }
+.weekday-picker button { min-height: 2.55rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255, 255, 255, 0.018); color: var(--muted); transition: border-color 140ms ease, color 140ms ease, background 140ms ease; }
+.weekday-picker button:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent), transparent 45%); }
+.weekday-picker button.active { color: var(--text); background: color-mix(in srgb, var(--accent), transparent 84%); border-color: color-mix(in srgb, var(--accent), transparent 38%); }
+.habit-designer-panel .field:first-child { max-width: 720px; margin: 0 auto; width: 100%; }
+.habit-designer-panel .weekday-picker { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(7, minmax(2.45rem, 1fr)); gap: 0.5rem; justify-content: stretch; width: 100%; max-width: 720px; margin: 0; padding: 0.15rem 0; }
+.weekday-picker button { min-width: 0; width: 100%; white-space: nowrap; }
+@media (max-width: 720px) {
+  .habit-designer-panel .weekday-picker { grid-template-columns: repeat(7, minmax(2rem, 1fr)); gap: 0.35rem; }
+  .weekday-picker button { min-height: 2.25rem; padding: 0.2rem; font-size: 0.82rem; }
+}

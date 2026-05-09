@@ -1,0 +1,14 @@
+/* Admin page user rows and stat editing controls. */
+
+.admin-list { display: grid; gap: 1.15rem; }
+.admin-row { display: grid; gap: 0.9rem; padding: 1rem 0; border-top: 1px solid var(--border-soft); }
+.admin-row:first-child { border-top: 0; }
+.admin-user-head { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; }
+.admin-user-head span { font-family: var(--font-mono); color: var(--muted); }
+.admin-user-head small { color: var(--muted); }
+.admin-controls { display: grid; grid-template-columns: minmax(160px, 240px) auto; gap: 1rem; align-items: end; }
+.stat-inputs { grid-template-columns: repeat(3, minmax(120px, 1fr)) auto; }
+@media (max-width: 820px) {
+.admin-controls,
+.stat-inputs { grid-template-columns: 1fr; }
+}

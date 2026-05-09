@@ -1,0 +1,82 @@
+/* Shared button/chip active and touch-state rules migrated from legacy.css. */
+
+.option-chip.active,
+.optional-toolbar .option-chip.active,
+.filter-row button.active,
+.calendar-left-tools button.active,
+.calendar-inline-filter-panel .filter-row button.active { color: var(--text) !important; background: color-mix(in srgb, var(--accent), transparent 82%) !important; border-color: color-mix(in srgb, var(--accent), transparent 35%) !important; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 65%) !important; }
+:root[data-theme="light"] .option-chip.active,
+:root[data-theme="light"] .optional-toolbar .option-chip.active,
+:root[data-theme="light"] .filter-row button.active,
+:root[data-theme="light"] .calendar-left-tools button.active,
+:root[data-theme="light"] .calendar-inline-filter-panel .filter-row button.active { color: #17202a !important; background: #dbe7f1 !important; border-color: #8fa8bf !important; }
+:root[data-theme="vampire"] .option-chip.active,
+:root[data-theme="vampire"] .optional-toolbar .option-chip.active,
+:root[data-theme="vampire"] .filter-row button.active,
+:root[data-theme="vampire"] .calendar-left-tools button.active,
+:root[data-theme="vampire"] .calendar-inline-filter-panel .filter-row button.active { color: #fff3ef !important; background: rgba(183, 52, 70, 0.26) !important; border-color: rgba(239, 83, 101, 0.58) !important; }
+:root[data-theme="rpg"] .option-chip.active,
+:root[data-theme="rpg"] .optional-toolbar .option-chip.active,
+:root[data-theme="rpg"] .filter-row button.active,
+:root[data-theme="rpg"] .calendar-left-tools button.active,
+:root[data-theme="rpg"] .calendar-inline-filter-panel .filter-row button.active { color: #fff7e5 !important; background: rgba(212, 173, 88, 0.22) !important; border-color: rgba(212, 173, 88, 0.56) !important; }
+
+button,
+.btn,
+.filter-row button,
+.option-chip { -webkit-tap-highlight-color: transparent; }
+
+/* Filter and avatar picker base states migrated from legacy.css. */
+.filter-row button,
+.avatar-picker button { border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--muted); padding: 0.48rem 0.75rem; transition: border-color 140ms ease, background 140ms ease, color 140ms ease; }
+.filter-row button:hover,
+.avatar-picker button:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent), transparent 50%); }
+.filter-row button.active,
+.avatar-picker button.active { color: var(--text); background: color-mix(in srgb, var(--accent), transparent 87%); border-color: color-mix(in srgb, var(--accent), transparent 35%); }
+
+/* Shared active and hover accent states migrated from legacy.css. */
+.top-nav a.active,
+.option-chip.active,
+.weekday-picker button.active { background: color-mix(in srgb, var(--accent), transparent 84%); border-color: color-mix(in srgb, var(--accent), transparent 38%); }
+
+.top-nav a:hover,
+.option-chip:hover,
+.weekday-picker button:hover,
+.pretty-calendar .calendar-cell:hover { border-color: color-mix(in srgb, var(--accent), transparent 45%); }
+
+/* Compact control sizing migrated from legacy.css. */
+.option-chip,
+.filter-row button,
+.calendar-filter-row button,
+.weekday-picker button { min-height: 34px; padding: 0.42rem 0.66rem; border-radius: 9px; font-size: 0.84rem; }
+
+/* Dense control sizing migrated from legacy.css. */
+.day-switcher a,
+.day-switcher button,
+.filter-row button,
+.avatar-picker button,
+.option-chip,
+.calendar-filter-row button { min-height: 30px; padding: 0.36rem 0.6rem; font-size: 0.8rem; border-radius: 8px; }
+
+/* Final compact control sizing migrated from legacy.css. */
+.option-chip,
+.filter-row button,
+.calendar-filter-row button,
+.day-switcher a,
+.day-switcher button { min-height: 34px; padding: 0.37rem 0.62rem; font-size: 0.91rem; font-weight: 600; border-radius: 10px; }
+
+/* Control typography migrated from legacy.css. */
+.top-nav a,
+.btn,
+.option-chip,
+.calendar-filter-row button,
+.filter-row button { font-family: var(--font-text); }
+
+/* Inline control alignment migrated from legacy.css. */
+.top-nav a,
+.day-switcher a,
+.day-switcher button,
+.btn,
+.option-chip,
+.filter-row button,
+.calendar-filter-row button { display: inline-flex; align-items: center; justify-content: center; text-align: center; line-height: 1.15; }

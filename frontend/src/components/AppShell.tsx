@@ -61,7 +61,7 @@ export function AppShell() {
           <div className="nav-side nav-side-left">
             {leftNav.map((item) => <NavLink key={item.to} to={item.to}>{item.label}</NavLink>)}
           </div>
-          <NavLink to="/today" className="today-nav-link">Today</NavLink>
+          <NavLink to="/today" className="nav-pivot">Today</NavLink>
           <div className="nav-side nav-side-right">
             {rightNav.map((item) => <NavLink key={item.to} to={item.to}>{item.label}</NavLink>)}
           </div>

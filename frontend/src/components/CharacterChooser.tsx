@@ -42,7 +42,7 @@ export function CharacterChooser({
         </div>
       </div>
 
-      <div className="character-card-grid three-character-grid">
+      <div className="character-card-grid character-grid">
         {characterCatalog.map((character) => (
           <button
             type="button"
@@ -51,7 +51,7 @@ export function CharacterChooser({
             onClick={() => chooseCharacter(character.id)}
           >
             <div className="character-card-preview">
-              <img src={character.preview} alt={character.name} />
+              {character.preview ? <img src={character.preview} alt={character.name} /> : null}
             </div>
             <div className="character-card-body">
               <strong>{character.name}</strong>

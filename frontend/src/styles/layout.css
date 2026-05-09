@@ -1,0 +1,99 @@
+/* Shared layout primitives will be extracted here gradually. */
+
+/* Layout rules migrated from legacy.css. */
+.app-shell { min-height: 100vh; }
+.main-view { min-width: 0; padding: 2rem clamp(1rem, 4vw, 3.6rem) 4rem; }
+.page { max-width: 1180px; margin: 0 auto; }
+.narrow-page { max-width: 760px; }
+.compact-header { margin-bottom: 1.45rem; }
+.split-header,
+.section-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.2rem; }
+.small-title-row { align-items: center; }
+.stack { display: grid; gap: 1rem; }
+.section-line { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border-soft); }
+.inner-line { border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); padding: 1rem 0; }
+@media (max-width: 820px) {
+.main-view { padding: 1.4rem 1rem 3rem; }
+.split-header,
+.section-title-row { display: grid; }
+}
+.page.centered-page,
+.page { max-width: 1160px; margin-left: auto; margin-right: auto; }
+.narrow-page.centered-page { max-width: 900px; }
+.main-view { display: grid; justify-items: stretch; }
+.page-header { text-align: left; }
+.compact-header { max-width: 100%; }
+.clean-section { border-radius: 16px; padding: 1.25rem; background: rgba(255,255,255,0.012); }
+.clean-section + .clean-section,
+.clean-section + .section-line,
+.section-line + .clean-section { margin-top: 1.15rem; }
+.page { width: min(100%, 1180px); }
+.clean-section + .clean-section,
+.clean-section + .section-line,
+.section-line + .clean-section,
+.section-line + .section-line,
+.two-col + .section-line,
+.section-line + .two-col { margin-top: 1rem; }
+@media (max-width: 720px) {
+.main-view { padding-left: 1rem; padding-right: 1rem; }
+}
+.section-line + .section-line,
+.two-col + .section-line,
+.section-line + .two-col { margin-top: 1rem; }
+.page-header { margin-bottom: 1.35rem; }
+.section-line { padding: 1.05rem 0 !important; }
+.main-view { padding-top: clamp(0.9rem, 2vw, 1.4rem) !important; }
+.page,
+.page.centered-page,
+.narrow-page.centered-page { max-width: 1180px !important; }
+.page { animation: v21-pageIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Two-column layout migrated from legacy.css. */
+.two-col,
+.calendar-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.74fr); gap: 1.8rem; align-items: start; }
+
+/* Wide page max-width migrated from legacy.css. */
+.today-page,
+.calendar-page { max-width: 1240px; }
+
+/* Large-layout collapse migrated from legacy.css. */
+@media (max-width: 1100px) {
+
+.today-grid,
+.calendar-layout,
+.two-col,
+.quests-col { grid-template-columns: 1fr; }
+.today-side { position: static; }
+
+}
+
+/* Tablet single-column repair migrated from legacy.css. */
+@media (max-width: 820px) {
+
+.form-grid,
+.quest-form,
+.task-form,
+.unified-form,
+.character-panel,
+.filter-grid { grid-template-columns: 1fr; }
+}
+
+/* Small-layout collapse migrated from legacy.css. */
+@media (max-width: 620px) {
+
+.line-item,
+.mini-row { grid-template-columns: 1fr; }
+
+.quick-add,
+.task-form { grid-template-columns: 1fr; }
+
+}
+
+/* Line-section surface repair migrated from legacy.css. */
+.section-line,
+.clean-section,
+.entity-form-panel,
+.task-create-panel,
+.plan-section,
+.calendar-panel,
+.character-panel { background: transparent !important; box-shadow: none !important; border-radius: var(--line-radius) !important; border-left: 0 !important; border-right: 0 !important; border-top: 1px solid var(--border) !important; border-bottom: 1px solid var(--border-soft) !important; padding: 1rem 0 !important; }

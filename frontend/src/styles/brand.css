@@ -1,0 +1,13 @@
+/* Inline brand mark styles migrated from legacy.css. */
+.brand-mark-svg img { display: none !important; }
+
+.brand-logo-ground { fill: var(--brand-ground, #66706a); }
+
+.brand-logo-trail,
+.brand-logo-seed { stroke: var(--brand-trail, #aeb8af); stroke-width: 3.25; stroke-linecap: round; fill: none; }
+
+.brand-logo-seed { stroke: var(--brand-star, #d8c58e); stroke-width: 2.35; }
+
+.brand-logo-spark { fill: var(--brand-star, #d8c58e); stroke: color-mix(in srgb, var(--brand-star, #d8c58e), white 34%); stroke-width: 1.1; }
+
+.brand-logo-dot { fill: color-mix(in srgb, var(--brand-trail, #aeb8af), white 32%); }

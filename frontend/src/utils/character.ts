@@ -1,11 +1,15 @@
 import lolbotBase from "../assets/characters/mr-lolbot-base.png";
 import nosferatuPlaceholder from "../assets/characters/nosferatu-placeholder.png";
 import knightPlaceholder from "../assets/characters/knight-placeholder.png";
+import astronautAvatar from "../assets/characters/astronaut.png";
 import type { GameStats, HpState } from "../api/types";
 import { normalizeHpState } from "./hp";
 
-export type ThemeName = "dark" | "light" | "rpg" | "vampire";
-export type CharacterId = "lolbot" | "nosferatu" | "knight";
+export const themeNames = ["dark", "light", "rpg", "vampire", "cosmos"] as const;
+export type ThemeName = typeof themeNames[number];
+
+export const characterIds = ["lolbot", "nosferatu", "knight", "astronaut"] as const;
+export type CharacterId = typeof characterIds[number];
 
 export const THEME_STORAGE_KEY = "flowvisior-theme";
 export const CHARACTER_STORAGE_KEY = "flowvisior-character";
@@ -18,8 +22,8 @@ export interface CharacterDefinition {
   description: string;
   theme: ThemeName;
   accent: string;
-  preview: string;
-  avatarByState: Record<HpState, string>;
+  preview?: string;
+  avatarByState: Partial<Record<HpState, string>>;
   quotes: string[];
 }
 
@@ -31,6 +35,14 @@ function sameAvatarForAllStates(src: string): Record<HpState, string> {
     EXHAUSTED: src,
     CRITICAL: src
   };
+}
+
+function isThemeName(value: string | null): value is ThemeName {
+  return themeNames.includes(value as ThemeName);
+}
+
+function isCharacterId(value: string | null): value is CharacterId {
+  return characterIds.includes(value as CharacterId);
 }
 
 export const characterCatalog: CharacterDefinition[] = [
@@ -99,13 +111,35 @@ export const characterCatalog: CharacterDefinition[] = [
       "Если устал, опусти забрало и сделай один шаг.",
       "Королевство строится не речами, а закрытыми задачами."
     ]
+  },
+  {
+    id: "astronaut",
+    name: "Астронавт",
+    title: "орбитальная ветка",
+    description: "Спокойный исследователь дальних маршрутов. Держит курс, чинит систему на ходу и знает: даже космос проходится по чеклисту.",
+    theme: "cosmos",
+    accent: "#7ddcff",
+    preview: astronautAvatar,
+    avatarByState: sameAvatarForAllStates(astronautAvatar),
+    quotes: [
+      "Звёзды не спрашивают, готов ли ты. Они просто светят дальше.",
+      "Маленький шаг в списке задач иногда спасает целую миссию.",
+      "Космос огромен, но следующий манёвр всегда конкретен.",
+      "Если вокруг вакуум, проверь скафандр и продолжай работу.",
+      "Гравитация привычек сильнее вдохновения. К счастью, её можно рассчитать.",
+      "Паника — плохой навигатор. Чеклист — скучный, но живучий гений.",
+      "Самые далёкие орбиты начинаются с тихого запуска утром.",
+      "Когда Земля выглядит маленькой, задачи наконец становятся соразмерными.",
+      "Не обязательно лететь быстро. Важно не потерять траекторию.",
+      "Даже ракета не спорит с физикой. Она просто честно сжигает топливо."
+    ]
   }
 ];
 
 export function readTheme(): ThemeName {
   if (typeof window === "undefined") return "dark";
   const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return saved === "dark" || saved === "light" || saved === "rpg" || saved === "vampire" ? saved : "dark";
+  return isThemeName(saved) ? saved : "dark";
 }
 
 export function applyTheme(theme: ThemeName) {
@@ -124,7 +158,7 @@ export function previewTheme(theme: ThemeName) {
 export function readSelectedCharacter(): CharacterId | null {
   if (typeof window === "undefined") return null;
   const saved = window.localStorage.getItem(CHARACTER_STORAGE_KEY);
-  return saved === "lolbot" || saved === "nosferatu" || saved === "knight" ? saved : null;
+  return isCharacterId(saved) ? saved : null;
 }
 
 export function getCharacter(id?: CharacterId | null) {
@@ -143,7 +177,8 @@ export function saveSelectedCharacter(id: CharacterId) {
 }
 
 export function avatarSrcForState(characterId: CharacterId | null | undefined, state: HpState) {
-  return getCharacter(characterId).avatarByState[state] ?? lolbotBase;
+  const character = getCharacter(characterId);
+  return character.avatarByState[state] ?? character.preview ?? null;
 }
 
 export function hpStateTitle(state: HpState) {
@@ -165,7 +200,6 @@ export function resolveAvatar(characterId: CharacterId | null | undefined, stats
     src: avatarSrcForState(characterId, hpState)
   };
 }
-
 
 export function getDailyQuote(characterId: CharacterId | null | undefined, date = new Date()) {
   const character = getCharacter(characterId);

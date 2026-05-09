@@ -1,5 +1,4 @@
-import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "../api/http";
 import type {
   CreateTaskRequest,
@@ -8,18 +7,23 @@ import type {
   DailyPlanResponse,
   SourceType
 } from "../api/types";
-import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
-import { FormModal } from "../components/FormModal";
-import { DateWheelInput, Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
-import { GameHud } from "../components/GameHud";
+import { TodayHero } from "../components/today/TodayHero";
+import { TodayNoteEditor } from "../components/today/TodayNoteEditor";
+import { TodayPlanSummary } from "../components/today/TodayPlanSummary";
+import { TodaySidebar } from "../components/today/TodaySidebar";
+import { TodayStartPanel } from "../components/today/TodayStartPanel";
+import { TodayTaskCreateModal, type TodayTaskOptions } from "../components/today/TodayTaskCreateModal";
+import { TodayToolbar } from "../components/today/TodayToolbar";
+import { DailyPlanGroups } from "../components/dailyPlan/DailyPlanGroups";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useAchievementWatcher } from "../context/AchievementContext";
 import { useGame } from "../context/GameContext";
 import { useToast } from "../context/ToastContext";
-import { formatDate, formatTime, itemStatusLabel, pct, planStatusLabel, signed, sourceLabel, todayISO } from "../utils/format";
-import { applyPlanItemOrder, animatePlanItemShift, capturePlanItemRects, readBooleanPreference, reorderItems, writeBooleanPreference, writePlanItemOrder } from "../utils/planItemUi";
+import { formatDate, pct, todayISO } from "../utils/format";
+import { countDailyPlanItemStatuses, groupDailyPlanItemsBySource, sortDailyPlanItemsByPlannedTime } from "../utils/dailyPlanItems";
+import { readBooleanPreference, writeBooleanPreference } from "../utils/planItemUi";
 
 const sourceFilters: Array<{ value: SourceType | "ALL"; label: string }> = [
   { value: "ALL", label: "Все" },
@@ -35,8 +39,6 @@ const statusFilters: Array<{ value: DailyPlanItemStatus | "ALL"; label: string }
   { value: "COMPLETED", label: "Выполненные" },
   { value: "FAILED", label: "Не выполненные" }
 ];
-
-
 
 function todayPlanCacheKey(date: string) {
   return `flowvisior:today-plan:${date}`;
@@ -72,215 +74,14 @@ function createInitialTaskForm(date = todayISO()): CreateTaskRequest {
   };
 }
 
-function countStatuses(items: DailyPlanItemResponse[]) {
-  return items.reduce<Record<DailyPlanItemStatus, number>>(
-    (acc, item) => {
-      acc[item.status] += 1;
-      return acc;
-    },
-    { PENDING: 0, COMPLETED: 0, FAILED: 0 }
-  );
-}
-
-function addDays(date: string, delta: number) {
-  const next = new Date(`${date}T12:00:00`);
-  next.setDate(next.getDate() + delta);
-  return next.toISOString().slice(0, 10);
-}
-
-function monthDayLabel(date: string) {
-  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${date}T12:00:00`));
-}
-
-function weekdayLabel(date: string) {
-  return new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(new Date(`${date}T12:00:00`));
-}
-
-function cycleLabel(status: DailyPlanItemStatus) {
-  if (status === "PENDING") return "Отметить как выполненную";
-  if (status === "COMPLETED") return "Отметить как не выполненную";
-  return "Вернуть в план";
-}
-
-function OptionButton({ active, children, onClick }: { active?: boolean; children: string; onClick: () => void }) {
-  return <button type="button" className={`option-chip ${active ? "active" : ""}`} onClick={onClick}>{children}</button>;
-}
-
-function sortByPlannedTime(items: DailyPlanItemResponse[]) {
-  return [...items].sort((a, b) => {
-    const left = a.plannedTime || "99:99";
-    const right = b.plannedTime || "99:99";
-    return left.localeCompare(right) || a.title.localeCompare(b.title, "ru");
-  });
-}
-
-const itemGroups: Array<{ source: SourceType; title: string }> = [
-  { source: "TASK", title: "Задачи" },
-  { source: "HABIT", title: "Привычки" },
-  { source: "QUEST", title: "Квесты" },
-  { source: "MANUAL", title: "Пункты" }
-];
-
-function groupedBySource(items: DailyPlanItemResponse[]) {
-  return itemGroups
-    .map((group) => ({ ...group, items: items.filter((item) => item.sourceType === group.source) }))
-    .filter((group) => group.items.length > 0);
-}
-
-
-function HpXpLine({ xp, hp }: { xp: number; hp: number }) {
-  return (
-    <span className="reward-line">
-      <span className="xp-token">XP {signed(xp)}</span>
-      <span className="hp-token">HP {signed(hp)}</span>
-    </span>
-  );
-}
-
-function formatTimer(seconds: number) {
-  const safe = Math.max(0, seconds);
-  const minutes = Math.floor(safe / 60);
-  const rest = safe % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
-}
-
-const TIMER_PRESETS = [5, 15, 25, 45, 60];
-const TIMER_RADIUS = 38;
-const TIMER_CIRCUMFERENCE = 2 * Math.PI * TIMER_RADIUS;
-
-function FocusTimer() {
-  const [minutes, setMinutes] = useState(25);
-  const total = minutes * 60;
-  const [remaining, setRemaining] = useState(total);
-  const [running, setRunning] = useState(false);
-  const [justFinished, setJustFinished] = useState(false);
-
-  useEffect(() => {
-    if (!running) setRemaining(total);
-  }, [running, total]);
-
-  useEffect(() => {
-    if (!running) return undefined;
-    const intervalId = window.setInterval(() => {
-      setRemaining((value) => {
-        if (value <= 1) {
-          window.clearInterval(intervalId);
-          setRunning(false);
-          setJustFinished(true);
-          return 0;
-        }
-        return value - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(intervalId);
-  }, [running]);
-
-  useEffect(() => {
-    if (!justFinished) return undefined;
-    const t = window.setTimeout(() => setJustFinished(false), 3000);
-    return () => window.clearTimeout(t);
-  }, [justFinished]);
-
-  const elapsed = total - remaining;
-  const strokeDashoffset = TIMER_CIRCUMFERENCE * (1 - elapsed / total);
-
-  function toggleRunning() {
-    if (remaining === 0) {
-      setRemaining(total);
-      setRunning(true);
-      setJustFinished(false);
-      return;
-    }
-    setRunning((value) => !value);
-  }
-
-  function chooseMinutes(value: number) {
-    const next = Math.min(240, Math.max(1, Math.round(value || 1)));
-    setMinutes(next);
-    setRunning(false);
-    setJustFinished(false);
-    setRemaining(next * 60);
-  }
-
-  const statusLabel = running ? "сессия идёт" : justFinished ? "✓ готово!" : `${minutes} мин`;
-
-  return (
-    <div className={`avatar-focus-timer ${running ? "timer-running" : ""} ${justFinished ? "timer-done" : ""}`} aria-label="Фокус-таймер">
-      <div className="timer-ring-svg-wrap">
-        <svg className="timer-ring-svg" viewBox="0 0 88 88" aria-hidden="true">
-          <circle className="timer-ring-bg" cx="44" cy="44" r={TIMER_RADIUS} />
-          <circle
-            className="timer-ring-track"
-            cx="44" cy="44" r={TIMER_RADIUS}
-            strokeDasharray={TIMER_CIRCUMFERENCE}
-            strokeDashoffset={strokeDashoffset}
-            style={{ transition: running ? "stroke-dashoffset 1.02s linear" : "stroke-dashoffset 0.38s cubic-bezier(0.22, 1, 0.36, 1)" }}
-          />
-          {justFinished && (
-            <circle className="timer-ring-done-pulse" cx="44" cy="44" r={TIMER_RADIUS} />
-          )}
-        </svg>
-        <span className="timer-ring-label">{formatTimer(remaining)}</span>
-      </div>
-      <div className="timer-copy">
-        <strong>Фокус</strong>
-        <small className={justFinished ? "timer-done-text" : ""}>{statusLabel}</small>
-      </div>
-      <div className="timer-presets" aria-label="Длительность">
-        {TIMER_PRESETS.map((p) => (
-          <button
-            key={p}
-            type="button"
-            className={`timer-preset-btn ${minutes === p && !running ? "active" : ""}`}
-            onClick={() => chooseMinutes(p)}
-            disabled={running}
-            title={`${p} минут`}
-          >
-            {p}
-          </button>
-        ))}
-        <input
-          className="timer-custom-input"
-          type="number"
-          min={1}
-          max={240}
-          value={minutes}
-          onChange={(event) => chooseMinutes(Number(event.target.value))}
-          disabled={running}
-          aria-label="Своя длительность в минутах"
-          title="Своё время"
-        />
-      </div>
-      <div className="timer-actions">
-        <Button type="button" variant="thin" onClick={toggleRunning}>{running ? "Пауза" : remaining === 0 ? "Снова" : "Старт"}</Button>
-        <Button type="button" variant="ghost" className="timer-reset-button" onClick={() => { setRunning(false); setJustFinished(false); setRemaining(total); }}>Сброс</Button>
-      </div>
-    </div>
-  );
-}
-
-function StatusIcon({ status }: { status: DailyPlanItemStatus }) {
-  return (
-    <svg className="status-cycle-svg" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-      <circle className="status-cycle-ring" cx="10" cy="10" r="8.2" />
-      {status === "COMPLETED" ? <path className="status-cycle-mark" d="M5.8 10.2 8.6 13 14.3 7" /> : null}
-      {status === "FAILED" ? <path className="status-cycle-mark" d="M5.8 10h8.4" /> : null}
-    </svg>
-  );
-}
-
 function closeDayQuestion(completedCount: number) {
   if (completedCount > 0) return "Закрыть сегодняшний день?";
   return "В этом дне пока нет выполненных задач. Если закрыть его сейчас, персонаж потеряет HP. Закрыть день?";
 }
 
-
 export function TodayPage() {
   const today = todayISO();
-  const cachedPlan = useMemo(() => {
-    const cached = readCachedTodayPlan(today);
-    return cached ? { ...cached, items: applyPlanItemOrder(cached.items, today) } : null;
-  }, [today]);
+  const cachedPlan = useMemo(() => readCachedTodayPlan(today), [today]);
   const { profile, refreshProfile } = useGame();
   const { notify } = useToast();
   const { syncAchievements } = useAchievementWatcher();
@@ -297,20 +98,17 @@ export function TodayPage() {
   const [taskError, setTaskError] = useState<string | null>(null);
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [taskOptions, setTaskOptions] = useState({ deadline: false, time: false, description: false });
+  const [taskOptions, setTaskOptions] = useState<TodayTaskOptions>({ deadline: false, time: false, description: false });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [openDescriptionId, setOpenDescriptionId] = useState<number | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState(cachedPlan?.note ?? "");
   const [noteSaving, setNoteSaving] = useState(false);
-  const [draggingItemId, setDraggingItemId] = useState<number | null>(null);
   const [twoColumnLayout, setTwoColumnLayout] = useState(() => readBooleanPreference("flowvisior:today-two-column-layout"));
   const [focusItemId, setFocusItemId] = useState<number | null>(null);
   const filtersHostRef = useRef<HTMLDivElement | null>(null);
   const focusTimerRef = useRef<number | null>(null);
-  const activeDragItemIdRef = useRef<number | null>(null);
-  const lastDragOverIdRef = useRef<number | null>(null);
 
   const loadPlan = useCallback(async (showLoader = true) => {
     if (showLoader) {
@@ -319,10 +117,9 @@ export function TodayPage() {
     }
     try {
       const data = await api.dailyPlans.byDate(today);
-      const orderedData = { ...data, items: applyPlanItemOrder(data.items, today) };
-      setPlan(orderedData);
-      setNoteDraft(orderedData.note ?? "");
-      writeCachedTodayPlan(today, orderedData);
+      setPlan(data);
+      setNoteDraft(data.note ?? "");
+      writeCachedTodayPlan(today, data);
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setPlan(null);
@@ -333,7 +130,6 @@ export function TodayPage() {
       if (showLoader) setLoading(false);
     }
   }, [today]);
-
 
   useEffect(() => {
     loadPlan();
@@ -356,9 +152,8 @@ export function TodayPage() {
     if (focusTimerRef.current) window.clearTimeout(focusTimerRef.current);
   }, []);
 
-
   const items = plan?.items ?? [];
-  const counts = useMemo(() => countStatuses(items), [items]);
+  const counts = useMemo(() => countDailyPlanItemStatuses(items), [items]);
   const isClosed = plan?.status === "CLOSED";
   const completedPct = pct(counts.COMPLETED, items.length);
 
@@ -370,100 +165,10 @@ export function TodayPage() {
       const byText = !q || item.title.toLowerCase().includes(q);
       return bySource && byStatus && byText;
     });
-    return sortByTime ? sortByPlannedTime(filtered) : filtered;
+    return sortByTime ? sortDailyPlanItemsByPlannedTime(filtered) : filtered;
   }, [items, search, sourceFilter, statusFilter, sortByTime]);
-  const groupedItems = useMemo(() => groupedBySource(filteredItems), [filteredItems]);
-  const nextFocusItem = useMemo(() => sortByPlannedTime(filteredItems.filter((item) => item.status === "PENDING"))[0] ?? null, [filteredItems]);
-  const canManualReorder = Boolean(plan && !isClosed && !sortByTime);
-
-  function shouldReorderAtPointer(activeId: number, overId: number, overElement: HTMLElement, pointerY: number) {
-    const from = items.findIndex((item) => item.id === activeId);
-    const to = items.findIndex((item) => item.id === overId);
-    if (from < 0 || to < 0 || from === to) return false;
-
-    const rect = overElement.getBoundingClientRect();
-    const midpointY = rect.top + rect.height / 2;
-    return from < to ? pointerY > midpointY : pointerY < midpointY;
-  }
-
-  function findReorderTarget(pointerY: number) {
-    const activeId = activeDragItemIdRef.current;
-    if (activeId === null) return null;
-
-    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-plan-item-id]"))
-      .filter((element) => Number(element.dataset.planItemId) !== activeId);
-    if (elements.length === 0) return null;
-
-    let nearest: { id: number; element: HTMLElement; distance: number } | null = null;
-    for (const element of elements) {
-      const id = Number(element.dataset.planItemId);
-      if (!Number.isFinite(id)) continue;
-      const rect = element.getBoundingClientRect();
-      const centerY = rect.top + rect.height / 2;
-      const distance = Math.abs(pointerY - centerY);
-      if (!nearest || distance < nearest.distance) nearest = { id, element, distance };
-    }
-
-    return nearest;
-  }
-
-  function movePlanItem(activeId: number, overId: number) {
-    if (!canManualReorder) return;
-    const previousRects = capturePlanItemRects();
-    setPlan((current) => {
-      if (!current) return current;
-      const nextItems = reorderItems(current.items, activeId, overId);
-      if (nextItems === current.items) return current;
-      writePlanItemOrder(today, nextItems);
-      const next = { ...current, items: nextItems };
-      writeCachedTodayPlan(today, next);
-      return next;
-    });
-    animatePlanItemShift(previousRects);
-  }
-
-  function handleDragPointerDown(event: ReactPointerEvent<HTMLElement>, itemId: number) {
-    if (!canManualReorder) return;
-    event.preventDefault();
-    activeDragItemIdRef.current = itemId;
-    lastDragOverIdRef.current = itemId;
-    setDraggingItemId(itemId);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  }
-
-  function handleDragPointerMove(event: ReactPointerEvent<HTMLElement>) {
-    const activeId = activeDragItemIdRef.current;
-    if (!canManualReorder || activeId === null) return;
-    event.preventDefault();
-    const target = findReorderTarget(event.clientY);
-    const itemElement = target?.element;
-    const overId = target?.id ?? Number.NaN;
-    if (!itemElement) return;
-    if (!Number.isFinite(overId) || overId === activeId || overId === lastDragOverIdRef.current) return;
-    if (!shouldReorderAtPointer(activeId, overId, itemElement, event.clientY)) return;
-    lastDragOverIdRef.current = overId;
-    movePlanItem(activeId, overId);
-  }
-
-  function handleDragPointerEnd(event?: ReactPointerEvent<HTMLElement>) {
-    if (event && event.currentTarget.hasPointerCapture?.(event.pointerId)) {
-      event.currentTarget.releasePointerCapture?.(event.pointerId);
-    }
-    activeDragItemIdRef.current = null;
-    lastDragOverIdRef.current = null;
-    setDraggingItemId(null);
-  }
-
-  function handleDragKeyDown(event: KeyboardEvent<HTMLElement>, itemId: number) {
-    if (!canManualReorder) return;
-    const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : 0;
-    if (direction === 0) return;
-    event.preventDefault();
-    const index = items.findIndex((item) => item.id === itemId);
-    const target = items[index + direction];
-    if (index < 0 || !target) return;
-    movePlanItem(itemId, target.id);
-  }
+  const groupedItems = useMemo(() => groupDailyPlanItemsBySource(filteredItems), [filteredItems]);
+  const nextFocusItem = useMemo(() => sortDailyPlanItemsByPlannedTime(filteredItems.filter((item) => item.status === "PENDING"))[0] ?? null, [filteredItems]);
 
   function toggleTwoColumnLayout() {
     setTwoColumnLayout((value) => {
@@ -477,7 +182,7 @@ export function TodayPage() {
     if (!nextFocusItem) return;
     setFocusItemId(nextFocusItem.id);
     window.requestAnimationFrame(() => {
-      document.querySelector(`[data-plan-item-id="${nextFocusItem.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.querySelector(`[data-focus-item-id="${nextFocusItem.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
     if (focusTimerRef.current) window.clearTimeout(focusTimerRef.current);
     focusTimerRef.current = window.setTimeout(() => setFocusItemId(null), 2600);
@@ -488,10 +193,9 @@ export function TodayPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.startByDate(today);
-      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, today) };
-      setPlan(orderedNext);
-      setNoteDraft(orderedNext.note ?? "");
-      writeCachedTodayPlan(today, orderedNext);
+      setPlan(next);
+      setNoteDraft(next.note ?? "");
+      writeCachedTodayPlan(today, next);
       notify({ tone: "success", title: "День открыт" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось открыть день");
@@ -531,10 +235,9 @@ export function TodayPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.closeByDate(today);
-      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, today) };
-      setPlan(orderedNext);
-      setNoteDraft(orderedNext.note ?? "");
-      writeCachedTodayPlan(today, orderedNext);
+      setPlan(next);
+      setNoteDraft(next.note ?? "");
+      writeCachedTodayPlan(today, next);
       notify({ tone: "success", title: "День закрыт" });
       refreshProfile().catch(() => undefined);
       syncAchievements(false).catch(() => undefined);
@@ -550,10 +253,9 @@ export function TodayPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.updateNoteByDate(today, { note: noteDraft.trim() || null });
-      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, today) };
-      setPlan(orderedNext);
-      setNoteDraft(orderedNext.note ?? "");
-      writeCachedTodayPlan(today, orderedNext);
+      setPlan(next);
+      setNoteDraft(next.note ?? "");
+      writeCachedTodayPlan(today, next);
       notify({ tone: "success", title: "Заметка сохранена" });
       setNoteOpen(false);
     } catch (err) {
@@ -653,235 +355,103 @@ export function TodayPage() {
     if (event.key === "Escape") setEditingId(null);
   }
 
-  function renderPlanItem(item: DailyPlanItemResponse) {
-    return (
-      <article
-        className={`line-item plan-item draggable-plan-item status-${item.status.toLowerCase()} ${draggingItemId === item.id ? "dragging" : ""} ${focusItemId === item.id ? "focus-pulse" : ""}`}
-        key={item.id}
-        data-plan-item-id={item.id}
-      >
-        <button
-          type="button"
-          className="drag-handle"
-          disabled={!canManualReorder}
-          onPointerDown={(event) => handleDragPointerDown(event, item.id)}
-          onPointerMove={handleDragPointerMove}
-          onPointerUp={handleDragPointerEnd}
-          onPointerCancel={handleDragPointerEnd}
-          onKeyDown={(event) => handleDragKeyDown(event, item.id)}
-          title={canManualReorder ? "Перетащить пункт. Стрелки вверх/вниз тоже меняют порядок." : "Ручной порядок доступен без сортировки по времени"}
-          aria-label="Перетащить пункт"
-        >
-          ⋮⋮
-        </button>
-        <button
-          type="button"
-          className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
-          onClick={() => cycleItem(item)}
-          disabled={busyItemId === item.id || isClosed}
-          aria-label={`${cycleLabel(item.status)}: ${item.title}`}
-        >
-          <StatusIcon status={item.status} />
-        </button>
-        {item.description ? (
-          <button type="button" className={`description-toggle ${openDescriptionId === item.id ? "open" : ""}`} onClick={() => setOpenDescriptionId((current) => current === item.id ? null : item.id)} aria-label="Показать описание">›</button>
-        ) : <span className="description-spacer" />}
-        <div className="todo-main">
-          <div className="item-title-line">
-            {editingId === item.id ? (
-              <TextInput className="inline-edit-input" autoFocus value={editTitle} onChange={(event) => setEditTitle(event.target.value)} onBlur={() => saveTitle(item)} onKeyDown={(event) => handleTitleKey(event, item)} />
-            ) : (
-              <strong className="editable-title" onClick={() => beginEdit(item)}>{item.title}</strong>
-            )}
-            <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
-          </div>
-          <p className="muted compact-meta">
-            {itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}
-          </p>
-          {openDescriptionId === item.id && item.description ? <p className="item-description">{item.description}</p> : null}
-        </div>
-      </article>
-    );
-  }
-
   return (
     <section className="page today-page compact-today-page">
-      <header className="day-hero today-hero">
-        <p className="eyebrow">{weekdayLabel(today)}</p>
-        <div className="date-inline-switcher day-date-inline" aria-label="Переключение дней">
-          <Link className="nav-text-button" to={`/calendar/${addDays(today, -1)}`} aria-label="Предыдущий день">← предыдущий</Link>
-          <h1>{monthDayLabel(today)}</h1>
-          <Link className="nav-text-button" to={`/calendar/${addDays(today, 1)}`} aria-label="Следующий день">следующий →</Link>
-        </div>
-        <div className="day-status-row">
-          <span>{plan ? planStatusLabel(plan.status) : "день не открыт"}</span>
-        </div>
-      </header>
+      <TodayHero date={today} status={plan?.status} />
 
       {loading ? <Loader label="Загружаем день" /> : null}
       <ErrorLine error={error} />
 
-      {!loading && !plan ? (
-        <>
-          <section className="section-line start-day-line clean-section center-open-day-panel">
-            <Button onClick={startDay} disabled={busy}>{busy ? "Открываем" : "Открыть день"}</Button>
-          </section>
-          <section className="section-line clean-section today-pre-character-card">
-            <div className="today-pre-avatar-slot">
-              <Avatar stats={profile?.gameStats} compact />
-              <FocusTimer />
-            </div>
-            <div className="today-pre-stats-slot">
-              <p className="eyebrow">персонаж</p>
-              <h2>Готов к дню</h2>
-              <GameHud stats={profile?.gameStats} />
-            </div>
-          </section>
-        </>
-      ) : null}
+      {!loading && !plan ? <TodayStartPanel busy={busy} stats={profile?.gameStats} onStartDay={startDay} /> : null}
 
       <div className="today-grid">
         <main className="today-main">
           {plan ? (
-            <section className="section-line plan-section clean-section">
-              <div className="section-title-row plan-title-row compact-plan-title-row">
-                <h2 className="inline-plan-title">
-                  Лист дня
-                  <span>выполнено {counts.COMPLETED} · в плане {counts.PENDING} · не выполнено {counts.FAILED}</span>
-                  {isClosed ? <HpXpLine xp={plan.xpEarned ?? 0} hp={plan.hpDelta ?? 0} /> : null}
-                </h2>
-                <div className="plan-progress">
-                  <strong>{completedPct}%</strong>
-                  <div className="meter"><span style={{ width: `${completedPct}%` }} /></div>
-                </div>
-              </div>
+            <>
+              <section className="section-line plan-section clean-section">
+                <TodayPlanSummary
+                  counts={counts}
+                  completedPct={completedPct}
+                  isClosed={isClosed}
+                  xpEarned={plan.xpEarned}
+                  hpDelta={plan.hpDelta}
+                />
 
-              <div className="today-inline-toolbar inline-overlay-host" ref={filtersHostRef}>
-                <div className="today-controls-row">
-                  {!isClosed ? (
-                    <Button type="button" onClick={() => setTaskDrawerOpen((value) => !value)} aria-expanded={taskDrawerOpen}>
-                      {taskDrawerOpen ? "Скрыть задачу" : "Добавить задачу"}
-                    </Button>
-                  ) : null}
-                  <Button type="button" variant="ghost" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen}>{filtersOpen ? "Скрыть фильтры" : "Фильтры"}</Button>
-                  <Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "По времени"}</Button>
-                  <Button type="button" variant="ghost" className={twoColumnLayout ? "toolbar-active" : ""} onClick={toggleTwoColumnLayout}>{twoColumnLayout ? "В один ряд" : "В два ряда"}</Button>
-                  <Button type="button" variant="ghost" className="focus-task-button" onClick={focusNextTask} disabled={!nextFocusItem}>Фокус</Button>
-                </div>
+                <TodayToolbar
+                  isClosed={isClosed}
+                  taskDrawerOpen={taskDrawerOpen}
+                  filtersOpen={filtersOpen}
+                  sortByTime={sortByTime}
+                  twoColumnLayout={twoColumnLayout}
+                  nextFocusItem={nextFocusItem}
+                  sourceFilters={sourceFilters}
+                  statusFilters={statusFilters}
+                  sourceFilter={sourceFilter}
+                  statusFilter={statusFilter}
+                  search={search}
+                  hostRef={filtersHostRef}
+                  setTaskDrawerOpen={setTaskDrawerOpen}
+                  setFiltersOpen={setFiltersOpen}
+                  setSortByTime={setSortByTime}
+                  setSourceFilter={setSourceFilter}
+                  setStatusFilter={setStatusFilter}
+                  setSearch={setSearch}
+                  toggleTwoColumnLayout={toggleTwoColumnLayout}
+                  focusNextTask={focusNextTask}
+                />
 
                 {taskDrawerOpen ? (
-                  <FormModal onClose={() => setTaskDrawerOpen(false)}>
-                    <form className="form-grid task-form task-drawer unified-form compact-create-form ordered-form centered-task-form modal-form-card" onSubmit={createTask} role="dialog" aria-modal="true" aria-label="Создание задачи" onMouseDown={(event) => event.stopPropagation()}>
-                      <div className="modal-form-head">
-                        <div><p className="eyebrow">новая задача</p><strong>Добавить задачу</strong></div>
-                        <button type="button" className="dialog-close" onClick={() => setTaskDrawerOpen(false)} aria-label="Закрыть">×</button>
-                      </div>
-                      <Field label="Название">
-                        <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} placeholder="Например: подготовить отчёт" />
-                      </Field>
-                      <Field label="Дата задачи">
-                        <DateWheelInput value={taskForm.deadlineDate || today} onChange={(value) => setTaskForm({ ...taskForm, deadlineDate: value || today })} allowClear={false} />
-                      </Field>
-                      <div className="optional-toolbar">
-                        <OptionButton active={taskOptions.time || Boolean(taskForm.plannedTime)} onClick={() => setTaskOptions((state) => ({ ...state, time: !state.time }))}>
-                          {taskForm.plannedTime ? `Время: ${formatTime(taskForm.plannedTime)}` : "Время"}
-                        </OptionButton>
-                        <OptionButton active={taskOptions.deadline || Boolean(taskForm.deadlineTime)} onClick={() => setTaskOptions((state) => ({ ...state, deadline: !state.deadline }))}>
-                          {taskForm.deadlineTime ? `Дедлайн: ${formatTime(taskForm.deadlineTime)}` : "Дедлайн"}
-                        </OptionButton>
-                        <OptionButton active={taskOptions.description || Boolean(taskForm.description)} onClick={() => setTaskOptions((state) => ({ ...state, description: !state.description }))}>
-                          Описание
-                        </OptionButton>
-                      </div>
-                      {taskOptions.time ? <Field label="Плановое время"><TimeWheelInput value={taskForm.plannedTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, plannedTime: value })} /></Field> : null}
-                      {taskOptions.deadline ? <Field label="Дедлайн"><TimeWheelInput value={taskForm.deadlineTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field> : null}
-                      {taskOptions.description ? <Field label="Описание"><TextArea value={taskForm.description ?? ""} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></Field> : null}
-                      <ErrorLine error={taskError} />
-                      <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
-                    </form>
-                  </FormModal>
+                  <TodayTaskCreateModal
+                    today={today}
+                    taskForm={taskForm}
+                    taskOptions={taskOptions}
+                    taskError={taskError}
+                    busy={busy}
+                    setTaskForm={setTaskForm}
+                    setTaskOptions={setTaskOptions}
+                    onSubmit={createTask}
+                    onClose={() => setTaskDrawerOpen(false)}
+                  />
                 ) : null}
 
-                {filtersOpen ? (
-                  <div className="filter-panel drawer-panel toolbar-popover toolbar-popover--filters">
-                    <div className="filter-row">
-                    {sourceFilters.map((filter) => (
-                      <button type="button" key={filter.value} className={sourceFilter === filter.value ? "active" : ""} onClick={() => setSourceFilter(filter.value)}>{filter.label}</button>
-                    ))}
-                  </div>
-                  <div className="filter-row muted-row">
-                    {statusFilters.map((filter) => (
-                      <button type="button" key={filter.value} className={statusFilter === filter.value ? "active" : ""} onClick={() => setStatusFilter(filter.value)}>{filter.label}</button>
-                    ))}
-                  </div>
-                  <TextInput value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Поиск" />
+                {items.length === 0 ? <EmptyState title="Пока пусто" text="Создай задачу или открой нужный квест в календаре." /> : null}
+                {items.length > 0 && filteredItems.length === 0 ? <EmptyState title="Ничего не найдено" text="Измени фильтры." /> : null}
+
+                <DailyPlanGroups
+                  groups={groupedItems}
+                  twoColumnLayout={twoColumnLayout}
+                  canChangeStatus={!isClosed}
+                  busyItemId={busyItemId}
+                  editingId={editingId}
+                  editTitle={editTitle}
+                  openDescriptionId={openDescriptionId}
+                  focusedItemId={focusItemId}
+                  setEditTitle={setEditTitle}
+                  onCycle={cycleItem}
+                  onToggleDescription={(id) => setOpenDescriptionId((current) => current === id ? null : id)}
+                  onBeginEdit={beginEdit}
+                  onSaveTitle={saveTitle}
+                  onTitleKey={handleTitleKey}
+                />
+
+                <div className="day-note-in-plan">
+                  {plan.note && !noteOpen ? <p className="day-note-preview">{plan.note}</p> : null}
+                  {noteOpen ? <TodayNoteEditor noteDraft={noteDraft} noteSaving={noteSaving} setNoteDraft={setNoteDraft} onSave={saveNote} /> : null}
+                  {isClosed ? <p className="muted closed-day-note">День закрыт. Изменения уже учтены в streak, HP и XP.</p> : null}
                 </div>
-                ) : null}
-              </div>
+              </section>
 
-              {items.length === 0 ? <EmptyState title="Пока пусто" text="Создай задачу или открой нужный квест в календаре." /> : null}
-              {items.length > 0 && filteredItems.length === 0 ? <EmptyState title="Ничего не найдено" text="Измени фильтры." /> : null}
-
-              <div className={`grouped-plan-list ${twoColumnLayout ? "two-column-enabled" : ""} ${draggingItemId !== null ? "is-reordering" : ""}`}>
-                {groupedItems.map((group) => (
-                  <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
-                    <div className="plan-source-head">
-                      <h3>{group.title}</h3>
-                      <span>{group.items.length}</span>
-                    </div>
-                    <div className={`plan-source-body ${twoColumnLayout ? "two-plan-columns" : ""}`}>
-                      {(twoColumnLayout ? [group.items.slice(0, Math.ceil(group.items.length / 2)), group.items.slice(Math.ceil(group.items.length / 2))] : [group.items])
-                        .filter((columnItems) => columnItems.length > 0)
-                        .map((columnItems, columnIndex) => (
-                          <div className="line-list todo-list typed-list clean-list plan-column-list" key={`${group.source}-${columnIndex}`}>
-                            {columnItems.map((item) => renderPlanItem(item))}
-                          </div>
-                        ))}
-                    </div>
-                  </section>
-                ))}
-              </div>
-
-              <div className="bottom-day-actions day-note-actions">
+              <div className="day-plan-external-actions">
                 <Button type="button" variant="ghost" onClick={() => setNoteOpen((value) => !value)}>
                   {noteOpen ? "Скрыть заметку" : plan.note ? "Изменить заметку" : "Заметка"}
                 </Button>
                 {!isClosed ? <Button variant="danger" onClick={closeDay} disabled={busy}>Закрыть день</Button> : null}
               </div>
-
-              {plan?.note && !noteOpen ? <p className="day-note-preview">{plan.note}</p> : null}
-
-              {noteOpen ? (
-                <div className="day-note-editor drawer-panel">
-                  <Field label="Заметка о дне">
-                    <TextArea
-                      value={noteDraft}
-                      onChange={(event) => setNoteDraft(event.target.value)}
-                      rows={4}
-                      maxLength={5000}
-                      placeholder="Что получилось, что не понравилось, что стоит запомнить"
-                    />
-                  </Field>
-                  <div className="form-actions">
-                    <Button type="button" disabled={noteSaving} onClick={saveNote}>{noteSaving ? "Сохраняем" : "Сохранить"}</Button>
-                  </div>
-                </div>
-              ) : null}
-
-              {isClosed ? <p className="muted closed-day-note">День закрыт. Изменения уже учтены в streak, HP и XP.</p> : null}
-            </section>
+            </>
           ) : null}
         </main>
 
-        {plan ? (
-          <aside className="today-side">
-            <section className="section-line character-panel clean-section">
-              <Avatar stats={profile?.gameStats} compact variantIndex={1} />
-              <FocusTimer />
-              <GameHud stats={profile?.gameStats} />
-            </section>
-          </aside>
-        ) : null}
+        {plan ? <TodaySidebar stats={profile?.gameStats} /> : null}
       </div>
     </section>
   );
