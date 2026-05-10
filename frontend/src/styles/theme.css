@@ -1,0 +1,172 @@
+/* Theme switcher styles migrated from legacy.css. */
+.theme-switcher { position: fixed; left: 1rem; bottom: 1rem; z-index: 80; display: inline-flex; align-items: center; gap: 0.5rem; border: 1px solid var(--border); color: var(--text); box-shadow: 0 12px 38px var(--shadow); backdrop-filter: blur(16px); transition: transform 140ms ease, border-color 140ms ease, background 140ms ease; }
+
+.theme-switcher:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent), transparent 35%); }
+
+.theme-switcher-icon { display: grid; place-items: center; border: 1px solid var(--border-soft); border-radius: 999px; color: var(--accent); }
+
+@media (max-width: 720px) {
+.theme-switcher { left: 0.75rem; bottom: 0.75rem; padding: 0.34rem 0.58rem; }
+.theme-switcher span:last-child { display: none; }
+}
+
+.theme-switcher { min-height: 31px; padding: 0.28rem 0.56rem; font-size: 0.76rem; border-radius: 999px; }
+
+.theme-switcher-icon { width: 1.18rem; height: 1.18rem; }
+
+.drawer-menu,
+.toast,
+.wheel-popover,
+.quest-picker-dialog { background: color-mix(in srgb, var(--surface), #000 10%); }
+.input,
+.quest-picker-button,
+.quest-picker-list button,
+.theme-switcher { background: color-mix(in srgb, var(--surface), var(--text) 2%); }
+:root[data-theme="light"] .input,
+:root[data-theme="light"] .quest-picker-button,
+:root[data-theme="light"] .quest-picker-list button,
+:root[data-theme="light"] .theme-switcher { background: color-mix(in srgb, var(--surface), #000 2%); }
+
+:root[data-theme="light"] .option-chip,
+:root[data-theme="light"] .filter-row button,
+:root[data-theme="light"] .day-switcher a,
+:root[data-theme="light"] .day-switcher button,
+:root[data-theme="light"] .quest-picker-button,
+:root[data-theme="light"] .quest-picker-list button { color: var(--text); background: rgba(255,255,255,0.7); }
+
+:root[data-theme="light"] .btn-ghost,
+:root[data-theme="light"] .day-switcher a,
+:root[data-theme="light"] .day-switcher button,
+:root[data-theme="light"] .option-chip,
+:root[data-theme="light"] .filter-row button,
+:root[data-theme="light"] .calendar-filter-row button,
+:root[data-theme="light"] .quest-picker-button,
+:root[data-theme="light"] .quest-picker-list button { color: var(--text); background: rgba(255, 255, 255, 0.82); border-color: #b8c5d3; }
+
+:root[data-theme="light"] .theme-switcher,
+:root[data-theme="light"] .drawer-panel,
+:root[data-theme="light"] .task-drawer,
+:root[data-theme="light"] .create-drawer-form,
+:root[data-theme="light"] .avatar-quote-bubble { background: #ffffff; color: var(--text); }
+
+:root[data-theme="light"] .item-type-badge,
+:root[data-theme="light"] .calendar-stats-row span,
+:root[data-theme="light"] .compact-stats-row span { color: #334456 !important; }
+
+:root[data-theme="vampire"] .top-bar,
+:root[data-theme="vampire"] .section-line,
+:root[data-theme="vampire"] .drawer-menu,
+:root[data-theme="vampire"] .quest-picker-dialog,
+:root[data-theme="vampire"] .wheel-popover { background: linear-gradient(180deg, rgba(31, 23, 35, 0.96), rgba(14, 10, 16, 0.96)); border-color: color-mix(in srgb, var(--border), var(--accent) 20%); }
+
+:root[data-theme="vampire"] .theme-switcher,
+:root[data-theme="vampire"] .quest-picker-button,
+:root[data-theme="vampire"] .option-chip,
+:root[data-theme="vampire"] .filter-row button,
+:root[data-theme="vampire"] .day-switcher a,
+:root[data-theme="vampire"] .day-switcher button { color: #f0e7df; background: rgba(31, 23, 35, 0.86); border-color: #513040; }
+
+:root[data-theme="dark"] .create-drawer-form,
+:root[data-theme="dark"] .task-drawer,
+:root[data-theme="dark"] .drawer-panel,
+:root[data-theme="dark"] .filter-panel,
+:root[data-theme="dark"] .wheel-popover,
+:root[data-theme="dark"] .quest-picker-dialog,
+:root[data-theme="dark"] .drawer-menu { background: #0b0d11 !important; border-color: #20242d !important; }
+:root[data-theme="dark"] .input,
+:root[data-theme="dark"] .quest-picker-button,
+:root[data-theme="dark"] .quest-picker-list button { background: #10131a !important; border-color: #242936 !important; }
+
+:root[data-theme="cosmos"] #root { position: relative; z-index: 1; }
+
+:root[data-theme="cosmos"] body::before,
+:root[data-theme="cosmos"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+:root[data-theme="cosmos"] body::before {
+  z-index: 0;
+  background:
+    radial-gradient(circle at 18% 24%, rgba(74,169,216,0.10), transparent 16rem),
+    radial-gradient(circle at 72% 18%, rgba(128,107,224,0.10), transparent 18rem),
+    radial-gradient(circle at 52% 78%, rgba(42,83,164,0.09), transparent 22rem);
+  filter: blur(0.2px);
+  animation: fv-cosmos-nebula-drift 18s ease-in-out infinite;
+}
+
+:root[data-theme="cosmos"] body::after {
+  z-index: 0;
+  opacity: 0.40;
+  background:
+    radial-gradient(circle at 8% 18%, rgba(226,235,255,0.38) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 28% 62%, rgba(74,169,216,0.34) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 72% 28%, rgba(226,235,255,0.34) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 86% 76%, rgba(128,107,224,0.36) 0 1px, transparent 1.8px);
+  background-size: 180px 180px, 240px 240px, 210px 210px, 270px 270px;
+  animation: fv-cosmos-stars-drift 28s linear infinite;
+}
+
+:root[data-theme="cosmos"] .top-bar,
+:root[data-theme="cosmos"] .section-line,
+:root[data-theme="cosmos"] .drawer-menu,
+:root[data-theme="cosmos"] .quest-picker-dialog,
+:root[data-theme="cosmos"] .wheel-popover,
+:root[data-theme="cosmos"] .form-modal-backdrop .modal-form-card {
+  border-color: color-mix(in srgb, var(--border), var(--accent) 10%);
+  background:
+    linear-gradient(135deg, rgba(74, 169, 216, 0.028), transparent 34%),
+    linear-gradient(180deg, rgba(8, 16, 32, 0.96), rgba(3, 7, 18, 0.96));
+  box-shadow: 0 22px 70px rgba(0, 3, 14, 0.50), inset 0 1px 0 rgba(232, 241, 255, 0.035);
+}
+
+:root[data-theme="cosmos"] .theme-switcher,
+:root[data-theme="cosmos"] .quest-picker-button,
+:root[data-theme="cosmos"] .option-chip,
+:root[data-theme="cosmos"] .filter-row button,
+:root[data-theme="cosmos"] .calendar-filter-row button,
+:root[data-theme="cosmos"] .day-switcher a,
+:root[data-theme="cosmos"] .day-switcher button,
+:root[data-theme="cosmos"] .input,
+:root[data-theme="cosmos"] .quest-picker-list button {
+  color: var(--text);
+  background: rgba(5, 10, 22, 0.84);
+  border-color: color-mix(in srgb, var(--border), var(--accent) 10%);
+}
+
+:root[data-theme="cosmos"] .btn-primary,
+:root[data-theme="cosmos"] .center-add-panel .center-add-actions .btn,
+:root[data-theme="cosmos"] .create-drawer-section .center-add-actions .btn,
+:root[data-theme="cosmos"] .compact-create-form .form-actions .btn,
+:root[data-theme="cosmos"] .create-drawer-form .form-actions .btn,
+:root[data-theme="cosmos"] .task-drawer .form-actions .btn,
+:root[data-theme="cosmos"] .drawer-panel .form-actions .btn {
+  color: #f4f9ff !important;
+  background: linear-gradient(180deg, #1f5f8a, #123a63) !important;
+  border-color: #367ea8 !important;
+  box-shadow: 0 12px 34px rgba(19, 76, 123, 0.28) !important;
+}
+
+:root[data-theme="cosmos"] .btn-primary:hover:not(:disabled),
+:root[data-theme="cosmos"] .center-add-panel .center-add-actions .btn:hover:not(:disabled),
+:root[data-theme="cosmos"] .create-drawer-section .center-add-actions .btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #27729d, #174a78) !important;
+}
+
+:root[data-theme="cosmos"] .btn-danger {
+  color: #fff8fb !important;
+  background: linear-gradient(180deg, #7e2447, #4f1532) !important;
+  border-color: #b84a65 !important;
+}
+
+:root[data-theme="cosmos"] .meter span,
+:root[data-theme="cosmos"] .xp-meter span {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), #d8e7ff);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="cosmos"] body::before,
+  :root[data-theme="cosmos"] body::after { animation: none; }
+}

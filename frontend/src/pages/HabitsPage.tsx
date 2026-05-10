@@ -3,8 +3,12 @@ import { api } from "../api/http";
 import type { CreateHabitRequest, HabitResponse } from "../api/types";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
+import { FormModal } from "../components/FormModal";
+import { OptionChip } from "../components/OptionChip";
 import { Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { ErrorLine, Loader } from "../components/Loader";
+import { ModalTwinTimeRow } from "../components/ModalTwinTimeRow";
+import { RevealSection } from "../components/RevealSection";
 import { useToast } from "../context/ToastContext";
 import { useAsync } from "../hooks/useAsync";
 import { formatTime } from "../utils/format";
@@ -19,10 +23,6 @@ const emptyForm: CreateHabitRequest = {
   deadlineTime: "",
   scheduleDays: allDays
 };
-
-function OptionButton({ active, children, onClick }: { active?: boolean; children: string; onClick: () => void }) {
-  return <button type="button" className={`option-chip ${active ? "active" : ""}`} onClick={onClick}>{children}</button>;
-}
 
 function formatSchedule(days?: number[]) {
   const normalized = days?.length ? days : allDays;
@@ -132,7 +132,7 @@ export function HabitsPage() {
         </div>
 
         {formOpen ? (
-          <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={resetForm}>
+          <FormModal onClose={resetForm}>
             <form className="form-grid unified-form compact-create-form create-drawer-form modal-form-card" onSubmit={submit} role="dialog" aria-modal="true" aria-label={editing ? "Редактирование привычки" : "Новая привычка"} onMouseDown={(event) => event.stopPropagation()}>
               <div className="modal-form-head">
                 <div><p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новая привычка"}</p><strong>{editing ? "Изменить привычку" : "Добавить привычку"}</strong></div>
@@ -156,14 +156,20 @@ export function HabitsPage() {
             </div>
 
             <div className="optional-toolbar">
-              <OptionButton active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>{form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}</OptionButton>
-              <OptionButton active={options.deadline || Boolean(form.deadlineTime)} onClick={() => setOptions((state) => ({ ...state, deadline: !state.deadline }))}>{form.deadlineTime ? `Дедлайн: ${formatTime(form.deadlineTime)}` : "Дедлайн"}</OptionButton>
-              <OptionButton active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionButton>
+              <OptionChip active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>{form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}</OptionChip>
+              <OptionChip active={options.deadline || Boolean(form.deadlineTime)} onClick={() => setOptions((state) => ({ ...state, deadline: !state.deadline }))}>{form.deadlineTime ? `Дедлайн: ${formatTime(form.deadlineTime)}` : "Дедлайн"}</OptionChip>
+              <OptionChip active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionChip>
             </div>
 
-            {options.time ? <Field label="Плановое время"><TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} /></Field> : null}
-            {options.deadline ? <Field label="Дедлайн"><TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field> : null}
-            {options.description ? <Field label="Описание"><TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Field> : null}
+            <ModalTwinTimeRow
+              timeOpen={options.time}
+              deadlineOpen={options.deadline}
+              timeField={<Field label="Плановое время"><TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} /></Field>}
+              deadlineField={<Field label="Дедлайн"><TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field>}
+            />
+            <RevealSection open={options.description} className="option-reveal--wide">
+              <Field label="Описание"><TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Field>
+            </RevealSection>
 
             <ErrorLine error={formError} />
             <div className="form-actions">
@@ -171,7 +177,7 @@ export function HabitsPage() {
               {editing ? <Button type="button" variant="ghost" onClick={resetForm}>Отмена</Button> : null}
             </div>
             </form>
-          </div>
+          </FormModal>
         ) : null}
       </section>
 

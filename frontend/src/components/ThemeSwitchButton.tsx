@@ -4,7 +4,8 @@ import { applyTheme, CHARACTER_EVENT, readTheme, type ThemeName } from "../utils
 const themes: Array<{ name: ThemeName; label: string; icon: string }> = [
   { name: "dark", label: "Тёмная", icon: "◐" },
   { name: "vampire", label: "Красная", icon: "☾" },
-  { name: "light", label: "Светлая", icon: "☼" }
+  { name: "light", label: "Светлая", icon: "☼" },
+  { name: "cosmos", label: "Космос", icon: "✦" }
 ];
 
 export function ThemeSwitchButton() {

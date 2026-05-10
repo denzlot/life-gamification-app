@@ -4,7 +4,7 @@ import { App } from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import { applyTheme, readTheme } from "./utils/character";
-import "./index.css";
+import "./styles/index";
 
 applyTheme(readTheme());
 

@@ -1,0 +1,77 @@
+/* Shared date navigation and compact day-header controls migrated from legacy.css. */
+
+.day-switcher { display: flex; justify-content: center; flex-wrap: wrap; }
+.day-switcher a,
+.day-switcher button { border: 0; background: transparent; color: var(--muted); text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; }
+.day-switcher a:hover,
+.day-switcher button:hover { color: var(--text); }
+
+.day-status-row { display: inline-flex; align-items: center; border: 1px solid var(--border); color: var(--muted); text-transform: uppercase; }
+.day-status-row b { color: var(--text); }
+
+.day-status-row { padding: 0.34rem 0.62rem; border-radius: 9px; letter-spacing: 0.1em; }
+.day-switcher { margin-top: 0.75rem; gap: 0.8rem; }
+.day-switcher a,
+.day-switcher button { font-size: 0.72rem; }
+
+.date-inline-switcher { display: grid; grid-template-columns: auto minmax(0, auto) auto; align-items: center; gap: 0.7rem; width: 100%; }
+.date-inline-switcher h1 { margin: 0; text-align: center; }
+.date-inline-switcher a,
+.date-inline-switcher button,
+.center-jump-button,
+.day-calendar-link { min-height: 34px; min-width: 34px; padding: 0.38rem 0.62rem; border: 1px solid var(--border); border-radius: 10px; background: color-mix(in srgb, var(--surface), var(--bg) 5%); color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; line-height: 1; font-weight: 700; }
+.date-inline-switcher a:hover,
+.date-inline-switcher button:hover,
+.center-jump-button:hover,
+.day-calendar-link:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent), transparent 38%); background: color-mix(in srgb, var(--accent), transparent 90%); }
+.day-status-row { justify-content: center; gap: 0.55rem !important; margin-top: 0.48rem !important; }
+.day-calendar-link { min-height: 28px; font-size: 0.78rem; padding: 0.28rem 0.52rem; }
+
+@media (max-width: 720px) {
+.date-inline-switcher { gap: 0.35rem; }
+.date-inline-switcher a,
+.date-inline-switcher button { min-width: 30px; min-height: 30px; padding: 0.28rem 0.46rem; }
+
+}
+.date-inline-switcher .nav-text-button,
+.date-inline-switcher a.nav-text-button,
+.date-inline-switcher button.nav-text-button { border-color: color-mix(in srgb, var(--border), var(--accent) 14%) !important; }
+.date-inline-switcher .nav-text-button:hover,
+.date-inline-switcher a.nav-text-button:hover,
+.date-inline-switcher button.nav-text-button:hover { border-color: color-mix(in srgb, var(--accent), transparent 35%) !important; }
+.day-date-inline { max-width: 680px; margin-inline: auto; }
+
+@media (max-width: 640px) {
+.date-inline-switcher .nav-text-button,
+.date-inline-switcher a.nav-text-button,
+.date-inline-switcher button.nav-text-button { min-width: 3.35rem !important; }
+.date-inline-switcher a.nav-text-button::first-letter,
+.date-inline-switcher button.nav-text-button::first-letter { font-size: 0.78rem; }
+}
+
+.date-inline-switcher .nav-text-button,
+.date-inline-switcher a.nav-text-button,
+.date-inline-switcher button.nav-text-button { min-width: 0 !important; width: auto !important; min-height: 0 !important; padding: 0.12rem 0.18rem !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; font-family: var(--font-heading) !important; font-weight: 700 !important; text-transform: uppercase !important; }
+.date-inline-switcher .nav-text-button:hover,
+.date-inline-switcher a.nav-text-button:hover,
+.date-inline-switcher button.nav-text-button:hover { color: var(--text) !important; background: transparent !important; }
+@media (max-width: 640px) {
+.date-inline-switcher .nav-text-button,
+.date-inline-switcher a.nav-text-button,
+.date-inline-switcher button.nav-text-button { font-size: 0.78rem !important; letter-spacing: 0.08em !important; padding-inline: 0 !important; }
+}
+
+.day-date-inline,
+.calendar-inline-switcher { max-width: none !important; margin-inline: 0 !important; justify-content: flex-start !important; }
+.date-inline-switcher { justify-content: flex-start !important; }
+.center-jump-button { margin: 0 !important; width: auto !important; font-size: 0.72rem !important; font-weight: 700 !important; min-height: 30px !important; height: 30px !important; padding: 0 0.75rem !important; border-radius: 8px !important; white-space: nowrap !important; display: inline-flex !important; align-items: center !important; position: static !important; grid-column: auto !important; grid-row: auto !important; }
+
+.date-inline-switcher,
+.day-date-inline,
+.calendar-inline-switcher { align-items: baseline !important; }
+.date-inline-switcher .nav-text-button,
+.date-inline-switcher a.nav-text-button,
+.date-inline-switcher button.nav-text-button { transform: translateY(0.22rem) !important; line-height: 1.1 !important; }
+.date-inline-switcher .nav-text-button:hover,
+.date-inline-switcher a.nav-text-button:hover,
+.date-inline-switcher button.nav-text-button:hover { transform: translateY(0.12rem) !important; }

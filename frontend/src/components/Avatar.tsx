@@ -48,7 +48,7 @@ export function Avatar({
       aria-label={`Персонаж ${resolved.character.name}`}
     >
       <div className="avatar-picture-wrap" aria-label={`Аватар персонажа ${variantIndex}`}>
-        <img src={resolved.src} alt={resolved.character.name} className="avatar-img" draggable={false} />
+        {resolved.src ? <img src={resolved.src} alt={resolved.character.name} className="avatar-img" /> : null}
       </div>
       <figcaption className="avatar-quote-bubble">
         <span>«{quote}»</span>

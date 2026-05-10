@@ -1,0 +1,65 @@
+/* Wheel input styles migrated from legacy.css.
+   Kept separate so modal-specific wheel overrides can sit after the generic wheel layer. */
+
+.wheel-field { position: relative; }
+.wheel-trigger { text-align: left; width: 100%; color: var(--muted); }
+.wheel-trigger.filled { color: var(--text); }
+.wheel-popover { position: absolute; z-index: 60; top: calc(100% + 0.6rem); left: 0; width: min(520px, 92vw); padding: 1.05rem; border: 1px solid color-mix(in srgb, var(--accent), transparent 68%); border-radius: 16px; background: rgba(13, 13, 16, 0.98); box-shadow: 0 22px 70px rgba(0, 0, 0, 0.48); }
+.wheel-preview { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+.date-preview { gap: 0.72rem; text-transform: uppercase; }
+.wheel-columns { display: grid; }
+.wheel-columns.two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wheel-columns.three-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.wheel-column { overflow-y: auto; display: grid; align-content: start; border: 1px solid var(--border-soft); scroll-snap-type: y mandatory; }
+.wheel-column button { border: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.035); background: transparent; scroll-snap-align: center; }
+.wheel-actions { display: flex; justify-content: flex-end; gap: 0.65rem; }
+
+@media (max-width: 720px) {
+.wheel-popover { position: fixed; left: 1rem; right: 1rem; top: 18vh; width: auto; }
+}
+
+.wheel-popover.compact-wheel,
+.wheel-popover { padding: 0.85rem; border-color: color-mix(in srgb, var(--accent), transparent 56%); background: rgba(9, 13, 11, 0.985); }
+.number-wheel.compact-wheel { width: min(250px, 84vw); }
+.wheel-preview { font-size: 1.12rem; margin-bottom: 0.6rem; }
+.wheel-columns { gap: 0.5rem; }
+.wheel-column { border-radius: 12px; }
+.wheel-column button { font-size: 0.94rem; }
+.wheel-actions { margin-top: 0.7rem; }
+.wheel-actions .btn { min-height: 38px; }
+.one-column { grid-template-columns: 1fr; }
+.number-wheel .wheel-preview small { color: var(--muted); font-family: var(--font-text); font-size: 0.78rem; }
+
+.wheel-popover.compact-wheel,
+.wheel-popover { width: min(320px, 88vw); }
+.date-wheel.compact-wheel { width: min(380px, 90vw); }
+.wheel-column { height: 132px; }
+.wheel-column button { min-height: 2rem; }
+
+.wheel-popover,
+.wheel-popover.compact-wheel { color: var(--text) !important; background: color-mix(in srgb, var(--surface), var(--bg) 18%) !important; border-color: color-mix(in srgb, var(--border), var(--accent) 18%) !important; box-shadow: 0 20px 58px var(--shadow) !important; }
+.wheel-preview { color: var(--text) !important; font-family: var(--font-heading) !important; font-weight: 500; }
+.wheel-column { background: linear-gradient(180deg, color-mix(in srgb, var(--surface-2), transparent 20%), transparent 18%, transparent 82%, color-mix(in srgb, var(--surface-2), transparent 35%)), color-mix(in srgb, var(--surface), var(--bg) 8%) !important; border-color: var(--border-soft) !important; scrollbar-color: color-mix(in srgb, var(--accent), transparent 30%) transparent; }
+.wheel-column button { color: var(--muted) !important; border-bottom-color: color-mix(in srgb, var(--border-soft), transparent 28%) !important; font-family: var(--font-text) !important; }
+.wheel-column button:hover { color: var(--text) !important; background: color-mix(in srgb, var(--surface-2), var(--accent) 7%) !important; }
+.wheel-column button.selected { color: var(--text) !important; background: color-mix(in srgb, var(--accent), transparent 82%) !important; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 48%) !important; }
+:root[data-theme="light"] .wheel-popover,
+:root[data-theme="light"] .wheel-popover.compact-wheel { background: #ffffff !important; border-color: #aebdcb !important; }
+:root[data-theme="light"] .wheel-column { background: linear-gradient(180deg, #eef3f8, #ffffff 20%, #ffffff 80%, #eef3f8) !important; border-color: #d8e0e8 !important; }
+:root[data-theme="light"] .wheel-column button.selected { color: #17202a !important; background: #dbe7f1 !important; box-shadow: inset 0 0 0 1px #95abc0 !important; }
+:root[data-theme="light"] .wheel-actions .btn-ghost { color: #34495d; background: #f3f6f9; border-color: #b8c5d3; }
+
+.time-wheel.compact-wheel { width: min(390px, 92vw) !important; }
+.number-wheel.compact-wheel,
+.number-select-wheel { width: min(320px, 88vw) !important; }
+.time-wheel .wheel-columns.two-columns { grid-template-columns: repeat(2, minmax(90px, 1fr)) !important; }
+.number-wheel .wheel-column { width: 160px !important; max-width: 170px !important; margin: 0 auto; }
+.wheel-manual-label { display: grid; gap: 0.34rem; margin: 0 0 0.55rem; color: var(--muted); font-size: 0.78rem; }
+.wheel-manual-input { min-height: 34px !important; }
+
+@media (max-width: 720px) {
+
+.time-wheel.compact-wheel,
+.number-wheel.compact-wheel,
+.number-select-wheel { width: calc(100vw - 2rem) !important; }
+}

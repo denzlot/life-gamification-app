@@ -1,0 +1,95 @@
+/* Compact shared page/header rules migrated from legacy.css. */
+
+.centered-title-header,
+.day-hero { max-width: 900px; margin: 0 auto 1.8rem; text-align: center; }
+.centered-title-header h1,
+.day-hero h1 { font-size: clamp(2rem, 5vw, 3.35rem); letter-spacing: -0.045em; }
+
+@media (max-width: 720px) {
+
+.centered-title-header h1,
+.day-hero h1 { font-size: clamp(1.8rem, 9vw, 2.65rem); }
+}
+
+.today-hero,
+.centered-title-header { max-width: 900px; margin-left: auto; margin-right: auto; text-align: center; }
+
+.centered-title-header,
+.day-hero,
+.today-hero { margin-bottom: 1.25rem; }
+.centered-title-header h1,
+.day-hero h1,
+.today-hero h1 { letter-spacing: -0.03em; }
+
+@media (max-width: 720px) {
+
+.habit-designer-panel .weekday-picker { gap: 0.28rem; }
+.weekday-picker button { min-height: 31px; padding: 0.16rem; font-size: 0.74rem; }
+
+}
+
+@media (max-width: 720px) {
+
+.quest-calendar-help { display: grid; }
+}
+
+.centered-title-header h1,
+.day-hero h1,
+.today-hero h1 { font-family: var(--font-heading); font-size: clamp(1.38rem, 2.34vw, 1.99rem); font-weight: 500; }
+
+@media (max-width: 720px) {
+
+.centered-title-header h1,
+.day-hero h1,
+.today-hero h1 { font-size: clamp(1.24rem, 6.2vw, 1.7rem); }
+
+}
+
+.page-header,
+.centered-title-header,
+.day-hero,
+.today-hero,
+.calendar-title-header { max-width: none !important; margin: 0 0 0.8rem !important; padding: 0.55rem 0 0.25rem !important; text-align: left !important; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 0.7rem 1rem; border-bottom: 1px solid color-mix(in srgb, var(--border), transparent 22%); }
+.page-header .eyebrow,
+.day-hero .eyebrow { grid-column: 1 / -1; margin-bottom: -0.2rem !important; }
+.page-header h1,
+.centered-title-header h1,
+.day-hero h1 { font-size: clamp(1.1rem, 1.35vw, 1.42rem) !important; letter-spacing: 0 !important; margin: 0 !important; }
+.section-title-row h2,
+.inline-plan-title { font-size: clamp(0.98rem, 1.08vw, 1.16rem) !important; }
+.day-status-row { justify-self: end; align-self: center; margin: 0 !important; font-size: 0.74rem; }
+.date-inline-switcher,
+.day-date-inline,
+.calendar-inline-switcher { grid-column: 1 / 2; max-width: none !important; margin: 0 !important; justify-content: flex-start !important; gap: 0.65rem !important; }
+.date-inline-switcher h1 { min-width: 0 !important; width: auto !important; }
+.date-inline-switcher .nav-text-button,
+.date-inline-switcher a.nav-text-button,
+.date-inline-switcher button.nav-text-button { font-size: 0.72rem !important; letter-spacing: 0.08em !important; color: var(--muted) !important; border-bottom: 1px solid transparent !important; }
+.date-inline-switcher .nav-text-button:hover,
+.date-inline-switcher a.nav-text-button:hover,
+.date-inline-switcher button.nav-text-button:hover { border-bottom-color: color-mix(in srgb, var(--accent), transparent 30%) !important; }
+.center-jump-button { align-self: center; }
+
+.center-add-panel,
+.center-open-day-panel,
+.start-day-line { max-width: none !important; margin-bottom: 0.75rem !important; padding: 0.7rem !important; }
+.plan-section,
+.calendar-panel { padding-top: 0.9rem !important; }
+
+@media (max-width: 920px) {
+.page-header,
+.centered-title-header,
+.day-hero,
+.today-hero,
+.calendar-title-header { grid-template-columns: 1fr; align-items: start; }
+.day-status-row,
+.center-jump-button { justify-self: start; grid-column: 1; grid-row: auto; }
+
+}
+
+@media (max-width: 700px) {
+.today-hero,
+.calendar-title-header { grid-template-columns: 1fr !important; grid-template-rows: auto !important; gap: 0.25rem !important; }
+.today-hero > .day-status-row,
+.calendar-header-actions { grid-column: 1 !important; grid-row: auto !important; justify-self: start !important; }
+}

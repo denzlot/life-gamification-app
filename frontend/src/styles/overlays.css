@@ -1,0 +1,44 @@
+/* Shared overlay/popover surface rules migrated from legacy.css. */
+
+.inline-overlay-host { position: relative; z-index: 6; }
+.today-inline-toolbar,
+.calendar-toolbar-stack { position: relative; isolation: isolate; }
+.toolbar-popover { position: absolute !important; left: 0; top: calc(100% + 0.35rem); z-index: 45; margin: 0 !important; border: 1px solid color-mix(in srgb, var(--border), var(--text) 4%) !important; border-radius: 16px !important; background: color-mix(in srgb, var(--surface), var(--bg) 5%) !important; box-shadow: 0 24px 60px color-mix(in srgb, var(--shadow), #000 16%) !important; backdrop-filter: blur(14px) saturate(1.05); }
+
+.toolbar-popover,
+.drawer-panel,
+.quest-picker-dialog,
+.wheel-popover { border-radius: 14px !important; background: linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 3%), color-mix(in srgb, var(--surface), var(--bg) 9%)) !important; border-color: color-mix(in srgb, var(--border), var(--accent) 12%) !important; box-shadow: 0 18px 48px color-mix(in srgb, var(--shadow), #000 14%) !important; }
+.toolbar-popover { width: min(100%, 28rem) !important; }
+.toolbar-popover--route { width: min(100%, 48rem) !important; }
+.calendar-left-tools,
+.today-controls-row { justify-content: flex-start !important; }
+.filter-row button,
+.calendar-left-tools button,
+.quest-picker-button { border-radius: 999px !important; min-height: 31px !important; font-size: 0.75rem !important; }
+
+.toolbar-popover,
+.filter-panel.drawer-panel { background: color-mix(in srgb, var(--bg), var(--surface) 20%) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.55) !important; }
+
+/* Toolbar alignment migrated from legacy.css. */
+.task-create-panel .section-title-row,
+.today-controls-row,
+.calendar-left-tools { justify-content: flex-start !important; }
+
+/* Filter panel layout migrated from legacy.css. */
+.filter-panel { display: grid; gap: 0.75rem; margin: 1rem 0 0.6rem; }
+
+/* Drawer/filter surface repair migrated from legacy.css. */
+.drawer-panel,
+.task-drawer,
+.filter-panel { background: transparent !important; box-shadow: none !important; border-color: var(--border-soft) !important; border-radius: var(--line-radius) !important; padding: 0.85rem 0 !important; }
+
+/* Drawer/filter sizing migrated from legacy.css. */
+.task-drawer,
+.drawer-panel,
+.filter-panel { max-width: 720px; }
+.task-drawer .input,
+.drawer-panel .input,
+.filter-panel .input { min-height: 36px; }

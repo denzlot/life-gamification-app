@@ -1,0 +1,13 @@
+/* DayDetails page styles extracted from legacy.css. */
+
+.day-screen-page { max-width: 960px; }
+.day-preview,
+.day-details { position: sticky; top: 92px; }
+.day-summary { border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
+.details-list { margin-top: 0.7rem; }
+.missing-note { margin: 1rem 0 0; border-left: 1px solid var(--warn); padding-left: 0.9rem; }
+.inline-note { margin: 0.7rem 0 0; }
+@media (max-width: 1100px) {
+  .day-preview,
+  .day-details { position: static; }
+}

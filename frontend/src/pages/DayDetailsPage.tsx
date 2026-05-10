@@ -1,19 +1,19 @@
-import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/http";
-import type { CalendarDayResponse, CreateTaskRequest, DailyPlanItemResponse, DailyPlanItemStatus, DailyPlanResponse, SourceType } from "../api/types";
+import type { CalendarDayResponse, CreateTaskRequest, DailyPlanItemResponse, DailyPlanItemStatus, DailyPlanResponse } from "../api/types";
 import { Button } from "../components/Button";
-import { EmptyState } from "../components/EmptyState";
-import { DateWheelInput, Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
+import { DayDetailsHero } from "../components/dayDetails/DayDetailsHero";
+import { DayPlanSection } from "../components/dayDetails/DayPlanSection";
+import { DayTaskCreatePanel } from "../components/dayDetails/DayTaskCreatePanel";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useAchievementWatcher } from "../context/AchievementContext";
 import { useGame } from "../context/GameContext";
 import { useToast } from "../context/ToastContext";
-import { formatDate, formatTime, itemStatusLabel, pct, planStatusLabel, signed, sourceLabel, todayISO } from "../utils/format";
-import { applyPlanItemOrder, animatePlanItemShift, capturePlanItemRects, readBooleanPreference, reorderItems, writeBooleanPreference, writePlanItemOrder } from "../utils/planItemUi";
+import { countDailyPlanItemStatuses, groupDailyPlanItemsBySource, sortDailyPlanItemsByPlannedTime } from "../utils/dailyPlanItems";
+import { formatDate, pct, todayISO } from "../utils/format";
+import { readBooleanPreference, writeBooleanPreference } from "../utils/planItemUi";
 import { buildPreviewItems, summarizePreviewItems } from "../utils/planningPreview";
-
-
 
 function emptyCalendarDay(date: string): CalendarDayResponse {
   return {
@@ -34,78 +34,13 @@ function emptyCalendarDay(date: string): CalendarDayResponse {
   };
 }
 
-function countStatuses(items: DailyPlanItemResponse[]) {
-  return items.reduce<Record<DailyPlanItemStatus, number>>(
-    (acc, item) => {
-      acc[item.status] += 1;
-      return acc;
-    },
-    { PENDING: 0, COMPLETED: 0, FAILED: 0 }
-  );
-}
-
-function addDays(date: string, delta: number) {
-  const next = new Date(`${date}T12:00:00`);
-  next.setDate(next.getDate() + delta);
-  return next.toISOString().slice(0, 10);
-}
-
-function canConfirm(date: string) {
-  return date <= todayISO();
-}
-
-function monthDayLabel(date: string) {
-  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(new Date(`${date}T12:00:00`));
-}
-
-function weekdayLabel(date: string) {
-  return new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(new Date(`${date}T12:00:00`));
-}
-
-function cycleLabel(status: DailyPlanItemStatus) {
-  if (status === "PENDING") return "Отметить как выполненную";
-  if (status === "COMPLETED") return "Отметить как не выполненную";
-  return "Вернуть в план";
-}
-
-function StatusIcon({ status }: { status: DailyPlanItemStatus }) {
-  return (
-    <svg className="status-cycle-svg" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-      <circle className="status-cycle-ring" cx="10" cy="10" r="8.2" />
-      {status === "COMPLETED" ? <path className="status-cycle-mark" d="M5.8 10.2 8.6 13 14.3 7" /> : null}
-      {status === "FAILED" ? <path className="status-cycle-mark" d="M5.8 10h8.4" /> : null}
-    </svg>
-  );
-}
-
 function closeDayQuestion(completedCount: number) {
   if (completedCount > 0) return "Закрыть этот день?";
   return "В этом дне пока нет выполненных задач. Если закрыть его сейчас, персонаж потеряет HP. Закрыть день?";
 }
 
-function OptionButton({ active, children, onClick }: { active?: boolean; children: string; onClick: () => void }) {
-  return <button type="button" className={`option-chip ${active ? "active" : ""}`} onClick={onClick}>{children}</button>;
-}
-
-function sortByPlannedTime(items: DailyPlanItemResponse[]) {
-  return [...items].sort((a, b) => {
-    const left = a.plannedTime || "99:99";
-    const right = b.plannedTime || "99:99";
-    return left.localeCompare(right) || a.title.localeCompare(b.title, "ru");
-  });
-}
-
-const itemGroups: Array<{ source: SourceType; title: string }> = [
-  { source: "TASK", title: "Задачи" },
-  { source: "HABIT", title: "Привычки" },
-  { source: "QUEST", title: "Квесты" },
-  { source: "MANUAL", title: "Пункты" }
-];
-
-function groupedBySource(items: DailyPlanItemResponse[]) {
-  return itemGroups
-    .map((group) => ({ ...group, items: items.filter((item) => item.sourceType === group.source) }))
-    .filter((group) => group.items.length > 0);
+function createEmptyTaskForm(date: string): CreateTaskRequest {
+  return { title: "", description: "", deadlineDate: date, plannedTime: "", deadlineTime: "" };
 }
 
 export function DayDetailsPage() {
@@ -121,7 +56,7 @@ export function DayDetailsPage() {
   const [busy, setBusy] = useState(false);
   const [busyItemId, setBusyItemId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [taskForm, setTaskForm] = useState<CreateTaskRequest>({ title: "", description: "", deadlineDate: date, plannedTime: "", deadlineTime: "" });
+  const [taskForm, setTaskForm] = useState<CreateTaskRequest>(() => createEmptyTaskForm(date));
   const [taskError, setTaskError] = useState<string | null>(null);
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
   const [taskOptions, setTaskOptions] = useState({ deadline: false, time: false, description: false });
@@ -132,17 +67,14 @@ export function DayDetailsPage() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
-  const [draggingItemId, setDraggingItemId] = useState<number | null>(null);
   const [twoColumnLayout, setTwoColumnLayout] = useState(() => readBooleanPreference("flowvisior:details-two-column-layout"));
-  const activeDragItemIdRef = useRef<number | null>(null);
-  const lastDragOverIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (date === todayISO()) {
       navigate("/today", { replace: true });
       return;
     }
-    setTaskForm({ title: "", description: "", deadlineDate: date, plannedTime: "", deadlineTime: "" });
+    setTaskForm(createEmptyTaskForm(date));
     setTaskOptions({ deadline: false, time: false, description: false });
   }, [date, navigate]);
 
@@ -163,8 +95,7 @@ export function DayDetailsPage() {
         api.habits.list(),
         api.quests.activeSteps()
       ]);
-      const orderedDayPlan = dayPlan ? { ...dayPlan, items: applyPlanItemOrder(dayPlan.items, date) } : null;
-      const preview = orderedDayPlan ? [] : buildPreviewItems(date, { tasks: taskList, habits: habitList, questSteps });
+      const preview = dayPlan ? [] : buildPreviewItems(date, { tasks: taskList, habits: habitList, questSteps });
       const previewStats = summarizePreviewItems(preview);
       const calendarSummary = calendar.find((day) => day.date === date) ?? emptyCalendarDay(date);
 
@@ -181,8 +112,8 @@ export function DayDetailsPage() {
         questCompletedCount: previewStats.questCompletedCount
       } : calendarSummary);
       setPreviewItems(preview);
-      setPlan(orderedDayPlan);
-      setNoteDraft(orderedDayPlan?.note ?? "");
+      setPlan(dayPlan);
+      setNoteDraft(dayPlan?.note ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось открыть день");
     } finally {
@@ -195,68 +126,17 @@ export function DayDetailsPage() {
   }, [load]);
 
   const items = plan?.items ?? previewItems;
-  const visibleItems = useMemo(() => sortByTime ? sortByPlannedTime(items) : items, [items, sortByTime]);
-  const groupedItems = useMemo(() => groupedBySource(visibleItems), [visibleItems]);
-  const counts = useMemo(() => countStatuses(items), [items]);
+  const visibleItems = useMemo(() => sortByTime ? sortDailyPlanItemsByPlannedTime(items) : items, [items, sortByTime]);
+  const groupedItems = useMemo(() => groupDailyPlanItemsBySource(visibleItems), [visibleItems]);
+  const counts = useMemo(() => countDailyPlanItemStatuses(items), [items]);
   const completedPct = pct(counts.COMPLETED, items.length);
   const isClosed = plan?.status === "CLOSED";
   const today = todayISO();
   const isPast = date < today;
   const isFuture = date > today;
-  const canManualReorder = Boolean(plan && !isClosed && !isPast && !isFuture && !sortByTime);
 
-  function movePlanItem(activeId: number, overId: number) {
-    if (!canManualReorder) return;
-    const previousRects = capturePlanItemRects();
-    setPlan((current) => {
-      if (!current) return current;
-      const nextItems = reorderItems(current.items, activeId, overId);
-      if (nextItems === current.items) return current;
-      writePlanItemOrder(date, nextItems);
-      return { ...current, items: nextItems };
-    });
-    animatePlanItemShift(previousRects);
-  }
-
-  function handleDragPointerDown(event: ReactPointerEvent<HTMLElement>, itemId: number) {
-    if (!canManualReorder) return;
-    event.preventDefault();
-    activeDragItemIdRef.current = itemId;
-    lastDragOverIdRef.current = itemId;
-    setDraggingItemId(itemId);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  }
-
-  function handleDragPointerMove(event: ReactPointerEvent<HTMLElement>) {
-    const activeId = activeDragItemIdRef.current;
-    if (!canManualReorder || activeId === null) return;
-    event.preventDefault();
-    const target = document.elementFromPoint(event.clientX, event.clientY);
-    const itemElement = target?.closest<HTMLElement>("[data-plan-item-id]");
-    const overId = Number(itemElement?.dataset.planItemId);
-    if (!Number.isFinite(overId) || overId === activeId || overId === lastDragOverIdRef.current) return;
-    lastDragOverIdRef.current = overId;
-    movePlanItem(activeId, overId);
-  }
-
-  function handleDragPointerEnd(event?: ReactPointerEvent<HTMLElement>) {
-    if (event && event.currentTarget.hasPointerCapture?.(event.pointerId)) {
-      event.currentTarget.releasePointerCapture?.(event.pointerId);
-    }
-    activeDragItemIdRef.current = null;
-    lastDragOverIdRef.current = null;
-    setDraggingItemId(null);
-  }
-
-  function handleDragKeyDown(event: KeyboardEvent<HTMLElement>, itemId: number) {
-    if (!canManualReorder) return;
-    const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : 0;
-    if (direction === 0) return;
-    event.preventDefault();
-    const index = items.findIndex((item) => item.id === itemId);
-    const target = items[index + direction];
-    if (index < 0 || !target) return;
-    movePlanItem(itemId, target.id);
+  function navigateToDate(targetDate: string) {
+    navigate(targetDate === today ? "/today" : `/calendar/${targetDate}`);
   }
 
   function toggleTwoColumnLayout() {
@@ -273,9 +153,8 @@ export function DayDetailsPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.startByDate(date);
-      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, date) };
-      setPlan(orderedNext);
-      setNoteDraft(orderedNext.note ?? "");
+      setPlan(next);
+      setNoteDraft(next.note ?? "");
       notify({ tone: "success", title: "День открыт" });
       await load(false);
     } catch (err) {
@@ -291,9 +170,8 @@ export function DayDetailsPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.closeByDate(date);
-      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, date) };
-      setPlan(orderedNext);
-      setNoteDraft(orderedNext.note ?? "");
+      setPlan(next);
+      setNoteDraft(next.note ?? "");
       notify({ tone: "success", title: "День закрыт" });
       refreshProfile().catch(() => undefined);
       syncAchievements(false).catch(() => undefined);
@@ -318,7 +196,7 @@ export function DayDetailsPage() {
     };
     try {
       await api.tasks.create(payload);
-      setTaskForm({ title: "", description: "", deadlineDate: date, plannedTime: "", deadlineTime: "" });
+      setTaskForm(createEmptyTaskForm(date));
       setTaskOptions({ deadline: false, time: false, description: false });
       setTaskDrawerOpen(false);
       notify({ tone: "success", title: taskForm.deadlineDate === date ? "Задача создана" : `Задача создана на ${formatDate(taskForm.deadlineDate || date)}` });
@@ -335,9 +213,8 @@ export function DayDetailsPage() {
     setError(null);
     try {
       const next = await api.dailyPlans.updateNoteByDate(date, { note: noteDraft.trim() || null });
-      const orderedNext = { ...next, items: applyPlanItemOrder(next.items, date) };
-      setPlan(orderedNext);
-      setNoteDraft(orderedNext.note ?? "");
+      setPlan(next);
+      setNoteDraft(next.note ?? "");
       notify({ tone: "success", title: "Заметка сохранена" });
       setNoteOpen(false);
       await load(false);
@@ -424,18 +301,7 @@ export function DayDetailsPage() {
 
   return (
     <section className="page narrow-page day-screen-page centered-page">
-      <header className="day-hero">
-        <p className="eyebrow">{weekdayLabel(date)}</p>
-        <div className="date-inline-switcher day-date-inline" aria-label="Переключение дней">
-          <button type="button" className="nav-text-button" onClick={() => { const target = addDays(date, -1); navigate(target === today ? "/today" : `/calendar/${target}`); }} aria-label="Предыдущий день">← предыдущий</button>
-          <h1>{monthDayLabel(date)}</h1>
-          <button type="button" className="nav-text-button" onClick={() => { const target = addDays(date, 1); navigate(target === today ? "/today" : `/calendar/${target}`); }} aria-label="Следующий день">следующий →</button>
-        </div>
-        <div className="day-status-row">
-          <span>{plan ? planStatusLabel(plan.status) : summary?.status === "EMPTY" ? "день не открыт" : planStatusLabel(summary?.status)}</span>
-          <Link className="day-calendar-link" to="/calendar">календарь</Link>
-        </div>
-      </header>
+      <DayDetailsHero date={date} plan={plan} summary={summary} onNavigateDate={navigateToDate} />
 
       {loading ? <Loader label="Открываем день" /> : <ErrorLine error={error} />}
 
@@ -452,146 +318,56 @@ export function DayDetailsPage() {
       ) : null}
 
       {!isClosed && !isPast ? (
-        <section className="section-line task-create-panel drawer-host clean-section">
-          <div className="section-title-row small-title-row">
-            <h2>{isFuture ? "Добавить задачу на этот день" : "Добавить задачу"}</h2>
-            <Button type="button" variant="ghost" onClick={() => setTaskDrawerOpen((value) => !value)}>{taskDrawerOpen ? "Скрыть" : "Добавить задачу"}</Button>
-          </div>
-          {taskDrawerOpen ? (
-            <div className="modal-backdrop form-modal-backdrop" role="presentation" onMouseDown={() => setTaskDrawerOpen(false)}>
-              <form className="form-grid task-drawer unified-form compact-create-form modal-form-card" onSubmit={createTask} role="dialog" aria-modal="true" aria-label="Создание задачи" onMouseDown={(event) => event.stopPropagation()}>
-                <div className="modal-form-head">
-                  <div><p className="eyebrow">новая задача</p><strong>{isFuture ? "Задача на выбранный день" : "Добавить задачу"}</strong></div>
-                  <button type="button" className="dialog-close" onClick={() => setTaskDrawerOpen(false)} aria-label="Закрыть">×</button>
-                </div>
-              <Field label="Название">
-                <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} placeholder="Например: созвон с дизайнером" />
-              </Field>
-              <div className="fixed-date-chip" aria-label={`Дата задачи: ${formatDate(date)}`}>Дата: {formatDate(date)}</div>
-              <div className="optional-toolbar">
-                <OptionButton active={taskOptions.time || Boolean(taskForm.plannedTime)} onClick={() => setTaskOptions((state) => ({ ...state, time: !state.time }))}>{taskForm.plannedTime ? `Время: ${formatTime(taskForm.plannedTime)}` : "Время"}</OptionButton>
-                <OptionButton active={taskOptions.deadline || Boolean(taskForm.deadlineTime)} onClick={() => setTaskOptions((state) => ({ ...state, deadline: !state.deadline }))}>{taskForm.deadlineTime ? `Дедлайн: ${formatTime(taskForm.deadlineTime)}` : "Дедлайн"}</OptionButton>
-                <OptionButton active={taskOptions.description || Boolean(taskForm.description)} onClick={() => setTaskOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionButton>
-              </div>
-              {taskOptions.time ? <Field label="Плановое время"><TimeWheelInput value={taskForm.plannedTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, plannedTime: value })} /></Field> : null}
-              {taskOptions.deadline ? <Field label="Дедлайн"><TimeWheelInput value={taskForm.deadlineTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field> : null}
-              {taskOptions.description ? <Field label="Описание"><TextArea value={taskForm.description ?? ""} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></Field> : null}
-              <ErrorLine error={taskError} />
-              <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
-              </form>
-            </div>
-          ) : null}
-        </section>
+        <DayTaskCreatePanel
+          date={date}
+          isFuture={isFuture}
+          taskForm={taskForm}
+          setTaskForm={setTaskForm}
+          taskOptions={taskOptions}
+          setTaskOptions={setTaskOptions}
+          taskDrawerOpen={taskDrawerOpen}
+          setTaskDrawerOpen={setTaskDrawerOpen}
+          taskError={taskError}
+          busy={busy}
+          onSubmit={createTask}
+        />
       ) : null}
 
       {summary || plan ? (
-        <section className="section-line clean-section">
-          <div className="section-title-row plan-title-row compact-plan-title-row">
-            <h2 className="inline-plan-title">
-              Лист дня
-              <span>выполнено {counts.COMPLETED} · в плане {counts.PENDING} · не выполнено {counts.FAILED}</span>
-              {(plan || summary) ? <span className="inline-rewards"><span className="xp-token">XP {signed(plan?.xpEarned ?? summary?.xpEarned ?? 0)}</span><span className="hp-token">HP {signed(plan?.hpDelta ?? summary?.hpDelta ?? 0)}</span></span> : null}
-            </h2>
-            <div className="plan-progress"><strong>{completedPct}%</strong><div className="meter"><span style={{ width: `${completedPct}%` }} /></div></div>
-          </div>
-          {isPast ? <p className="muted inline-note">Прошедший день открыт только для просмотра задач. Заметку можно обновить.</p> : null}
-          {items.length > 1 ? (
-            <div className="today-controls-row">
-              <Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "Сортировать по времени"}</Button>
-              <Button type="button" variant="ghost" className={twoColumnLayout ? "toolbar-active" : ""} onClick={toggleTwoColumnLayout}>{twoColumnLayout ? "В один ряд" : "В два ряда"}</Button>
-            </div>
-          ) : null}
-
-          {items.length > 0 ? (
-            <div className={`grouped-plan-list details-list ${twoColumnLayout ? "two-column-enabled" : ""}`}>
-              {groupedItems.map((group) => (
-                <section className={`plan-source-group group-${group.source.toLowerCase()}`} key={group.source}>
-                  <div className="plan-source-head">
-                    <h3>{group.title}</h3>
-                    <span>{group.items.length}</span>
-                  </div>
-                  <div className="line-list todo-list typed-list clean-list">
-                    {group.items.map((item) => (
-                      <article
-                        className={`line-item plan-item draggable-plan-item status-${item.status.toLowerCase()} ${draggingItemId === item.id ? "dragging" : ""}`}
-                        key={item.id}
-                        data-plan-item-id={item.id}
-                      >
-                        <button
-                          type="button"
-                          className="drag-handle"
-                          disabled={!canManualReorder}
-                          onPointerDown={(event) => handleDragPointerDown(event, item.id)}
-                          onPointerMove={handleDragPointerMove}
-                          onPointerUp={handleDragPointerEnd}
-                          onPointerCancel={handleDragPointerEnd}
-                          onKeyDown={(event) => handleDragKeyDown(event, item.id)}
-                          title={canManualReorder ? "Перетащить пункт. Стрелки вверх/вниз тоже меняют порядок." : "Ручной порядок доступен только для открытого дня без сортировки по времени"}
-                          aria-label="Перетащить пункт"
-                        >
-                          ⋮⋮
-                        </button>
-                        <button
-                          type="button"
-                          className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
-                          disabled={!plan || busyItemId === item.id || isClosed || isPast || !canConfirm(date)}
-                          onClick={() => cycleItem(item)}
-                          aria-label={`${cycleLabel(item.status)}: ${item.title}`}
-                        >
-                          <StatusIcon status={item.status} />
-                        </button>
-                        {item.description ? <button type="button" className={`description-toggle ${openDescriptionId === item.id ? "open" : ""}`} onClick={() => setOpenDescriptionId((current) => current === item.id ? null : item.id)} aria-label="Показать описание">›</button> : <span className="description-spacer" />}
-                        <div className="todo-main">
-                          <div className="item-title-line">
-                            {editingId === item.id ? (
-                              <TextInput className="inline-edit-input" autoFocus value={editTitle} onChange={(event) => setEditTitle(event.target.value)} onBlur={() => saveTitle(item)} onKeyDown={(event) => handleTitleKey(event, item)} />
-                            ) : (
-                              <strong className="editable-title" onClick={() => beginEdit(item)}>{item.title}</strong>
-                            )}
-                            <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
-                          </div>
-                          <p className="muted compact-meta">{itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}</p>
-                          {openDescriptionId === item.id && item.description ? <p className="item-description">{item.description}</p> : null}
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          ) : null}
-
-          {!loading && !plan && items.length === 0 ? <EmptyState title="На этот день пока ничего не назначено" text="Добавь задачу или распредели шаг квеста на эту дату." /> : null}
-          {!loading && plan && items.length === 0 ? <EmptyState title="Пока пусто" text="Создай задачу или настрой привычки и квесты." /> : null}
-
-          <div className="bottom-day-actions day-note-actions">
-            <Button type="button" variant="ghost" onClick={() => setNoteOpen((value) => !value)}>
-              {noteOpen ? "Скрыть заметку" : plan?.note ? "Изменить заметку" : "Заметка"}
-            </Button>
-            {plan && !isClosed && !isPast && !isFuture ? <Button variant="danger" onClick={closeDay} disabled={busy}>Закрыть день</Button> : null}
-          </div>
-
-          {plan?.note && !noteOpen ? <p className="day-note-preview">{plan.note}</p> : null}
-
-          {noteOpen ? (
-            <div className="day-note-editor drawer-panel">
-              <Field label="Заметка о дне">
-                <TextArea
-                  value={noteDraft}
-                  onChange={(event) => setNoteDraft(event.target.value)}
-                  rows={4}
-                  maxLength={5000}
-                  placeholder="Что получилось, что не понравилось, что стоит запомнить"
-                />
-              </Field>
-              <div className="form-actions">
-                <Button type="button" disabled={noteSaving} onClick={saveNote}>{noteSaving ? "Сохраняем" : "Сохранить"}</Button>
-              </div>
-            </div>
-          ) : null}
-
-          {plan && isClosed ? <p className="muted closed-day-note">День закрыт. Изменения уже учтены в streak, HP и XP.</p> : null}
-        </section>
+        <DayPlanSection
+          summary={summary}
+          plan={plan}
+          items={items}
+          groups={groupedItems}
+          counts={counts}
+          completedPct={completedPct}
+          loading={loading}
+          isPast={isPast}
+          isFuture={isFuture}
+          isClosed={isClosed}
+          sortByTime={sortByTime}
+          twoColumnLayout={twoColumnLayout}
+          noteOpen={noteOpen}
+          noteDraft={noteDraft}
+          noteSaving={noteSaving}
+          busy={busy}
+          busyItemId={busyItemId}
+          editingId={editingId}
+          editTitle={editTitle}
+          openDescriptionId={openDescriptionId}
+          setSortByTime={setSortByTime}
+          toggleTwoColumnLayout={toggleTwoColumnLayout}
+          setNoteOpen={setNoteOpen}
+          setNoteDraft={setNoteDraft}
+          setEditTitle={setEditTitle}
+          onCloseDay={closeDay}
+          onSaveNote={saveNote}
+          onCycle={cycleItem}
+          onToggleDescription={(id) => setOpenDescriptionId((current) => current === id ? null : id)}
+          onBeginEdit={beginEdit}
+          onSaveTitle={saveTitle}
+          onTitleKey={handleTitleKey}
+        />
       ) : null}
     </section>
   );

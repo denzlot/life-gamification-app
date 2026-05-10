@@ -1,0 +1,43 @@
+/* Shared form styles extracted from the legacy cascade. */
+
+.field > .field-hint {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted-2);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+/* Forms rules migrated from legacy.css. */
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
+.field { display: grid; color: var(--muted); }
+.field > span { color: var(--muted); }
+.field small { color: var(--muted-2); }
+.input { width: 100%; border: 1px solid var(--border); color: var(--text); outline: none; }
+.select { color-scheme: dark; }
+.filter-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 0.35fr); gap: 0.75rem; align-items: center; }
+.input { background: rgba(255, 255, 255, 0.025); }
+.mini-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 720px) {
+.mini-form-grid { grid-template-columns: 1fr; }
+}
+.field small { display: none; }
+.form-grid.unified-form { align-items: start; }
+.clean-field > span { color: color-mix(in srgb, var(--muted), var(--text) 10%); }
+.mini-form-grid { grid-column: 1 / -1; }
+.clean-field > span { display: inline-flex; min-height: 1.15rem; align-items: center; }
+.textarea { resize: vertical; overflow: auto; }
+.field:has(.textarea) { grid-column: 1 / -1; }
+
+.field { gap: 0.32rem; }
+.textarea { line-height: 1.38; }
+.form-grid { gap: 0.72rem; }
+
+.input { min-height: 40px; padding: 0.54rem 0.7rem; font-size: 0.98rem; border-radius: 10px; }
+.textarea { min-height: 41px !important; max-height: 116px !important; }
+.field { font-size: 0.94rem; }
+@media (max-width: 720px) {
+.input { min-height: 37px; }
+}
+.input { transition: border-color 150ms ease, box-shadow 200ms ease, background 150ms ease !important; }
+.input:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent), transparent 82%) !important; border-color: color-mix(in srgb, var(--accent), transparent 28%) !important; }
