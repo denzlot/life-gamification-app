@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from "react";
 import type { DailyPlanItemResponse } from "../../api/types";
 import { formatTime, itemStatusLabel, sourceLabel } from "../../utils/format";
+import { formatFocusClockDuration } from "../../utils/focusTimerStorage";
 import { dailyPlanCycleLabel } from "../../utils/dailyPlanItems";
 import { TextInput } from "../FormFields";
 import { StatusCycleIcon } from "../StatusCycleIcon";
@@ -13,7 +14,6 @@ interface DailyPlanItemRowProps {
   openDescriptionId: number | null;
   canChangeStatus: boolean;
   canEditTitle?: boolean;
-  focused?: boolean;
   setEditTitle: (value: string) => void;
   onCycle: (item: DailyPlanItemResponse) => void;
   onToggleDescription: (id: number) => void;
@@ -31,7 +31,6 @@ export function DailyPlanItemRow({
   openDescriptionId,
   canChangeStatus,
   canEditTitle = canChangeStatus,
-  focused = false,
   setEditTitle,
   onCycle,
   onToggleDescription,
@@ -41,12 +40,10 @@ export function DailyPlanItemRow({
 }: DailyPlanItemRowProps) {
   const isEditing = editingId === item.id;
   const isDescriptionOpen = openDescriptionId === item.id;
+  const showFocusSpent = item.status === "COMPLETED" && typeof item.focusSpentSeconds === "number" && item.focusSpentSeconds > 0;
 
   return (
-    <article
-      className={`line-item plan-item status-${item.status.toLowerCase()} ${focused ? "focus-pulse" : ""}`}
-      data-focus-item-id={item.id}
-    >
+    <article className={`line-item plan-item status-${item.status.toLowerCase()}`}>
       <button
         type="button"
         className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
@@ -88,12 +85,22 @@ export function DailyPlanItemRow({
               {item.title}
             </strong>
           )}
-          <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
         </div>
         <p className="muted compact-meta">
           {itemStatusLabel(item.status)}{item.plannedTime ? ` · ${formatTime(item.plannedTime)}` : ""}{item.deadlineTime ? ` · дедлайн ${formatTime(item.deadlineTime)}` : ""}
         </p>
         {isDescriptionOpen && item.description ? <p className="item-description">{item.description}</p> : null}
+      </div>
+
+      <div className="plan-item-meta" aria-label="Тип и Focus-время">
+        <span
+          className={`plan-item-focus-time ${showFocusSpent ? "" : "is-empty"}`}
+          title={showFocusSpent ? "Засчитанное Focus-время" : undefined}
+          aria-hidden={!showFocusSpent}
+        >
+          {showFocusSpent ? formatFocusClockDuration(item.focusSpentSeconds ?? 0) : "0:00"}
+        </span>
+        <span className="item-type-badge">{sourceLabel(item.sourceType).toLowerCase()}</span>
       </div>
     </article>
   );

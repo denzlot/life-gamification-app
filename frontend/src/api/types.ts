@@ -9,6 +9,7 @@ export type HpState = "GREAT" | "NORMAL" | "TIRED" | "EXHAUSTED" | "CRITICAL";
 export type UserRole = "USER" | "ADMIN" | string;
 export type UserStatus = "ACTIVE" | "BANNED";
 export type ActivityAction = "COMPLETED" | "FAILED" | "RESET" | "DAY_CLOSED" | string;
+export type FocusCreditedMode = "PLANNED" | "ACTUAL";
 
 export interface AuthUser {
   id: number;
@@ -90,6 +91,7 @@ export interface DailyPlanItemResponse {
   hpDeltaFail: number;
   createdAt?: string;
   completedAt?: string | null;
+  focusSpentSeconds?: number | null;
 }
 
 export interface DailyPlanResponse {
@@ -184,6 +186,43 @@ export interface UpdateDailyPlanItemRequest {
   description?: string | null;
   plannedTime?: string | null;
   deadlineTime?: string | null;
+}
+
+
+export interface CreateFocusSessionRequest {
+  sessionId: string;
+  sourceType: SourceType;
+  sourceId?: number | null;
+  title: string;
+  durationSeconds: number;
+  plannedDurationSeconds: number;
+  actualElapsedSeconds: number;
+  overtimeSeconds: number;
+  creditedDurationSeconds: number;
+  creditedMode: FocusCreditedMode;
+  completedAt: string;
+  planDate: string;
+}
+
+export interface CompleteDailyPlanItemRequest {
+  focusSession?: CreateFocusSessionRequest | null;
+}
+
+export interface FocusSessionResponse {
+  id: number;
+  sessionId: string;
+  userId: number;
+  sourceType: SourceType;
+  sourceId?: number | null;
+  title: string;
+  durationSeconds: number;
+  plannedDurationSeconds: number;
+  actualElapsedSeconds: number;
+  overtimeSeconds: number;
+  creditedDurationSeconds: number;
+  creditedMode: FocusCreditedMode;
+  completedAt: string;
+  planDate: string;
 }
 
 export interface TodaySummaryResponse {
@@ -292,11 +331,23 @@ export interface StreakHistoryResponse {
   maxStreak: number;
 }
 
+
+export interface FocusStatsResponse {
+  totalSeconds: number;
+  taskSeconds: number;
+  habitSeconds: number;
+  questSeconds: number;
+  plannedSeconds: number;
+  actualSeconds: number;
+  overtimeSeconds: number;
+}
+
 export interface StatsResponse {
   allTime: AllTimeStatsResponse;
   thisWeek: ThisWeekStatsResponse;
   xpByWeek: XpByWeekResponse[];
   streakHistory: StreakHistoryResponse[];
+  focus: FocusStatsResponse;
 }
 
 export interface AchievementResponse {

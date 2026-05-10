@@ -24,6 +24,7 @@ public class StatsService {
     private final DailyPlanItemRepository dailyPlanItemRepository;
     private final ActivityLogRepository activityLogRepository;
     private final QuestRepository questRepository;
+    private final FocusSessionRepository focusSessionRepository;
 
     public StatsService(
             AuthenticatedUserService authenticatedUserService,
@@ -31,7 +32,8 @@ public class StatsService {
             DailyPlanRepository dailyPlanRepository,
             DailyPlanItemRepository dailyPlanItemRepository,
             ActivityLogRepository activityLogRepository,
-            QuestRepository questRepository
+            QuestRepository questRepository,
+            FocusSessionRepository focusSessionRepository
     ) {
         this.authenticatedUserService = authenticatedUserService;
         this.userGameStatsService = userGameStatsService;
@@ -39,6 +41,7 @@ public class StatsService {
         this.dailyPlanItemRepository = dailyPlanItemRepository;
         this.activityLogRepository = activityLogRepository;
         this.questRepository = questRepository;
+        this.focusSessionRepository = focusSessionRepository;
     }
 
     @Transactional
@@ -58,7 +61,8 @@ public class StatsService {
                 buildAllTime(user, stats, plans, items, xpByWeek),
                 buildThisWeek(plans, items, logs),
                 xpByWeek,
-                buildStreakHistory(plans)
+                buildStreakHistory(plans),
+                buildFocusStats(user)
         );
     }
 
@@ -118,6 +122,18 @@ public class StatsService {
         int activeDays = countActiveDays(plans, items, weekStart, weekEnd);
 
         return new ThisWeekStatsResponse(xp, tasksCompleted, habitsCompleted, activeDays);
+    }
+
+    private FocusStatsResponse buildFocusStats(User user) {
+        return new FocusStatsResponse(
+                focusSessionRepository.sumDurationSeconds(user),
+                focusSessionRepository.sumDurationSecondsBySourceType(user, ActivitySourceType.TASK),
+                focusSessionRepository.sumDurationSecondsBySourceType(user, ActivitySourceType.HABIT),
+                focusSessionRepository.sumDurationSecondsBySourceType(user, ActivitySourceType.QUEST),
+                focusSessionRepository.sumPlannedDurationSeconds(user),
+                focusSessionRepository.sumActualElapsedSeconds(user),
+                focusSessionRepository.sumOvertimeSeconds(user)
+        );
     }
 
     private List<XpByWeekResponse> buildXpByWeek(List<ActivityLog> logs) {

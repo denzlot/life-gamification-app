@@ -69,3 +69,499 @@
 
 /* Today top panel spacing migrated from legacy.css. */
 .top-task-panel { margin-bottom: 1.4rem; }
+
+/* Today focus session: task picker, active timer modal, and compact page widget. */
+.focus-modal-card {
+  --modal-width: 720px;
+}
+
+.focus-modal-card > .focus-filter-row,
+.focus-modal-card > .focus-task-list,
+.focus-modal-card > .focus-modal-empty,
+.focus-modal-card > .field,
+.focus-modal-card > .focus-session-panel {
+  grid-column: 1 / -1;
+}
+
+.focus-filter-row {
+  align-items: center;
+}
+
+.focus-task-list {
+  display: grid;
+  gap: 0.45rem;
+  max-height: min(42vh, 360px);
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+.focus-task-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.72rem 0.78rem;
+  border: 1px solid color-mix(in srgb, var(--border), var(--text) 4%);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-2), transparent 10%);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, transform 120ms ease, opacity 140ms ease;
+}
+
+.focus-task-option:hover,
+.focus-task-option.selected {
+  border-color: color-mix(in srgb, var(--accent), transparent 34%);
+  background: color-mix(in srgb, var(--accent), transparent 88%);
+}
+
+.focus-task-option:active {
+  transform: scale(0.99);
+}
+
+.focus-task-option.is-muted {
+  opacity: 0.58;
+}
+
+.focus-task-option-main {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.focus-task-option-main strong,
+.focus-active-task-card strong,
+.today-focus-widget-main {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.focus-task-option-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.focus-task-option-meta span + span::before {
+  content: "·";
+  margin-right: 0.5rem;
+  color: color-mix(in srgb, var(--muted), transparent 18%);
+}
+
+.focus-task-status {
+  padding: 0.24rem 0.5rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.focus-task-status.status-completed {
+  border-color: color-mix(in srgb, var(--good), transparent 48%);
+  color: var(--good);
+}
+
+.focus-task-status.status-failed {
+  border-color: color-mix(in srgb, var(--danger), transparent 48%);
+  color: var(--danger);
+}
+
+.focus-duration-wheel {
+  max-width: 20rem;
+}
+
+.focus-session-panel {
+  display: grid;
+  justify-items: center;
+  gap: 0.95rem;
+}
+
+.focus-progress-ring {
+  --focus-progress: 0%;
+  display: grid;
+  place-items: center;
+  width: min(78vw, 19rem);
+  aspect-ratio: 1;
+  padding: 0.55rem;
+  border-radius: 50%;
+  background:
+    conic-gradient(color-mix(in srgb, var(--accent), var(--good) 16%) var(--focus-progress), color-mix(in srgb, var(--border), transparent 38%) 0),
+    color-mix(in srgb, var(--surface), var(--bg) 5%);
+  box-shadow:
+    0 24px 70px color-mix(in srgb, var(--shadow), var(--accent) 10%),
+    inset 0 0 0 1px color-mix(in srgb, var(--text), transparent 92%);
+  transition: background 420ms linear, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.focus-session-card.status-paused .focus-progress-ring {
+  background:
+    conic-gradient(color-mix(in srgb, var(--accent-2), var(--accent) 20%) var(--focus-progress), color-mix(in srgb, var(--border), transparent 38%) 0),
+    color-mix(in srgb, var(--surface), var(--bg) 5%);
+}
+
+.focus-session-card.status-completed .focus-progress-ring {
+  background:
+    conic-gradient(color-mix(in srgb, var(--good), var(--accent) 12%) var(--focus-progress), color-mix(in srgb, var(--border), transparent 38%) 0),
+    color-mix(in srgb, var(--surface), var(--good) 4%);
+}
+
+.focus-progress-core {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 18%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--accent), transparent 78%), transparent 45%),
+    color-mix(in srgb, var(--surface), var(--bg) 8%);
+  text-align: center;
+}
+
+.focus-time-left {
+  font-family: var(--font-mono);
+  font-size: clamp(2.8rem, 10vw, 5.15rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.08em;
+  color: var(--text);
+}
+
+.focus-progress-label {
+  padding: 0.22rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 14%);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: lowercase;
+}
+
+.focus-active-task-card {
+  display: grid;
+  gap: 0.24rem;
+  width: min(100%, 34rem);
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 14%);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface-2), var(--accent) 6%), color-mix(in srgb, var(--surface), var(--bg) 4%));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text), transparent 94%);
+}
+
+.focus-active-task-card .eyebrow {
+  margin-bottom: 0.1rem;
+}
+
+.focus-active-task-card span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.focus-session-card.status-completed .focus-time-left,
+.focus-session-card.status-completed .modal-form-head strong {
+  color: var(--good);
+}
+
+.focus-complete-prompt {
+  display: grid;
+  gap: 0.75rem;
+  width: min(100%, 38rem);
+  padding: 0.9rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--good), transparent 50%);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--good), transparent 91%);
+}
+
+.focus-complete-prompt p {
+  margin: 0.28rem 0 0;
+}
+
+.focus-complete-plan-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border-color: color-mix(in srgb, var(--border), var(--good) 20%);
+  background: color-mix(in srgb, var(--surface), var(--good) 5%);
+}
+
+.focus-complete-plan-row .btn {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.today-focus-widget {
+  --focus-progress: 0%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  margin: -0.1rem 0 0.65rem;
+  padding: 0.62rem 0.65rem 0.68rem 0.78rem;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 16%);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface), var(--accent) 5%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text), transparent 94%);
+  overflow: hidden;
+}
+
+.today-focus-widget.status-paused {
+  background: color-mix(in srgb, var(--surface), var(--accent-2) 5%);
+}
+
+.today-focus-widget-main {
+  min-width: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.today-focus-widget-main span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+}
+
+.today-focus-widget-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.today-focus-widget-progress {
+  position: absolute;
+  left: 0;
+  right: auto;
+  bottom: 0;
+  width: var(--focus-progress);
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent), transparent 10%), color-mix(in srgb, var(--good), var(--accent) 18%));
+  transition: width 420ms linear;
+}
+
+.today-focus-widget.status-paused .today-focus-widget-progress {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-2), transparent 10%), color-mix(in srgb, var(--accent), transparent 18%));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-progress-ring,
+  .today-focus-widget-progress,
+  .focus-task-option {
+    transition: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .focus-task-option,
+  .today-focus-widget,
+  .focus-complete-plan-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .today-focus-widget {
+    display: grid;
+  }
+
+  .today-focus-widget-actions,
+  .focus-complete-plan-row .btn {
+    justify-content: flex-start;
+    justify-self: start;
+    flex-wrap: wrap;
+  }
+}
+
+/* Focus UX: quieter active/completed states without changing the project visual language. */
+.focus-session-card.modal-form-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--bg) 14%), color-mix(in srgb, var(--surface-2), var(--bg) 24%));
+}
+
+.focus-session-card .modal-form-head {
+  border-bottom-color: color-mix(in srgb, var(--border), transparent 25%);
+}
+
+.focus-session-card .focus-session-panel {
+  gap: 0.75rem;
+}
+
+.focus-session-card .focus-progress-ring {
+  width: min(54vw, 11.6rem);
+  padding: 0.42rem;
+  background:
+    conic-gradient(color-mix(in srgb, var(--accent), var(--text) 6%) var(--focus-progress), color-mix(in srgb, var(--border), transparent 26%) 0),
+    color-mix(in srgb, var(--surface-2), var(--bg) 26%);
+  box-shadow:
+    0 16px 42px color-mix(in srgb, var(--shadow), transparent 20%),
+    inset 0 0 0 1px color-mix(in srgb, var(--text), transparent 92%);
+}
+
+.focus-session-card.status-paused .focus-progress-ring,
+.focus-session-card.is-overtime .focus-progress-ring {
+  background:
+    conic-gradient(color-mix(in srgb, var(--accent-2), var(--text) 8%) var(--focus-progress), color-mix(in srgb, var(--border), transparent 24%) 0),
+    color-mix(in srgb, var(--surface-2), var(--bg) 28%);
+}
+
+.focus-session-card .focus-progress-core {
+  padding: 0.75rem;
+  background:
+    radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--accent), transparent 86%), transparent 48%),
+    color-mix(in srgb, var(--surface), var(--bg) 18%);
+}
+
+.focus-session-card .focus-time-left {
+  font-size: clamp(1.8rem, 6.6vw, 3.1rem);
+  letter-spacing: -0.07em;
+}
+
+.focus-session-card.is-overtime .focus-time-left,
+.focus-session-card.is-overtime .modal-form-head strong {
+  color: color-mix(in srgb, var(--accent-2), var(--text) 26%);
+}
+
+.focus-session-card.is-overtime .focus-progress-label {
+  border-color: color-mix(in srgb, var(--accent-2), transparent 48%);
+}
+
+.focus-active-task-card {
+  background: color-mix(in srgb, var(--surface-2), var(--bg) 18%);
+  border-color: color-mix(in srgb, var(--border), var(--accent) 8%);
+  box-shadow: none;
+}
+
+.focus-complete-prompt {
+  width: min(100%, 34rem);
+  padding: 0.78rem;
+  border-color: color-mix(in srgb, var(--border), var(--accent-2) 10%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-2), var(--bg) 22%), color-mix(in srgb, var(--surface), var(--bg) 28%));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text), transparent 95%);
+}
+
+.focus-complete-copy {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.focus-complete-copy p {
+  margin: 0;
+}
+
+.focus-plan-summary {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.42rem;
+  width: 100%;
+  padding: 0.54rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 20%);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface), var(--bg) 22%);
+}
+
+.focus-plan-summary span {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.focus-plan-summary strong {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.98rem;
+}
+
+.focus-credit-choice button {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+  padding: 0.58rem 0.64rem;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 18%);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface), var(--bg) 18%);
+}
+
+.focus-credit-choice span {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.focus-credit-choice strong {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.focus-credit-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.focus-credit-choice button {
+  width: 100%;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, transform 120ms ease;
+}
+
+.focus-credit-choice button:hover,
+.focus-credit-choice button.selected {
+  border-color: color-mix(in srgb, var(--accent), transparent 38%);
+  background: color-mix(in srgb, var(--accent), transparent 90%);
+}
+
+.focus-credit-choice button:active {
+  transform: scale(0.99);
+}
+
+.focus-complete-plan-row {
+  padding: 0.68rem;
+  border-color: color-mix(in srgb, var(--border), var(--accent) 8%);
+  background: color-mix(in srgb, var(--surface), var(--bg) 16%);
+}
+
+.today-focus-widget.is-overtime {
+  border-color: color-mix(in srgb, var(--border), var(--accent-2) 14%);
+  background: color-mix(in srgb, var(--surface), var(--bg) 14%);
+}
+
+.today-focus-widget.is-overtime .today-focus-widget-progress {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-2), transparent 10%), color-mix(in srgb, var(--accent), transparent 18%));
+}
+
+@media (max-width: 620px) {
+  .focus-session-card .focus-progress-ring {
+    width: min(62vw, 10.5rem);
+  }
+
+  .focus-plan-summary,
+  .focus-credit-choice {
+    grid-template-columns: 1fr;
+  }
+}
+
+.focus-pause-prompt {
+  border-color: color-mix(in srgb, var(--border), var(--accent) 12%);
+}
+
+.focus-pause-prompt .focus-plan-summary {
+  border-color: color-mix(in srgb, var(--border), var(--accent) 16%);
+  background: color-mix(in srgb, var(--surface), var(--accent) 4%);
+}

@@ -3,11 +3,14 @@ import type {
   AdminUserResponse,
   AuthUser,
   CalendarDayResponse,
+  CompleteDailyPlanItemRequest,
+  CreateFocusSessionRequest,
   CreateHabitRequest,
   CreateManualDailyPlanItemRequest,
   CreateQuestRequest,
   CreateTaskRequest,
   DailyPlanResponse,
+  FocusSessionResponse,
   DashboardResponse,
   HabitResponse,
   HistoryPageResponse,
@@ -186,10 +189,14 @@ export const api = {
       request<DailyPlanResponse>(`/daily-plans/${planId}/items`, { method: "POST", body: json(payload) })
   },
   dailyPlanItems: {
-    complete: (id: number) => request<void>(`/daily-plan-items/${id}/complete`, { method: "POST" }),
+    complete: (id: number, payload?: CompleteDailyPlanItemRequest) => request<void>(`/daily-plan-items/${id}/complete`, { method: "POST", ...(payload ? { body: json(payload) } : {}) }),
     fail: (id: number) => request<void>(`/daily-plan-items/${id}/fail`, { method: "POST" }),
     reset: (id: number) => request<void>(`/daily-plan-items/${id}/reset`, { method: "POST" }),
     update: (id: number, payload: UpdateDailyPlanItemRequest) => request<void>(`/daily-plan-items/${id}`, { method: "PATCH", body: json(payload) })
+  },
+  focusSessions: {
+    save: (payload: CreateFocusSessionRequest) => request<FocusSessionResponse>("/focus-sessions", { method: "POST", body: json(payload) }),
+    list: () => request<FocusSessionResponse[]>("/focus-sessions")
   },
   quests: {
     list: () => request<QuestResponse[]>("/quests"),

@@ -14,6 +14,8 @@ import { TodayNoteEditor } from "../components/today/TodayNoteEditor";
 import { TodayPlanSummary } from "../components/today/TodayPlanSummary";
 import { TodaySidebar } from "../components/today/TodaySidebar";
 import { TodayStartPanel } from "../components/today/TodayStartPanel";
+import { TodayFocusModal } from "../components/today/TodayFocusModal";
+import { TodayFocusWidget } from "../components/today/TodayFocusWidget";
 import { TodayTaskCreateModal, type TodayTaskOptions } from "../components/today/TodayTaskCreateModal";
 import { TodayToolbar } from "../components/today/TodayToolbar";
 import { DailyPlanGroups } from "../components/dailyPlan/DailyPlanGroups";
@@ -21,9 +23,11 @@ import { ErrorLine, Loader } from "../components/Loader";
 import { useAchievementWatcher } from "../context/AchievementContext";
 import { useGame } from "../context/GameContext";
 import { useToast } from "../context/ToastContext";
+import { useTodayFocusTimer } from "../hooks/useTodayFocusTimer";
 import { formatDate, pct, todayISO } from "../utils/format";
 import { countDailyPlanItemStatuses, groupDailyPlanItemsBySource, sortDailyPlanItemsByPlannedTime } from "../utils/dailyPlanItems";
 import { readBooleanPreference, writeBooleanPreference } from "../utils/planItemUi";
+import { formatFocusClockDuration, type FocusCreditedMode } from "../utils/focusTimerStorage";
 
 const sourceFilters: Array<{ value: SourceType | "ALL"; label: string }> = [
   { value: "ALL", label: "Все" },
@@ -74,6 +78,17 @@ function createInitialTaskForm(date = todayISO()): CreateTaskRequest {
   };
 }
 
+
+function toLocalDateTimeString(timestamp: number) {
+  const date = new Date(timestamp);
+  const localTimestamp = timestamp - date.getTimezoneOffset() * 60_000;
+  return new Date(localTimestamp).toISOString().slice(0, 19);
+}
+
+function toApiCreditedMode(mode: FocusCreditedMode) {
+  return mode === "actual" ? "ACTUAL" as const : "PLANNED" as const;
+}
+
 function closeDayQuestion(completedCount: number) {
   if (completedCount > 0) return "Закрыть сегодняшний день?";
   return "В этом дне пока нет выполненных задач. Если закрыть его сейчас, персонаж потеряет HP. Закрыть день?";
@@ -106,9 +121,10 @@ export function TodayPage() {
   const [noteDraft, setNoteDraft] = useState(cachedPlan?.note ?? "");
   const [noteSaving, setNoteSaving] = useState(false);
   const [twoColumnLayout, setTwoColumnLayout] = useState(() => readBooleanPreference("flowvisior:today-two-column-layout"));
-  const [focusItemId, setFocusItemId] = useState<number | null>(null);
+  const [focusModalOpen, setFocusModalOpen] = useState(false);
   const filtersHostRef = useRef<HTMLDivElement | null>(null);
-  const focusTimerRef = useRef<number | null>(null);
+  const focusCompleteSubmittingRef = useRef(false);
+  const focusTimer = useTodayFocusTimer();
 
   const loadPlan = useCallback(async (showLoader = true) => {
     if (showLoader) {
@@ -148,10 +164,6 @@ export function TodayPage() {
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, [filtersOpen]);
 
-  useEffect(() => () => {
-    if (focusTimerRef.current) window.clearTimeout(focusTimerRef.current);
-  }, []);
-
   const items = plan?.items ?? [];
   const counts = useMemo(() => countDailyPlanItemStatuses(items), [items]);
   const isClosed = plan?.status === "CLOSED";
@@ -168,7 +180,6 @@ export function TodayPage() {
     return sortByTime ? sortDailyPlanItemsByPlannedTime(filtered) : filtered;
   }, [items, search, sourceFilter, statusFilter, sortByTime]);
   const groupedItems = useMemo(() => groupDailyPlanItemsBySource(filteredItems), [filteredItems]);
-  const nextFocusItem = useMemo(() => sortDailyPlanItemsByPlannedTime(filteredItems.filter((item) => item.status === "PENDING"))[0] ?? null, [filteredItems]);
 
   function toggleTwoColumnLayout() {
     setTwoColumnLayout((value) => {
@@ -176,16 +187,6 @@ export function TodayPage() {
       writeBooleanPreference("flowvisior:today-two-column-layout", next);
       return next;
     });
-  }
-
-  function focusNextTask() {
-    if (!nextFocusItem) return;
-    setFocusItemId(nextFocusItem.id);
-    window.requestAnimationFrame(() => {
-      document.querySelector(`[data-focus-item-id="${nextFocusItem.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-    if (focusTimerRef.current) window.clearTimeout(focusTimerRef.current);
-    focusTimerRef.current = window.setTimeout(() => setFocusItemId(null), 2600);
   }
 
   async function startDay() {
@@ -265,6 +266,18 @@ export function TodayPage() {
     }
   }
 
+  function updatePlanItem(itemId: number, updater: (item: DailyPlanItemResponse) => DailyPlanItemResponse) {
+    setPlan((current) => {
+      if (!current) return current;
+      const next = {
+        ...current,
+        items: current.items.map((entry) => entry.id === itemId ? updater(entry) : entry)
+      };
+      writeCachedTodayPlan(today, next);
+      return next;
+    });
+  }
+
   async function runAction(item: DailyPlanItemResponse, action: "complete" | "fail" | "reset") {
     if (action === "fail" && item.status === "COMPLETED") {
       await api.dailyPlanItems.reset(item.id);
@@ -277,19 +290,16 @@ export function TodayPage() {
   async function cycleItem(item: DailyPlanItemResponse) {
     if (isClosed || busyItemId === item.id) return;
     const previous = item.status;
+    const previousCompletedAt = item.completedAt ?? null;
     const action: "complete" | "fail" | "reset" = item.status === "PENDING" ? "complete" : item.status === "COMPLETED" ? "fail" : "reset";
     const nextStatus: DailyPlanItemStatus = action === "complete" ? "COMPLETED" : action === "fail" ? "FAILED" : "PENDING";
 
     setBusyItemId(item.id);
-    setPlan((current) => {
-      if (!current) return current;
-      const next = {
-        ...current,
-        items: current.items.map((entry) => entry.id === item.id ? { ...entry, status: nextStatus, completedAt: nextStatus === "PENDING" ? null : new Date().toISOString() } : entry)
-      };
-      writeCachedTodayPlan(today, next);
-      return next;
-    });
+    updatePlanItem(item.id, (entry) => ({
+      ...entry,
+      status: nextStatus,
+      completedAt: nextStatus === "PENDING" ? null : new Date().toISOString()
+    }));
 
     try {
       await runAction(item, action);
@@ -297,17 +307,59 @@ export function TodayPage() {
       syncAchievements(false).catch(() => undefined);
       if (item.sourceType === "QUEST") loadPlan(false).catch(() => undefined);
     } catch (err) {
-      setPlan((current) => {
-        if (!current) return current;
-        const next = {
-          ...current,
-          items: current.items.map((entry) => entry.id === item.id ? { ...entry, status: previous } : entry)
-        };
-        writeCachedTodayPlan(today, next);
-        return next;
-      });
+      updatePlanItem(item.id, (entry) => ({ ...entry, status: previous, completedAt: previousCompletedAt }));
       setError(err instanceof Error ? err.message : "Не удалось изменить статус");
     } finally {
+      setBusyItemId(null);
+    }
+  }
+
+  async function completeFocusItem(item: DailyPlanItemResponse, creditedMode: FocusCreditedMode) {
+    if (focusCompleteSubmittingRef.current || isClosed || busyItemId === item.id || item.status === "COMPLETED" || focusTimer.timer.savedAt) return;
+    const previous = item.status;
+    const previousCompletedAt = item.completedAt ?? null;
+    const previousFocusSpentSeconds = item.focusSpentSeconds ?? null;
+    const creditedDurationSeconds = creditedMode === "actual"
+      ? focusTimer.actualElapsedSeconds
+      : focusTimer.plannedDurationSeconds;
+    const sessionId = focusTimer.timer.sessionId;
+    const completedAt = focusTimer.timer.completedAt ?? Date.now();
+    const focusSession = sessionId && focusTimer.timer.task ? {
+      sessionId,
+      sourceType: item.sourceType,
+      sourceId: item.sourceId ?? null,
+      title: item.title,
+      durationSeconds: creditedDurationSeconds,
+      plannedDurationSeconds: focusTimer.plannedDurationSeconds,
+      actualElapsedSeconds: focusTimer.actualElapsedSeconds,
+      overtimeSeconds: focusTimer.overtimeSeconds,
+      creditedDurationSeconds,
+      creditedMode: toApiCreditedMode(creditedMode),
+      completedAt: toLocalDateTimeString(completedAt),
+      planDate: today
+    } : null;
+
+    focusCompleteSubmittingRef.current = true;
+    setBusyItemId(item.id);
+    updatePlanItem(item.id, (entry) => ({
+      ...entry,
+      status: "COMPLETED",
+      completedAt: new Date().toISOString(),
+      focusSpentSeconds: creditedDurationSeconds
+    }));
+
+    try {
+      await api.dailyPlanItems.complete(item.id, focusSession ? { focusSession } : undefined);
+      if (sessionId) focusTimer.markSaved(sessionId);
+      notify({ tone: "success", title: "Задача отмечена выполненной", text: `Засчитано ${formatFocusClockDuration(creditedDurationSeconds)}.` });
+      refreshProfile().catch(() => undefined);
+      syncAchievements(false).catch(() => undefined);
+      if (item.sourceType === "QUEST") loadPlan(false).catch(() => undefined);
+    } catch (err) {
+      updatePlanItem(item.id, (entry) => ({ ...entry, status: previous, completedAt: previousCompletedAt, focusSpentSeconds: previousFocusSpentSeconds }));
+      setError(err instanceof Error ? err.message : "Не удалось отметить задачу выполненной");
+    } finally {
+      focusCompleteSubmittingRef.current = false;
       setBusyItemId(null);
     }
   }
@@ -383,7 +435,6 @@ export function TodayPage() {
                   filtersOpen={filtersOpen}
                   sortByTime={sortByTime}
                   twoColumnLayout={twoColumnLayout}
-                  nextFocusItem={nextFocusItem}
                   sourceFilters={sourceFilters}
                   statusFilters={statusFilters}
                   sourceFilter={sourceFilter}
@@ -397,7 +448,16 @@ export function TodayPage() {
                   setStatusFilter={setStatusFilter}
                   setSearch={setSearch}
                   toggleTwoColumnLayout={toggleTwoColumnLayout}
-                  focusNextTask={focusNextTask}
+                  onOpenFocus={() => setFocusModalOpen(true)}
+                />
+
+                <TodayFocusWidget
+                  timer={focusTimer.timer}
+                  remainingSeconds={focusTimer.remainingSeconds}
+                  overtimeSeconds={focusTimer.overtimeSeconds}
+                  onOpen={() => setFocusModalOpen(true)}
+                  onPause={focusTimer.pause}
+                  onResume={focusTimer.resume}
                 />
 
                 {taskDrawerOpen ? (
@@ -425,7 +485,6 @@ export function TodayPage() {
                   editingId={editingId}
                   editTitle={editTitle}
                   openDescriptionId={openDescriptionId}
-                  focusedItemId={focusItemId}
                   setEditTitle={setEditTitle}
                   onCycle={cycleItem}
                   onToggleDescription={(id) => setOpenDescriptionId((current) => current === id ? null : id)}
@@ -448,6 +507,32 @@ export function TodayPage() {
                 {!isClosed ? <Button variant="danger" onClick={closeDay} disabled={busy}>Закрыть день</Button> : null}
               </div>
             </>
+          ) : null}
+
+          {focusModalOpen ? (
+            <TodayFocusModal
+              items={items}
+              timer={focusTimer.timer}
+              remainingSeconds={focusTimer.remainingSeconds}
+              overtimeSeconds={focusTimer.overtimeSeconds}
+              plannedDurationSeconds={focusTimer.plannedDurationSeconds}
+              actualElapsedSeconds={focusTimer.actualElapsedSeconds}
+              canCompleteItem={!isClosed}
+              completingItemId={busyItemId}
+              onStart={(item, durationMinutes) => {
+                if (item.status === "COMPLETED") {
+                  notify({ tone: "info", title: "Фокус уже не нужен", text: "Задача уже выполнена." });
+                  return;
+                }
+                focusTimer.start(item, durationMinutes);
+              }}
+              onPause={focusTimer.pause}
+              onResume={focusTimer.resume}
+              onReset={focusTimer.reset}
+              onChangeCreditedMode={focusTimer.setCreditedMode}
+              onCompleteItem={completeFocusItem}
+              onClose={() => setFocusModalOpen(false)}
+            />
           ) : null}
         </main>
 

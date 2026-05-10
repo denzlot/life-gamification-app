@@ -55,6 +55,9 @@ public class DailyPlanItem {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "focus_spent_seconds")
+    private Integer focusSpentSeconds;
+
     protected DailyPlanItem() {
     }
 
@@ -126,6 +129,11 @@ public class DailyPlanItem {
     public void reset() {
         this.status = DailyPlanItemStatus.PENDING;
         this.completedAt = null;
+        this.focusSpentSeconds = null;
+    }
+
+    public void setFocusSpentSeconds(Integer focusSpentSeconds) {
+        this.focusSpentSeconds = focusSpentSeconds;
     }
 
     public void update(String title, String description, LocalTime plannedTime, LocalTime deadlineTime) {
@@ -156,4 +164,5 @@ public class DailyPlanItem {
     public int getHpDeltaFail() { return hpDeltaFail; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getCompletedAt() { return completedAt; }
+    public Integer getFocusSpentSeconds() { return focusSpentSeconds; }
 }

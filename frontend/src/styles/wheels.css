@@ -1,65 +1,42 @@
-/* Wheel input styles migrated from legacy.css.
-   Kept separate so modal-specific wheel overrides can sit after the generic wheel layer. */
+/* Central wheel inputs for TimeWheelInput, DateWheelInput and NumberWheelInput.
+   Panels render through a fixed portal, so modals, drawers and reveal sections cannot clip them. */
 
-.wheel-field { position: relative; }
-.wheel-trigger { text-align: left; width: 100%; color: var(--muted); }
+.wheel-field { width: 100%; }
+.wheel-trigger { width: 100%; text-align: left; color: var(--muted); cursor: pointer; }
 .wheel-trigger.filled { color: var(--text); }
-.wheel-popover { position: absolute; z-index: 60; top: calc(100% + 0.6rem); left: 0; width: min(520px, 92vw); padding: 1.05rem; border: 1px solid color-mix(in srgb, var(--accent), transparent 68%); border-radius: 16px; background: rgba(13, 13, 16, 0.98); box-shadow: 0 22px 70px rgba(0, 0, 0, 0.48); }
-.wheel-preview { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+.wheel-portal { position: fixed; inset: 0; z-index: 1300; pointer-events: none; }
+.wheel-scrim { position: fixed; inset: 0; pointer-events: auto; background: color-mix(in srgb, var(--bg), transparent 38%); backdrop-filter: blur(5px); }
+.wheel-panel { position: fixed; pointer-events: auto; display: grid; gap: 0.72rem; overflow: hidden auto; padding: 0.9rem; border: 1px solid color-mix(in srgb, var(--border), var(--accent) 16%); border-radius: 18px; color: var(--text); background: linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 3%), color-mix(in srgb, var(--surface), var(--bg) 12%)); box-shadow: 0 24px 64px color-mix(in srgb, var(--shadow), #000 18%); animation: wheel-panel-in 150ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.wheel-panel--sheet { border-radius: 24px; }
+.wheel-preview { display: flex; align-items: baseline; justify-content: center; gap: 0.52rem; min-height: 2rem; font-family: var(--font-heading); font-size: 1.18rem; font-weight: 650; letter-spacing: 0.03em; }
+.wheel-preview small { color: var(--muted); font-family: var(--font-text); font-size: 0.78rem; letter-spacing: 0; }
 .date-preview { gap: 0.72rem; text-transform: uppercase; }
-.wheel-columns { display: grid; }
-.wheel-columns.two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.wheel-columns.three-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.wheel-column { overflow-y: auto; display: grid; align-content: start; border: 1px solid var(--border-soft); scroll-snap-type: y mandatory; }
-.wheel-column button { border: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.035); background: transparent; scroll-snap-align: center; }
-.wheel-actions { display: flex; justify-content: flex-end; gap: 0.65rem; }
-
-@media (max-width: 720px) {
-.wheel-popover { position: fixed; left: 1rem; right: 1rem; top: 18vh; width: auto; }
-}
-
-.wheel-popover.compact-wheel,
-.wheel-popover { padding: 0.85rem; border-color: color-mix(in srgb, var(--accent), transparent 56%); background: rgba(9, 13, 11, 0.985); }
-.number-wheel.compact-wheel { width: min(250px, 84vw); }
-.wheel-preview { font-size: 1.12rem; margin-bottom: 0.6rem; }
-.wheel-columns { gap: 0.5rem; }
-.wheel-column { border-radius: 12px; }
-.wheel-column button { font-size: 0.94rem; }
-.wheel-actions { margin-top: 0.7rem; }
+.wheel-manual-label { display: grid; gap: 0.34rem; color: var(--muted); font-size: 0.78rem; }
+.wheel-manual-input { min-height: 36px; }
+.wheel-columns { display: grid; gap: 0.5rem; }
+.wheel-columns.one-column { grid-template-columns: 1fr; justify-items: center; }
+.wheel-columns.two-columns { grid-template-columns: repeat(2, minmax(88px, 1fr)); }
+.wheel-columns.three-columns { grid-template-columns: repeat(3, minmax(72px, 1fr)); }
+.wheel-column { position: relative; display: grid; align-content: start; width: 100%; max-height: 13.5rem; height: 13.5rem; overflow-y: auto; overscroll-behavior: contain; padding: 5.05rem 0; border: 1px solid var(--border-soft); border-radius: 14px; background: linear-gradient(180deg, color-mix(in srgb, var(--surface-2), transparent 18%), transparent 28%, transparent 72%, color-mix(in srgb, var(--surface-2), transparent 30%)), color-mix(in srgb, var(--surface), var(--bg) 8%); scroll-behavior: smooth; scroll-padding-block: 5.05rem; scroll-snap-type: y mandatory; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent), transparent 42%) transparent; }
+.wheel-column::before { content: ""; position: sticky; top: 50%; z-index: 0; display: block; height: 2.28rem; margin-bottom: -2.28rem; transform: translateY(-50%); border-block: 1px solid color-mix(in srgb, var(--accent), transparent 62%); background: color-mix(in srgb, var(--accent), transparent 90%); pointer-events: none; }
+.wheel-column button { position: relative; z-index: 1; min-height: 2.28rem; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font-family: var(--font-text); font-size: 0.95rem; letter-spacing: 0.015em; scroll-snap-align: center; transition: color 120ms ease, background 120ms ease, transform 120ms ease, opacity 120ms ease; }
+.wheel-column button:hover,
+.wheel-column button:focus-visible { color: var(--text); background: color-mix(in srgb, var(--surface-2), var(--accent) 7%); outline: none; }
+.wheel-column button.selected { color: var(--text); background: color-mix(in srgb, var(--accent), transparent 83%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 46%); transform: scale(1.025); }
+.number-wheel .wheel-column { width: min(11rem, 100%); }
+.wheel-actions { display: flex; justify-content: flex-end; gap: 0.65rem; padding-top: 0.1rem; }
+.wheel-actions.single-action { justify-content: stretch; }
+.wheel-actions.single-action .btn { width: 100%; }
 .wheel-actions .btn { min-height: 38px; }
-.one-column { grid-template-columns: 1fr; }
-.number-wheel .wheel-preview small { color: var(--muted); font-family: var(--font-text); font-size: 0.78rem; }
-
-.wheel-popover.compact-wheel,
-.wheel-popover { width: min(320px, 88vw); }
-.date-wheel.compact-wheel { width: min(380px, 90vw); }
-.wheel-column { height: 132px; }
-.wheel-column button { min-height: 2rem; }
-
-.wheel-popover,
-.wheel-popover.compact-wheel { color: var(--text) !important; background: color-mix(in srgb, var(--surface), var(--bg) 18%) !important; border-color: color-mix(in srgb, var(--border), var(--accent) 18%) !important; box-shadow: 0 20px 58px var(--shadow) !important; }
-.wheel-preview { color: var(--text) !important; font-family: var(--font-heading) !important; font-weight: 500; }
-.wheel-column { background: linear-gradient(180deg, color-mix(in srgb, var(--surface-2), transparent 20%), transparent 18%, transparent 82%, color-mix(in srgb, var(--surface-2), transparent 35%)), color-mix(in srgb, var(--surface), var(--bg) 8%) !important; border-color: var(--border-soft) !important; scrollbar-color: color-mix(in srgb, var(--accent), transparent 30%) transparent; }
-.wheel-column button { color: var(--muted) !important; border-bottom-color: color-mix(in srgb, var(--border-soft), transparent 28%) !important; font-family: var(--font-text) !important; }
-.wheel-column button:hover { color: var(--text) !important; background: color-mix(in srgb, var(--surface-2), var(--accent) 7%) !important; }
-.wheel-column button.selected { color: var(--text) !important; background: color-mix(in srgb, var(--accent), transparent 82%) !important; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 48%) !important; }
-:root[data-theme="light"] .wheel-popover,
-:root[data-theme="light"] .wheel-popover.compact-wheel { background: #ffffff !important; border-color: #aebdcb !important; }
-:root[data-theme="light"] .wheel-column { background: linear-gradient(180deg, #eef3f8, #ffffff 20%, #ffffff 80%, #eef3f8) !important; border-color: #d8e0e8 !important; }
-:root[data-theme="light"] .wheel-column button.selected { color: #17202a !important; background: #dbe7f1 !important; box-shadow: inset 0 0 0 1px #95abc0 !important; }
+:root[data-theme="light"] .wheel-panel { background: linear-gradient(180deg, #ffffff, #f4f7fa); border-color: #aebdcb; }
+:root[data-theme="light"] .wheel-column { background: linear-gradient(180deg, #eef3f8, transparent 28%, transparent 72%, #eef3f8), #ffffff; border-color: #d8e0e8; }
+:root[data-theme="light"] .wheel-column button.selected { color: #17202a; background: #dbe7f1; box-shadow: inset 0 0 0 1px #95abc0; }
 :root[data-theme="light"] .wheel-actions .btn-ghost { color: #34495d; background: #f3f6f9; border-color: #b8c5d3; }
-
-.time-wheel.compact-wheel { width: min(390px, 92vw) !important; }
-.number-wheel.compact-wheel,
-.number-select-wheel { width: min(320px, 88vw) !important; }
-.time-wheel .wheel-columns.two-columns { grid-template-columns: repeat(2, minmax(90px, 1fr)) !important; }
-.number-wheel .wheel-column { width: 160px !important; max-width: 170px !important; margin: 0 auto; }
-.wheel-manual-label { display: grid; gap: 0.34rem; margin: 0 0 0.55rem; color: var(--muted); font-size: 0.78rem; }
-.wheel-manual-input { min-height: 34px !important; }
-
-@media (max-width: 720px) {
-
-.time-wheel.compact-wheel,
-.number-wheel.compact-wheel,
-.number-select-wheel { width: calc(100vw - 2rem) !important; }
-}
+:root[data-theme="vampire"] .wheel-panel { background: linear-gradient(180deg, rgba(31, 23, 35, 0.98), rgba(14, 10, 16, 0.98)); border-color: color-mix(in srgb, var(--border), var(--accent) 20%); }
+:root[data-theme="dark"] .wheel-panel { background: #0b0d11; border-color: #20242d; }
+:root[data-theme="cosmos"] .wheel-panel { border-color: color-mix(in srgb, var(--border), var(--accent) 10%); background: linear-gradient(135deg, rgba(74, 169, 216, 0.028), transparent 34%), linear-gradient(180deg, rgba(8, 16, 32, 0.98), rgba(3, 7, 18, 0.98)); box-shadow: 0 22px 70px rgba(0, 3, 14, 0.50), inset 0 1px 0 rgba(232, 241, 255, 0.035); }
+@keyframes wheel-panel-in { from { opacity: 0; transform: translateY(-6px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (max-width: 640px) { .wheel-panel { width: auto; border-radius: 22px; animation-name: wheel-sheet-in; } .wheel-columns.three-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); } .wheel-column { height: 12rem; max-height: 12rem; padding-block: 4.45rem; scroll-padding-block: 4.45rem; } .wheel-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); } }
+@media (max-width: 390px) { .wheel-panel { padding: 0.78rem; } .wheel-columns { gap: 0.38rem; } .wheel-column button { font-size: 0.86rem; } }
+@media (prefers-reduced-motion: reduce) { .wheel-panel, .wheel-column, .wheel-column button { animation: none; scroll-behavior: auto; transition-duration: 1ms; } }
+@keyframes wheel-sheet-in { from { opacity: 0; transform: translateY(18px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }

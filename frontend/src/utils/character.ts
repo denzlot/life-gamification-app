@@ -10,6 +10,7 @@ export type ThemeName = typeof themeNames[number];
 
 export const characterIds = ["lolbot", "nosferatu", "knight", "astronaut"] as const;
 export type CharacterId = typeof characterIds[number];
+export type CharacterAnimation = "idle" | "success" | "damage" | "level-up";
 
 export const THEME_STORAGE_KEY = "flowvisior-theme";
 export const CHARACTER_STORAGE_KEY = "flowvisior-character";

@@ -1,5 +1,6 @@
 package com.dcorp.flowvisior.controller;
 
+import com.dcorp.flowvisior.dto.dailyplan.CompleteDailyPlanItemRequest;
 import com.dcorp.flowvisior.dto.dailyplan.UpdateDailyPlanItemRequest;
 import com.dcorp.flowvisior.entity.*;
 import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
@@ -32,10 +33,13 @@ public class DailyPlanItemController {
     }
 
     @PostMapping("/{id}/complete")
-    public ResponseEntity<Void> complete(@PathVariable Long id) {
+    public ResponseEntity<Void> complete(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) CompleteDailyPlanItemRequest request
+    ) {
         User user = authenticatedUserService.getCurrentUser();
         DailyPlanItem item = getItemForUser(id, user);
-        gameService.complete(item, user);
+        gameService.complete(item, user, request == null ? null : request.getFocusSession());
         return ResponseEntity.ok().build();
     }
 

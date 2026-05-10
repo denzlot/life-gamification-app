@@ -18,7 +18,6 @@ interface DailyPlanGroupsProps {
   editTitle: string;
   openDescriptionId: number | null;
   className?: string;
-  focusedItemId?: number | null;
   setEditTitle: (value: string) => void;
   onCycle: (item: DailyPlanItemResponse) => void;
   onToggleDescription: (id: number) => void;
@@ -44,7 +43,6 @@ export function DailyPlanGroups({
   editTitle,
   openDescriptionId,
   className = "",
-  focusedItemId = null,
   setEditTitle,
   onCycle,
   onToggleDescription,
@@ -75,7 +73,6 @@ export function DailyPlanGroups({
                     openDescriptionId={openDescriptionId}
                     canChangeStatus={canChangeStatus}
                     canEditTitle={canEditTitle}
-                    focused={focusedItemId === item.id}
                     setEditTitle={setEditTitle}
                     onCycle={onCycle}
                     onToggleDescription={onToggleDescription}
