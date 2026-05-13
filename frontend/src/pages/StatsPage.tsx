@@ -3,6 +3,7 @@ import { EmptyState } from "../components/EmptyState";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useAsync } from "../hooks/useAsync";
 import { formatDate } from "../utils/format";
+import { formatFocusTimerDuration } from "../utils/focusTimerStorage";
 
 export function StatsPage() {
   const { data, loading, error } = useAsync(() => api.stats.get(), []);
@@ -13,6 +14,23 @@ export function StatsPage() {
 
   const maxWeekXp = Math.max(1, ...data.xpByWeek.map((item) => item.xp));
   const maxStreak = Math.max(1, ...data.streakHistory.map((item) => item.maxStreak));
+  const focus = data.focus;
+  const focusTypeRows = [
+    { key: "task", label: "Задачи", value: focus.taskSeconds },
+    { key: "habit", label: "Привычки", value: focus.habitSeconds },
+    { key: "quest", label: "Квесты", value: focus.questSeconds }
+  ];
+  const focusTimelineRows = [
+    { key: "planned", label: "План", value: focus.plannedSeconds },
+    { key: "actual", label: "Факт", value: focus.actualSeconds },
+    { key: "credited", label: "Зачтено", value: focus.totalSeconds }
+  ];
+  const hasFocusData = focusTimelineRows.some((row) => row.value > 0) || focus.overtimeSeconds > 0;
+  const maxFocusTypeSeconds = Math.max(1, ...focusTypeRows.map((row) => row.value));
+  const maxFocusTimelineSeconds = Math.max(1, ...focusTimelineRows.map((row) => row.value));
+  const bestFocusType = focusTypeRows.reduce((best, row) => row.value > best.value ? row : best, focusTypeRows[0]);
+  const creditedVsPlanned = focus.totalSeconds - focus.plannedSeconds;
+  const actualVsPlanned = focus.actualSeconds - focus.plannedSeconds;
 
   return (
     <section className="page">
@@ -39,6 +57,65 @@ export function StatsPage() {
           <Stat label="Привычки" value={data.thisWeek.habitsCompleted} />
           <Stat label="Активные дни" value={data.thisWeek.activeDays} />
         </div>
+      </section>
+
+      <section className="section-line stats-focus-panel">
+        <div className="stats-section-heading">
+          <div>
+            <p className="eyebrow">focus time</p>
+            <h2>Фокус</h2>
+          </div>
+          <span className="stats-subtle-pill">считается по зачтённому времени</span>
+        </div>
+
+        {!hasFocusData ? (
+          <EmptyState title="Focus-сессий пока нет" text="Когда завершишь задачу через Focus, здесь появятся зачтённое время и разбивка по типам." />
+        ) : (
+          <>
+            <div className="stats-grid compact-stats focus-summary-cards">
+              <Stat label="Всего зачтено" value={formatFocusTimerDuration(focus.totalSeconds)} />
+              <Stat label="Лучший тип" value={bestFocusType.value > 0 ? bestFocusType.label : "—"} suffix={bestFocusType.value > 0 ? formatFocusTimerDuration(bestFocusType.value) : undefined} />
+              <Stat label="План → зачёт" value={formatFocusDelta(creditedVsPlanned)} />
+              <Stat label="Сверх плана" value={formatFocusTimerDuration(focus.overtimeSeconds)} />
+            </div>
+
+            <div className="focus-analytics-grid">
+              <div className="focus-analytics-card">
+                <div className="focus-card-heading">
+                  <strong>Разбивка по типам</strong>
+                  <span>{formatFocusTimerDuration(focus.totalSeconds)}</span>
+                </div>
+                <div className="focus-mini-bars">
+                  {focusTypeRows.map((row) => (
+                    <FocusBar
+                      key={row.key}
+                      label={row.label}
+                      value={row.value}
+                      max={maxFocusTypeSeconds}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="focus-analytics-card">
+                <div className="focus-card-heading">
+                  <strong>План / факт / зачёт</strong>
+                  <span>{formatFocusDelta(actualVsPlanned)} к плану</span>
+                </div>
+                <div className="focus-mini-bars">
+                  {focusTimelineRows.map((row) => (
+                    <FocusBar
+                      key={row.key}
+                      label={row.label}
+                      value={row.value}
+                      max={maxFocusTimelineSeconds}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       <div className="two-col">
@@ -82,4 +159,22 @@ function Stat({ label, value, suffix, tone }: { label: string; value: string | n
       {suffix ? <small>{suffix}</small> : null}
     </div>
   );
+}
+
+function FocusBar({ label, value, max }: { label: string; value: number; max: number }) {
+  const width = value > 0 ? Math.max(3, Math.round((value / max) * 100)) : 0;
+
+  return (
+    <div className="focus-bar-row">
+      <span>{label}</span>
+      <div className="focus-bar-track" aria-hidden="true"><span style={{ width: `${width}%` }} /></div>
+      <b>{formatFocusTimerDuration(value)}</b>
+    </div>
+  );
+}
+
+function formatFocusDelta(seconds: number) {
+  if (seconds === 0) return "0 сек";
+  const sign = seconds > 0 ? "+" : "−";
+  return `${sign}${formatFocusTimerDuration(Math.abs(seconds))}`;
 }

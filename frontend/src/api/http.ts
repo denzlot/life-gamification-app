@@ -3,11 +3,14 @@ import type {
   AdminUserResponse,
   AuthUser,
   CalendarDayResponse,
+  CompleteDailyPlanItemRequest,
+  CreateFocusSessionRequest,
   CreateHabitRequest,
   CreateManualDailyPlanItemRequest,
   CreateQuestRequest,
   CreateTaskRequest,
   DailyPlanResponse,
+  FocusSessionResponse,
   DashboardResponse,
   HabitResponse,
   HistoryPageResponse,
@@ -16,6 +19,9 @@ import type {
   QuestStepResponse,
   StatsResponse,
   TaskResponse,
+  TelegramSettingsRequest,
+  TelegramSettingsResponse,
+  CreateTelegramLinkResponse,
   UpdateDailyPlanItemRequest,
   UpdateDailyPlanNoteRequest,
   UpdateGameStatsRequest,
@@ -186,10 +192,14 @@ export const api = {
       request<DailyPlanResponse>(`/daily-plans/${planId}/items`, { method: "POST", body: json(payload) })
   },
   dailyPlanItems: {
-    complete: (id: number) => request<void>(`/daily-plan-items/${id}/complete`, { method: "POST" }),
+    complete: (id: number, payload?: CompleteDailyPlanItemRequest) => request<void>(`/daily-plan-items/${id}/complete`, { method: "POST", ...(payload ? { body: json(payload) } : {}) }),
     fail: (id: number) => request<void>(`/daily-plan-items/${id}/fail`, { method: "POST" }),
     reset: (id: number) => request<void>(`/daily-plan-items/${id}/reset`, { method: "POST" }),
     update: (id: number, payload: UpdateDailyPlanItemRequest) => request<void>(`/daily-plan-items/${id}`, { method: "PATCH", body: json(payload) })
+  },
+  focusSessions: {
+    save: (payload: CreateFocusSessionRequest) => request<FocusSessionResponse>("/focus-sessions", { method: "POST", body: json(payload) }),
+    list: () => request<FocusSessionResponse[]>("/focus-sessions")
   },
   quests: {
     list: () => request<QuestResponse[]>("/quests"),
@@ -209,6 +219,14 @@ export const api = {
   },
   history: {
     get: (page = 0, size = 20) => request<HistoryPageResponse>(withQuery("/history", { page, size }))
+  },
+  telegram: {
+    settings: () => request<TelegramSettingsResponse>("/telegram/settings"),
+    updateSettings: (payload: TelegramSettingsRequest) =>
+      request<TelegramSettingsResponse>("/telegram/settings", { method: "PUT", body: json(payload) }),
+    createLinkCode: () =>
+      request<CreateTelegramLinkResponse>("/telegram/link-code", { method: "POST" }),
+    unlink: () => request<void>("/telegram/link", { method: "DELETE" })
   },
   admin: {
     users: () => request<AdminUserResponse[]>("/admin/users"),

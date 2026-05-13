@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { join, relative } from 'node:path';
 
-const root = new URL('../src/styles', import.meta.url).pathname;
+const root = fileURLToPath(new URL('../src/styles', import.meta.url));
 const files = [];
 function walk(dir) {
   for (const name of readdirSync(dir)) {
@@ -15,7 +16,7 @@ walk(root);
 const selectorCounts = new Map();
 const summary = files.map((file) => {
   const text = readFileSync(file, 'utf8');
-  const rel = file.replace(process.cwd() + '/', '');
+  const rel = relative(process.cwd(), file);
   const selectors = text.match(/(^|\n)\s*[^@{}][^{]+\{/g) ?? [];
   for (const raw of selectors) {
     const selector = raw.replace('{', '').trim();

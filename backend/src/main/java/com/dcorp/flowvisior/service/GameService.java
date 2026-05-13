@@ -1,5 +1,6 @@
 package com.dcorp.flowvisior.service;
 
+import com.dcorp.flowvisior.dto.focus.CreateFocusSessionRequest;
 import com.dcorp.flowvisior.entity.*;
 import com.dcorp.flowvisior.repository.ActivityLogRepository;
 import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
@@ -26,23 +27,31 @@ public class GameService {
     private final ActivityLogRepository activityLogRepository;
     private final QuestStepRepository questStepRepository;
     private final AchievementService achievementService;
+    private final FocusSessionService focusSessionService;
 
     public GameService(
             UserGameStatsRepository userGameStatsRepository,
             DailyPlanItemRepository dailyPlanItemRepository,
             ActivityLogRepository activityLogRepository,
             QuestStepRepository questStepRepository,
-            AchievementService achievementService
+            AchievementService achievementService,
+            FocusSessionService focusSessionService
     ) {
         this.userGameStatsRepository = userGameStatsRepository;
         this.dailyPlanItemRepository = dailyPlanItemRepository;
         this.activityLogRepository = activityLogRepository;
         this.questStepRepository = questStepRepository;
         this.achievementService = achievementService;
+        this.focusSessionService = focusSessionService;
     }
 
     @Transactional
     public void complete(DailyPlanItem item, User user) {
+        complete(item, user, null);
+    }
+
+    @Transactional
+    public void complete(DailyPlanItem item, User user, CreateFocusSessionRequest focusSession) {
         validateEditable(item);
 
         if (item.getStatus() != DailyPlanItemStatus.PENDING) {
@@ -54,9 +63,21 @@ public class GameService {
         UserGameStats stats = getStats(user);
         QuestStep questStep = getPendingQuestStepForItem(item, user);
 
+        if (focusSession != null) {
+            validateFocusSessionForItem(item, focusSession);
+            int focusSpentSeconds = focusSession.getCreditedDurationSeconds() == null
+                    ? focusSession.getDurationSeconds()
+                    : focusSession.getCreditedDurationSeconds();
+            item.setFocusSpentSeconds(focusSpentSeconds);
+        }
+
         item.complete();
         dailyPlanItemRepository.save(item);
         completeQuestStep(questStep, item.getDailyPlan().getPlanDate());
+
+        if (focusSession != null) {
+            focusSessionService.saveCompletedSession(user, focusSession);
+        }
 
         activityLogRepository.save(new ActivityLog(
                 user, item.getDailyPlan(), item,
@@ -179,9 +200,16 @@ public class GameService {
         );
     }
 
-    // Старый метод оставлен для совместимости вызовов, если они где-то остались.
-    public void applyStreakLogic(UserGameStats stats, boolean dayWasProductive) {
-        applyDayClose(stats, dayWasProductive, LocalDate.now());
+    private void validateFocusSessionForItem(DailyPlanItem item, CreateFocusSessionRequest focusSession) {
+        if (focusSession.getSourceType() != item.getSourceType()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Focus session source type does not match item");
+        }
+
+        Long itemSourceId = item.getSourceId();
+        Long focusSourceId = focusSession.getSourceId();
+        if (itemSourceId != null && focusSourceId != null && !itemSourceId.equals(focusSourceId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Focus session source id does not match item");
+        }
     }
 
     private void validateEditable(DailyPlanItem item) {

@@ -24,4 +24,3 @@
 .btn-success:hover:not(:disabled) { box-shadow: 0 5px 18px color-mix(in srgb, var(--good), transparent 68%) !important; }
 .btn-danger:hover:not(:disabled) { box-shadow: 0 5px 18px color-mix(in srgb, var(--danger), transparent 68%) !important; }
 .btn.toolbar-active,
-.btn.focus-task-button:not(:disabled):hover { border-color: color-mix(in srgb, var(--accent), transparent 35%) !important; background: color-mix(in srgb, var(--accent), transparent 87%) !important; color: var(--text) !important; }

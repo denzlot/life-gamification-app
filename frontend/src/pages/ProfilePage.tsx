@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/http";
-import type { AchievementResponse } from "../api/types";
+import type { AchievementResponse, CreateTelegramLinkResponse, TelegramSettingsResponse } from "../api/types";
 import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { CharacterChooser } from "../components/CharacterChooser";
@@ -20,6 +20,10 @@ export function ProfilePage() {
   const [showChooser, setShowChooser] = useState(false);
   const [selectedCharacterId, setSelectedCharacterId] = useState(() => readSelectedCharacter());
   const [previewCharacterId, setPreviewCharacterId] = useState<typeof selectedCharacterId>(null);
+  const [telegram, setTelegram] = useState<TelegramSettingsResponse | null>(null);
+  const [telegramLink, setTelegramLink] = useState<CreateTelegramLinkResponse | null>(null);
+  const [telegramBusy, setTelegramBusy] = useState(false);
+  const [telegramError, setTelegramError] = useState<string | null>(null);
   const character = getCharacter(previewCharacterId ?? selectedCharacterId);
 
   function toggleChooser() {
@@ -51,8 +55,62 @@ export function ProfilePage() {
     }
   }
 
+  async function loadTelegramSettings() {
+    setTelegramError(null);
+    try {
+      setTelegram(await api.telegram.settings());
+    } catch (err) {
+      setTelegramError(err instanceof Error ? err.message : "Не удалось загрузить настройки Telegram");
+    }
+  }
+
+  async function createTelegramLink() {
+    setTelegramBusy(true);
+    setTelegramError(null);
+    try {
+      setTelegramLink(await api.telegram.createLinkCode());
+    } catch (err) {
+      setTelegramError(err instanceof Error ? err.message : "Не удалось создать link code");
+    } finally {
+      setTelegramBusy(false);
+    }
+  }
+
+  async function updateTelegramSettings(next: TelegramSettingsResponse) {
+    setTelegram(next);
+    setTelegramBusy(true);
+    setTelegramError(null);
+    try {
+      setTelegram(await api.telegram.updateSettings({
+        remindersEnabled: next.remindersEnabled,
+        plannedRemindersEnabled: next.plannedRemindersEnabled,
+        deadlineRemindersEnabled: next.deadlineRemindersEnabled
+      }));
+    } catch (err) {
+      setTelegramError(err instanceof Error ? err.message : "Не удалось сохранить настройки Telegram");
+      loadTelegramSettings().catch(() => undefined);
+    } finally {
+      setTelegramBusy(false);
+    }
+  }
+
+  async function unlinkTelegram() {
+    setTelegramBusy(true);
+    setTelegramError(null);
+    try {
+      await api.telegram.unlink();
+      setTelegramLink(null);
+      await loadTelegramSettings();
+    } catch (err) {
+      setTelegramError(err instanceof Error ? err.message : "Не удалось отвязать Telegram");
+    } finally {
+      setTelegramBusy(false);
+    }
+  }
+
   useEffect(() => {
     loadAchievements();
+    loadTelegramSettings();
   }, []);
 
   useEffect(() => {
@@ -124,6 +182,73 @@ export function ProfilePage() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="section-line clean-section profile-telegram-panel">
+        <div className="section-title-row">
+          <div>
+            <p className="eyebrow">Telegram</p>
+            <h2>Бот и напоминания</h2>
+          </div>
+          <span className={`profile-telegram-status ${telegram?.linked ? "is-linked" : ""}`}>
+            {telegram?.linked ? "привязан" : "не привязан"}
+          </span>
+        </div>
+
+        <ErrorLine error={telegramError} />
+
+        {!telegram?.linked ? (
+          <div className="profile-telegram-connect">
+            <Button onClick={createTelegramLink} disabled={telegramBusy}>
+              {telegramBusy ? "Создаем..." : "Подключить Telegram"}
+            </Button>
+            {telegramLink ? (
+              <div className="profile-telegram-code">
+                {telegramLink.deepLink ? (
+                  <a className="btn btn-ghost" href={telegramLink.deepLink} target="_blank" rel="noreferrer">
+                    Открыть Telegram
+                  </a>
+                ) : null}
+                <span>Код: <strong>{telegramLink.linkCode}</strong></span>
+                <small className="muted">Отправьте боту /start {telegramLink.linkCode}</small>
+                <Button variant="thin" onClick={loadTelegramSettings} disabled={telegramBusy}>
+                  Проверить статус
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="profile-telegram-settings">
+            <label>
+              <input
+                type="checkbox"
+                checked={telegram.remindersEnabled}
+                disabled={telegramBusy}
+                onChange={(event) => updateTelegramSettings({ ...telegram, remindersEnabled: event.target.checked })}
+              />
+              Напоминания включены
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={telegram.plannedRemindersEnabled}
+                disabled={telegramBusy || !telegram.remindersEnabled}
+                onChange={(event) => updateTelegramSettings({ ...telegram, plannedRemindersEnabled: event.target.checked })}
+              />
+              Planned time
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={telegram.deadlineRemindersEnabled}
+                disabled={telegramBusy || !telegram.remindersEnabled}
+                onChange={(event) => updateTelegramSettings({ ...telegram, deadlineRemindersEnabled: event.target.checked })}
+              />
+              Deadline
+            </label>
+            <Button variant="danger" onClick={unlinkTelegram} disabled={telegramBusy}>Отвязать Telegram</Button>
+          </div>
+        )}
       </section>
     </section>
   );

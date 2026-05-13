@@ -16,7 +16,6 @@
 
 .drawer-menu,
 .toast,
-.wheel-popover,
 .quest-picker-dialog { background: color-mix(in srgb, var(--surface), #000 10%); }
 .input,
 .quest-picker-button,
@@ -56,8 +55,7 @@
 :root[data-theme="vampire"] .top-bar,
 :root[data-theme="vampire"] .section-line,
 :root[data-theme="vampire"] .drawer-menu,
-:root[data-theme="vampire"] .quest-picker-dialog,
-:root[data-theme="vampire"] .wheel-popover { background: linear-gradient(180deg, rgba(31, 23, 35, 0.96), rgba(14, 10, 16, 0.96)); border-color: color-mix(in srgb, var(--border), var(--accent) 20%); }
+:root[data-theme="vampire"] .quest-picker-dialog { background: linear-gradient(180deg, rgba(31, 23, 35, 0.96), rgba(14, 10, 16, 0.96)); border-color: color-mix(in srgb, var(--border), var(--accent) 20%); }
 
 :root[data-theme="vampire"] .theme-switcher,
 :root[data-theme="vampire"] .quest-picker-button,
@@ -70,7 +68,6 @@
 :root[data-theme="dark"] .task-drawer,
 :root[data-theme="dark"] .drawer-panel,
 :root[data-theme="dark"] .filter-panel,
-:root[data-theme="dark"] .wheel-popover,
 :root[data-theme="dark"] .quest-picker-dialog,
 :root[data-theme="dark"] .drawer-menu { background: #0b0d11 !important; border-color: #20242d !important; }
 :root[data-theme="dark"] .input,
@@ -113,7 +110,6 @@
 :root[data-theme="cosmos"] .section-line,
 :root[data-theme="cosmos"] .drawer-menu,
 :root[data-theme="cosmos"] .quest-picker-dialog,
-:root[data-theme="cosmos"] .wheel-popover,
 :root[data-theme="cosmos"] .form-modal-backdrop .modal-form-card {
   border-color: color-mix(in srgb, var(--border), var(--accent) 10%);
   background:

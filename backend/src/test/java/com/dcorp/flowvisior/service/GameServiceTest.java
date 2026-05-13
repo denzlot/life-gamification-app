@@ -2,21 +2,39 @@ package com.dcorp.flowvisior.service;
 
 import com.dcorp.flowvisior.entity.User;
 import com.dcorp.flowvisior.entity.UserGameStats;
+import com.dcorp.flowvisior.repository.ActivityLogRepository;
+import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
+import com.dcorp.flowvisior.repository.QuestStepRepository;
+import com.dcorp.flowvisior.repository.UserGameStatsRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(MockitoExtension.class)
 class GameServiceTest {
 
-    private final GameService gameService = new GameService(
-            null,
-            null,
-            null,
-            null,
-            null
-    );
+    @Mock
+    private UserGameStatsRepository userGameStatsRepository;
+
+    @Mock
+    private DailyPlanItemRepository dailyPlanItemRepository;
+
+    @Mock
+    private ActivityLogRepository activityLogRepository;
+
+    @Mock
+    private QuestStepRepository questStepRepository;
+
+    @Mock
+    private AchievementService achievementService;
+
+    @Mock
+    private FocusSessionService focusSessionService;
 
     @Test
     void productiveSeventhDayGrantsShieldAndStreakReward() {
@@ -26,7 +44,7 @@ class GameServiceTest {
         stats.setHp(90);
         stats.setLastProductiveDate(today.minusDays(1));
 
-        GameService.DayGameDelta delta = gameService.applyDayClose(stats, true, today);
+        GameService.DayGameDelta delta = service().applyDayClose(stats, true, today);
 
         assertThat(stats.getStreak()).isEqualTo(7);
         assertThat(stats.isStreakShield()).isTrue();
@@ -45,7 +63,7 @@ class GameServiceTest {
         stats.setStreakShield(true);
         stats.setLastProductiveDate(today.minusDays(1));
 
-        GameService.DayGameDelta delta = gameService.applyDayClose(stats, false, today);
+        GameService.DayGameDelta delta = service().applyDayClose(stats, false, today);
 
         assertThat(stats.getStreak()).isEqualTo(7);
         assertThat(stats.isStreakShield()).isFalse();
@@ -64,7 +82,7 @@ class GameServiceTest {
         stats.setHp(10);
         stats.addXp(100);
 
-        GameService.DayGameDelta delta = gameService.applyDayClose(stats, false, today);
+        GameService.DayGameDelta delta = service().applyDayClose(stats, false, today);
 
         assertThat(stats.getStreak()).isZero();
         assertThat(stats.getXp()).isEqualTo(30);
@@ -81,11 +99,22 @@ class GameServiceTest {
         stats.setStreak(5);
         stats.setLastProductiveDate(today.minusDays(3));
 
-        gameService.applyDayClose(stats, true, today);
+        service().applyDayClose(stats, true, today);
 
         assertThat(stats.getStreak()).isEqualTo(1);
         assertThat(stats.isStreakShield()).isFalse();
         assertThat(stats.getLastProductiveDate()).isEqualTo(today);
+    }
+
+    private GameService service() {
+        return new GameService(
+                userGameStatsRepository,
+                dailyPlanItemRepository,
+                activityLogRepository,
+                questStepRepository,
+                achievementService,
+                focusSessionService
+        );
     }
 
     private UserGameStats stats() {

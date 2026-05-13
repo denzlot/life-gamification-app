@@ -19,9 +19,9 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-// endpoints: /api/auth/register, /login, /logout, /me
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -31,8 +31,13 @@ public class AuthController {
     private final SecurityContextRepository securityContextRepository;
     private final UserGameStatsService userGameStatsService;
 
-    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository,
-                          PasswordEncoder passwordEncoder, SecurityContextRepository securityContextRepository, UserGameStatsService userGameStatsService) {
+    public AuthController(
+            AuthenticationManager authenticationManager,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            SecurityContextRepository securityContextRepository,
+            UserGameStatsService userGameStatsService
+    ) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -41,52 +46,49 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Transactional
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        // проверяем что username не занят
         if (userRepository.existsByUsername(request.getUsername())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
-    User user = new User(request.getUsername(), passwordEncoder.encode(request.getPassword()));
 
-    User saved = userRepository.save(user);
-    userGameStatsService.createFor(saved);
-    return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(new AuthResponse(saved.getId(), saved.getUsername(), saved.getRole().name()));
+        User user = new User(request.getUsername(), passwordEncoder.encode(request.getPassword()));
+        User saved = userRepository.save(user);
+        userGameStatsService.createFor(saved);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new AuthResponse(saved.getId(), saved.getUsername(), saved.getRole().name()));
     }
 
-
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login (@Valid @RequestBody LoginRequest request,
-                                               HttpServletRequest httpServletRequest,
-                                               HttpServletResponse httpServletResponse) {
-    // проверяем логин и пароль
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse
+    ) {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 request.getUsername(),
-                request.getPassword()));
+                request.getPassword()
+        ));
 
-        // сохраняем авторизацию в сессию
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
         securityContextRepository.saveContext(context, httpServletRequest, httpServletResponse);
-
-        // достаем пользователя из бд чтобы вернуть id
 
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
 
         return ResponseEntity.ok(
                 new AuthResponse(user.getId(), user.getUsername(), user.getRole().name())
         );
-
-
     }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
-        request.getSession(false); // не создавать сессию если её нет
         var session = request.getSession(false);
         if (session != null) {
-            session.invalidate(); // уничтожаем сессию
+            session.invalidate();
         }
         SecurityContextHolder.clearContext();
         return ResponseEntity.ok().build();

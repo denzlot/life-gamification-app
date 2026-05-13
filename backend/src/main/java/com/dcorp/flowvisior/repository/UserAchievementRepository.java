@@ -10,7 +10,14 @@ import java.util.Set;
 
 public interface UserAchievementRepository extends JpaRepository<UserAchievement, Long> {
 
-    List<UserAchievement> findByUserOrderByUnlockedAtDesc(User user);
+    @Query("""
+            select ua
+            from UserAchievement ua
+            join fetch ua.achievement
+            where ua.user = :user
+            order by ua.unlockedAt desc
+            """)
+    List<UserAchievement> findByUserWithAchievementOrderByUnlockedAtDesc(User user);
 
     @Query("SELECT ua.achievement.key FROM UserAchievement ua WHERE ua.user = :user")
     Set<String> findUnlockedKeysByUser(User user);

@@ -22,6 +22,7 @@ public class DailyPlanItemResponse {
     private final int hpDeltaFail;
     private final LocalDateTime createdAt;
     private final LocalDateTime completedAt;
+    private final Integer focusSpentSeconds;
 
     public DailyPlanItemResponse(DailyPlanItem item) {
         this.id = item.getId();
@@ -37,6 +38,7 @@ public class DailyPlanItemResponse {
         this.hpDeltaFail = item.getHpDeltaFail();
         this.createdAt = item.getCreatedAt();
         this.completedAt = item.getCompletedAt();
+        this.focusSpentSeconds = item.getFocusSpentSeconds();
     }
 
     public Long getId() { return id; }
@@ -52,4 +54,5 @@ public class DailyPlanItemResponse {
     public int getHpDeltaFail() { return hpDeltaFail; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getCompletedAt() { return completedAt; }
+    public Integer getFocusSpentSeconds() { return focusSpentSeconds; }
 }

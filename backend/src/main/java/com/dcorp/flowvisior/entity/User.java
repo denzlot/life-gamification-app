@@ -1,5 +1,4 @@
 package com.dcorp.flowvisior.entity;
-// кто пользователь в бд
 
 import jakarta.persistence.*;
 
@@ -32,7 +31,20 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    protected User() {}
+    @Column(name = "telegram_chat_id")
+    private Long telegramChatId;
+
+    @Column(name = "telegram_reminders_enabled", nullable = false)
+    private boolean telegramRemindersEnabled;
+
+    @Column(name = "telegram_planned_reminders_enabled", nullable = false)
+    private boolean telegramPlannedRemindersEnabled;
+
+    @Column(name = "telegram_deadline_reminders_enabled", nullable = false)
+    private boolean telegramDeadlineRemindersEnabled;
+
+    protected User() {
+    }
 
     public User(String username, String password) {
         this.username = username;
@@ -42,10 +54,15 @@ public class User {
     }
 
     @PrePersist
-    void onCreate(){
+    void onCreate() {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void ban() {
@@ -56,13 +73,40 @@ public class User {
         this.status = UserStatus.ACTIVE;
     }
 
-    public Long getId() {return id;}
-    public String getUsername() {return username;}
+    public void linkTelegram(Long telegramChatId) {
+        this.telegramChatId = telegramChatId;
+        this.telegramRemindersEnabled = true;
+        this.telegramPlannedRemindersEnabled = true;
+        this.telegramDeadlineRemindersEnabled = true;
+    }
+
+    public void unlinkTelegram() {
+        this.telegramChatId = null;
+        this.telegramRemindersEnabled = false;
+        this.telegramPlannedRemindersEnabled = false;
+        this.telegramDeadlineRemindersEnabled = false;
+    }
+
+    public void updateTelegramReminderSettings(
+            boolean remindersEnabled,
+            boolean plannedRemindersEnabled,
+            boolean deadlineRemindersEnabled
+    ) {
+        this.telegramRemindersEnabled = remindersEnabled;
+        this.telegramPlannedRemindersEnabled = plannedRemindersEnabled;
+        this.telegramDeadlineRemindersEnabled = deadlineRemindersEnabled;
+    }
+
+    public Long getId() { return id; }
+    public String getUsername() { return username; }
     public String getPassword() { return password; }
     public Role getRole() { return role; }
     public UserStatus getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
-
-
+    public Long getTelegramChatId() { return telegramChatId; }
+    public boolean isTelegramLinked() { return telegramChatId != null; }
+    public boolean isTelegramRemindersEnabled() { return telegramRemindersEnabled; }
+    public boolean isTelegramPlannedRemindersEnabled() { return telegramPlannedRemindersEnabled; }
+    public boolean isTelegramDeadlineRemindersEnabled() { return telegramDeadlineRemindersEnabled; }
 }

@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import type { DailyPlanItemResponse, DailyPlanItemStatus, SourceType } from "../../api/types";
+import type { DailyPlanItemStatus, SourceType } from "../../api/types";
 import { Button } from "../Button";
 import { TextInput } from "../FormFields";
 
@@ -14,7 +14,6 @@ interface TodayToolbarProps {
   filtersOpen: boolean;
   sortByTime: boolean;
   twoColumnLayout: boolean;
-  nextFocusItem: DailyPlanItemResponse | null;
   sourceFilters: Array<FilterOption<SourceType | "ALL">>;
   statusFilters: Array<FilterOption<DailyPlanItemStatus | "ALL">>;
   sourceFilter: SourceType | "ALL";
@@ -28,7 +27,7 @@ interface TodayToolbarProps {
   setStatusFilter: (value: DailyPlanItemStatus | "ALL") => void;
   setSearch: (value: string) => void;
   toggleTwoColumnLayout: () => void;
-  focusNextTask: () => void;
+  onOpenFocus: () => void;
 }
 
 /** Toolbar state stays in TodayPage; this component only owns the controls markup. */
@@ -38,7 +37,6 @@ export function TodayToolbar({
   filtersOpen,
   sortByTime,
   twoColumnLayout,
-  nextFocusItem,
   sourceFilters,
   statusFilters,
   sourceFilter,
@@ -52,7 +50,7 @@ export function TodayToolbar({
   setStatusFilter,
   setSearch,
   toggleTwoColumnLayout,
-  focusNextTask
+  onOpenFocus
 }: TodayToolbarProps) {
   return (
     <div className="today-inline-toolbar inline-overlay-host" ref={hostRef}>
@@ -65,7 +63,7 @@ export function TodayToolbar({
         <Button type="button" variant="ghost" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen}>{filtersOpen ? "Скрыть фильтры" : "Фильтры"}</Button>
         <Button type="button" variant="ghost" onClick={() => setSortByTime((value) => !value)}>{sortByTime ? "Обычный порядок" : "По времени"}</Button>
         <Button type="button" variant="ghost" className={twoColumnLayout ? "toolbar-active" : ""} onClick={toggleTwoColumnLayout}>{twoColumnLayout ? "В один ряд" : "В два ряда"}</Button>
-        <Button type="button" variant="ghost" className="focus-task-button" onClick={focusNextTask} disabled={!nextFocusItem}>Фокус</Button>
+        <Button type="button" variant="ghost" onClick={onOpenFocus}>Фокус</Button>
       </div>
 
       {filtersOpen ? (
