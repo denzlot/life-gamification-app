@@ -1,5 +1,6 @@
 package com.dcorp.flowvisior.controller;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -25,6 +26,11 @@ public class ApiExceptionHandler {
                 .map(error -> "Некорректное значение поля " + error.getField())
                 .orElse("Некорректные данные запроса");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiErrorResponse(message));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrity() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiErrorResponse("Запись уже существует"));
     }
 
     public record ApiErrorResponse(String message) {

@@ -35,6 +35,7 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
   }, [steps, selectedStepId]);
 
   const selectedStep = steps.find((step) => step.id === selectedStepId) ?? steps[0] ?? null;
+  const selectedStepEditable = selectedStep?.status !== "COMPLETED";
 
   useEffect(() => {
     if (!selectedStep) return;
@@ -77,7 +78,7 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
 
   async function saveRouteEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selectedStep) return;
+    if (!selectedStep || selectedStep.status === "COMPLETED") return;
     setBusyId(selectedStep.id);
     try {
       await api.quests.updateStep(selectedStep.id, {
@@ -122,7 +123,6 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
           </button>
         ))}
       </div>
-
       {selectedStep ? (
         <>
           <div className={`quest-route-focus status-${selectedStep.status.toLowerCase()}`}>
@@ -141,13 +141,15 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
                   {selectedStep.scheduledDate === today ? "Отложить на завтра" : "На сегодня"}
                 </Button>
               ) : null}
-              <Button type="button" variant="thin" onClick={() => setEditingStepId((current) => current === selectedStep.id ? null : selectedStep.id)}>
-                {editingStepId === selectedStep.id ? "Скрыть" : "Изменить шаг"}
-              </Button>
+              {selectedStepEditable ? (
+                <Button type="button" variant="thin" onClick={() => setEditingStepId((current) => current === selectedStep.id ? null : selectedStep.id)}>
+                  {editingStepId === selectedStep.id ? "Скрыть" : "Изменить шаг"}
+                </Button>
+              ) : null}
             </div>
           </div>
 
-          {editingStepId === selectedStep.id ? (
+          {selectedStepEditable && editingStepId === selectedStep.id ? (
             <form className="route-step-edit compact-create-form" onSubmit={saveRouteEdit}>
               <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} />
               <div className="route-step-edit-grid">

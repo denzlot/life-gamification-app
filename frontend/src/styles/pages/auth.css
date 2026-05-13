@@ -178,3 +178,195 @@
   background: rgba(5, 10, 22, 0.88) !important;
   box-shadow: 0 24px 70px rgba(0, 3, 14, 0.46), inset 0 1px 0 rgba(232,241,255,0.035);
 }
+
+.auth-screen {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bg), var(--surface-2) 12%) 0%, var(--bg) 48%, color-mix(in srgb, var(--bg), #000 12%) 100%),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--border), transparent 82%) 0 1px, transparent 1px 5.4rem),
+    repeating-linear-gradient(180deg, color-mix(in srgb, var(--border), transparent 86%) 0 1px, transparent 1px 5.4rem);
+}
+
+:root[data-theme="light"] .auth-screen {
+  background:
+    linear-gradient(135deg, #f6f8fb 0%, #eaf0f6 52%, #dde8f0 100%),
+    repeating-linear-gradient(90deg, rgba(40, 65, 90, 0.055) 0 1px, transparent 1px 5.4rem),
+    repeating-linear-gradient(180deg, rgba(40, 65, 90, 0.045) 0 1px, transparent 1px 5.4rem);
+}
+
+.auth-screen:not(.welcome-screen) .refined-auth-panel {
+  width: min(100%, 1080px) !important;
+  min-height: 600px;
+  grid-template-columns: minmax(340px, 1fr) minmax(320px, 390px) !important;
+  gap: clamp(1.25rem, 4vw, 3rem) !important;
+  padding: clamp(1.2rem, 4vw, 2.4rem) !important;
+  border: 1px solid color-mix(in srgb, var(--border), var(--text) 4%) !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--surface), transparent 8%) !important;
+  box-shadow: 0 24px 80px color-mix(in srgb, var(--shadow), #000 16%);
+}
+
+.auth-story {
+  min-width: 0;
+  display: grid;
+  gap: 1.3rem;
+  align-content: center;
+}
+
+.auth-screen:not(.welcome-screen) .auth-intro h1 {
+  max-width: 10ch;
+  font-size: 3.3rem !important;
+  line-height: 1.02;
+}
+
+.auth-screen:not(.welcome-screen) .auth-copy {
+  max-width: 30rem;
+  font-size: 1rem;
+}
+
+.auth-mission-preview {
+  width: min(100%, 470px);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 12%);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface-2), transparent 8%), color-mix(in srgb, var(--surface), transparent 4%)),
+    repeating-linear-gradient(135deg, transparent 0 0.65rem, color-mix(in srgb, var(--accent), transparent 94%) 0.65rem 0.7rem);
+}
+
+.auth-preview-top,
+.auth-preview-core,
+.auth-route-stack span {
+  display: flex;
+  align-items: center;
+}
+
+.auth-preview-top {
+  justify-content: space-between;
+  gap: 0.8rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+
+.auth-preview-status {
+  padding: 0.32rem 0.54rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--text), var(--accent) 16%);
+}
+
+.auth-preview-core {
+  gap: 1rem;
+}
+
+.auth-progress-dial {
+  width: 8.5rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 16%);
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    conic-gradient(from 210deg, var(--accent), var(--accent-2), color-mix(in srgb, var(--border), var(--text) 16%)) border-box;
+}
+
+.auth-progress-dial strong {
+  font-family: var(--font-heading);
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.auth-progress-dial span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.auth-route-stack {
+  flex: 1;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.auth-route-stack span {
+  min-height: 2.35rem;
+  justify-content: space-between;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--text), var(--muted) 14%);
+  font-size: 0.84rem;
+}
+
+.auth-route-stack span::after {
+  content: "";
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--muted), transparent 30%);
+}
+
+.auth-route-stack .is-done::after {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent), transparent 84%);
+}
+
+.auth-preview-rows {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.auth-preview-rows span {
+  width: var(--row-width);
+  height: 0.54rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent), transparent 20%), color-mix(in srgb, var(--accent-2), transparent 18%));
+}
+
+.auth-screen:not(.welcome-screen) .auth-form {
+  align-self: center;
+  gap: 1rem;
+  padding: 1.1rem !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--surface), var(--bg) 7%) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text), transparent 94%);
+}
+
+.auth-form .input {
+  min-height: 3rem;
+}
+
+.auth-form .btn {
+  min-height: 3rem;
+}
+
+@media (max-width: 980px) {
+  .auth-screen:not(.welcome-screen) .refined-auth-panel {
+    grid-template-columns: 1fr !important;
+    min-height: 0;
+  }
+
+  .auth-mission-preview {
+    width: 100%;
+  }
+}
+
+@media (max-width: 620px) {
+  .auth-screen:not(.welcome-screen) .auth-intro h1 {
+    font-size: 2.25rem !important;
+  }
+
+  .auth-preview-core {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .auth-progress-dial {
+    width: 100%;
+    aspect-ratio: 2.8;
+  }
+}

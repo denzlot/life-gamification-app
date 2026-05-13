@@ -23,7 +23,7 @@ class UserDetailsServiceImplTest {
     void bannedUserIsDisabledForSpringSecurity() {
         User user = new User("blocked", "{bcrypt}hash");
         user.ban();
-        when(userRepository.findByUsername("blocked")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsernameIgnoreCase("blocked")).thenReturn(Optional.of(user));
 
         UserDetails userDetails = new UserDetailsServiceImpl(userRepository)
                 .loadUserByUsername("blocked");
@@ -34,7 +34,7 @@ class UserDetailsServiceImplTest {
     @Test
     void activeUserIsEnabledForSpringSecurity() {
         User user = new User("active", "{bcrypt}hash");
-        when(userRepository.findByUsername("active")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsernameIgnoreCase("active")).thenReturn(Optional.of(user));
 
         UserDetails userDetails = new UserDetailsServiceImpl(userRepository)
                 .loadUserByUsername("active");

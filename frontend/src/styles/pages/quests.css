@@ -151,6 +151,56 @@
 
 .compact-pace-strip { max-width: 820px !important; min-height: 0 !important; padding: 0.45rem 0 !important; margin: 0.45rem auto 0.5rem !important; }
 
+/* Route window polish: larger day targets, calmer panel, no tiny chip feeling. */
+.redesigned-route-board.polished-route-board {
+  padding: 1.15rem !important;
+  gap: 1rem !important;
+  border-radius: 16px !important;
+}
+.redesigned-route-board .quest-route-head {
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.34fr) auto !important;
+}
+.redesigned-route-board .quest-route-track {
+  gap: 0.55rem !important;
+  padding: 0.7rem !important;
+  max-height: 12rem;
+  overflow: auto;
+}
+.redesigned-route-board .quest-route-node {
+  --node-size: 2.55rem;
+  font-size: 0.86rem;
+  border-radius: 12px !important;
+}
+.redesigned-route-board .quest-route-focus {
+  padding: 0.9rem 1rem !important;
+  position: relative;
+  overflow: hidden;
+}
+.redesigned-route-board .quest-route-focus::before {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  top: 0.58rem;
+  height: 1px;
+  opacity: 0.7;
+  background: color-mix(in srgb, var(--accent), transparent 35%);
+}
+.redesigned-route-board .quest-route-focus.status-completed::before {
+  background: color-mix(in srgb, var(--good), transparent 35%);
+}
+.redesigned-route-board .quest-route-focus.status-skipped::before {
+  background: color-mix(in srgb, var(--danger), transparent 35%);
+}
+.redesigned-route-board .route-step-actions .btn {
+  min-height: 2.25rem;
+  min-width: 128px;
+}
+@media (max-width: 920px) {
+  .redesigned-route-board .quest-route-head { grid-template-columns: 1fr !important; }
+  .redesigned-route-board .quest-route-track { max-height: 14rem; }
+}
+
 /* Keep the archive toggle aligned with the steps view toggle on the opposite panel. */
 .quest-list-title-row { align-items: start; min-height: 3rem; }
 .quest-list-title-row .btn { min-width: 104px; justify-self: end; }
