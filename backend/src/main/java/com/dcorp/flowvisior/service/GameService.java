@@ -17,10 +17,7 @@ import java.time.LocalDate;
 public class GameService {
 
     private static final String CLOSED_PLAN_ERROR = "Cannot modify items in a closed daily plan";
-    private static final int SEVEN_DAY_XP_REWARD = 70;
-    private static final int SEVEN_DAY_HP_REWARD = 7;
-    private static final int MISSED_DAY_XP_PENALTY = -70;
-    private static final int MISSED_DAY_HP_PENALTY = -7;
+    private static final int SEVEN_DAY_HP_REWARD = 15;
 
     private final UserGameStatsRepository userGameStatsRepository;
     private final DailyPlanItemRepository dailyPlanItemRepository;
@@ -157,13 +154,13 @@ public class GameService {
         achievementService.checkAndGrant(user);
     }
 
-    public DayGameDelta applyDayClose(UserGameStats stats, boolean dayWasProductive, LocalDate planDate) {
+    public DayGameDelta applyDayClose(UserGameStats stats, DayQuality dayQuality, LocalDate planDate, int totalCount) {
         int xpBefore = stats.getXp();
         int hpBefore = stats.getHp();
         boolean shieldBefore = stats.isStreakShield();
         boolean shieldUsed = false;
 
-        if (dayWasProductive) {
+        if (dayQuality.continuesStreak()) {
             LocalDate expectedPrevious = planDate.minusDays(1);
             LocalDate lastProductiveDate = stats.getLastProductiveDate();
 
@@ -173,10 +170,11 @@ public class GameService {
 
             stats.setStreak(stats.getStreak() + 1);
             stats.setLastProductiveDate(planDate);
+            stats.addXp(dayQuality.getXpReward());
+            stats.addHp(dayQuality.hpDelta(totalCount));
 
             if (stats.getStreak() % 7 == 0) {
                 stats.setStreakShield(true);
-                stats.addXp(SEVEN_DAY_XP_REWARD);
                 stats.addHp(SEVEN_DAY_HP_REWARD);
             }
         } else {
@@ -186,8 +184,7 @@ public class GameService {
                 shieldUsed = true;
             } else {
                 stats.setStreak(0);
-                stats.addXp(MISSED_DAY_XP_PENALTY);
-                stats.addHp(MISSED_DAY_HP_PENALTY);
+                stats.addHp(dayQuality.hpDelta(totalCount));
             }
         }
 

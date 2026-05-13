@@ -272,25 +272,8 @@ public class DailyPlanService {
                 );
 
         for (DailyPlan plan : stalePlannedPlans) {
-            closePlannedPlanWithoutGameDelta(plan);
+            closePlanInternal(user, plan, true);
         }
-    }
-
-    private void closePlannedPlanWithoutGameDelta(DailyPlan dailyPlan) {
-        if (dailyPlan.isClosed()) {
-            return;
-        }
-
-        List<DailyPlanItem> items = dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(dailyPlan);
-        long completedCount = items.stream()
-                .filter(i -> i.getStatus() == DailyPlanItemStatus.COMPLETED)
-                .count();
-        long failedCount = items.stream()
-                .filter(i -> i.getStatus() == DailyPlanItemStatus.FAILED)
-                .count();
-
-        dailyPlan.close((int) completedCount, (int) failedCount, 0, 0, 0, false);
-        dailyPlanRepository.save(dailyPlan);
     }
 
     private DailyPlanResponse closePlanInternal(User user, DailyPlan dailyPlan, boolean automatic) {
@@ -306,14 +289,15 @@ public class DailyPlanService {
                 .filter(i -> i.getStatus() == DailyPlanItemStatus.FAILED)
                 .count();
 
-        boolean dayWasProductive = completedCount > 0;
+        int totalCount = items.size();
+        double completionRate = totalCount == 0 ? 0d : (double) completedCount / totalCount;
+        DayQuality dayQuality = DayQuality.fromCounts((int) completedCount, totalCount);
 
         UserGameStats stats = userGameStatsRepository.findByUser(user)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Game stats not found"));
 
-        GameService.DayGameDelta delta = gameService.applyDayClose(stats, dayWasProductive, dailyPlan.getPlanDate());
+        GameService.DayGameDelta delta = gameService.applyDayClose(stats, dayQuality, dailyPlan.getPlanDate(), totalCount);
         userGameStatsRepository.save(stats);
-        achievementService.checkAndGrant(user);
 
         activityLogRepository.save(new ActivityLog(
                 user, dailyPlan, null,
@@ -326,6 +310,9 @@ public class DailyPlanService {
         dailyPlan.close(
                 (int) completedCount,
                 (int) failedCount,
+                totalCount,
+                completionRate,
+                dayQuality,
                 delta.getXpDelta(),
                 delta.getHpDelta(),
                 stats.getStreak(),
@@ -333,12 +320,16 @@ public class DailyPlanService {
         );
 
         dailyPlanRepository.save(dailyPlan);
+        achievementService.checkAndGrant(user);
 
         return new ClosedDailyPlanResponse(
                 dailyPlan,
                 items,
                 (int) completedCount,
                 (int) failedCount,
+                totalCount,
+                completionRate,
+                dayQuality,
                 delta.getXpDelta(),
                 delta.getHpDelta(),
                 stats.getStreak(),
@@ -485,6 +476,9 @@ public class DailyPlanService {
     private static final class ClosedDailyPlanResponse extends DailyPlanResponse {
         private final int completedCount;
         private final int failedCount;
+        private final int totalCount;
+        private final double completionRate;
+        private final DayQuality dayQuality;
         private final int xpEarned;
         private final int hpDelta;
         private final int streakAfterClose;
@@ -496,6 +490,9 @@ public class DailyPlanService {
                 List<DailyPlanItem> items,
                 int completedCount,
                 int failedCount,
+                int totalCount,
+                double completionRate,
+                DayQuality dayQuality,
                 int xpEarned,
                 int hpDelta,
                 int streakAfterClose,
@@ -505,6 +502,9 @@ public class DailyPlanService {
             super(dailyPlan, items);
             this.completedCount = completedCount;
             this.failedCount = failedCount;
+            this.totalCount = totalCount;
+            this.completionRate = completionRate;
+            this.dayQuality = dayQuality;
             this.xpEarned = xpEarned;
             this.hpDelta = hpDelta;
             this.streakAfterClose = streakAfterClose;
@@ -514,6 +514,9 @@ public class DailyPlanService {
 
         public int getCompletedCount() { return completedCount; }
         public int getFailedCount() { return failedCount; }
+        public int getTotalCount() { return totalCount; }
+        public double getCompletionRate() { return completionRate; }
+        public DayQuality getDayQuality() { return dayQuality; }
         public int getXpEarned() { return xpEarned; }
         public int getHpDelta() { return hpDelta; }
         public int getStreakAfterClose() { return streakAfterClose; }

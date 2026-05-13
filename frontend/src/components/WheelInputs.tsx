@@ -140,6 +140,13 @@ function WheelColumn<T extends string | number>({ label, value, options, onChang
   const scrollTimerRef = useRef<number | null>(null);
   const safeLabel = String(label).replace(/\s+/g, "-");
 
+  useEffect(() => () => {
+    if (scrollTimerRef.current) {
+      window.clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = null;
+    }
+  }, []);
+
   function alignSelected(behavior: ScrollBehavior = "smooth") {
     const container = columnRef.current;
     if (!container) return;
@@ -175,7 +182,10 @@ function WheelColumn<T extends string | number>({ label, value, options, onChang
 
   function handleScroll() {
     if (scrollTimerRef.current) window.clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = window.setTimeout(selectNearestToCenter, 90);
+    scrollTimerRef.current = window.setTimeout(() => {
+      scrollTimerRef.current = null;
+      selectNearestToCenter();
+    }, 90);
   }
 
   function move(delta: number) {

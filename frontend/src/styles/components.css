@@ -453,6 +453,85 @@
   }
 }
 
+.faq-float-button {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 82;
+  min-width: 2.9rem;
+  height: 2.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface), var(--text) 2%);
+  color: var(--text);
+  box-shadow: 0 12px 38px var(--shadow);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.faq-float-button:hover { border-color: color-mix(in srgb, var(--accent), transparent 35%); transform: translateY(-1px); }
+.faq-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--bg), transparent 12%);
+  backdrop-filter: blur(12px);
+}
+.faq-modal {
+  width: min(780px, 100%);
+  max-height: min(760px, calc(100vh - 2rem));
+  overflow: auto;
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--modal-radius);
+  background: color-mix(in srgb, var(--surface), var(--bg) 7%);
+  box-shadow: 0 24px 70px var(--shadow);
+}
+.faq-modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+
+.faq-lead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  align-items: baseline;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.faq-lead strong { color: var(--text); }
+.faq-lead span { color: var(--muted); }
+
+.faq-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 1.2rem; }
+.faq-list article {
+  display: grid;
+  gap: 0.32rem;
+  padding: 0.78rem 0;
+  border-top: 1px solid var(--border-soft);
+}
+.faq-list article > span {
+  justify-self: start;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 760;
+}
+.faq-list h3 { margin: 0; font-size: 0.98rem; }
+.faq-list p { margin: 0; color: var(--muted); }
+@media (max-width: 720px) {
+  .faq-float-button { right: 0.75rem; bottom: 4rem; }
+  .faq-modal-backdrop { place-items: end center; padding: 0.75rem; }
+  .faq-modal { max-height: 84vh; border-radius: 20px 20px 0 0; }
+  .faq-list { grid-template-columns: 1fr; }
+}
+
 
 /* Stable daily-plan row meta: status | description | title/status | focus time | type. */
 .line-list.typed-list .line-item.plan-item,

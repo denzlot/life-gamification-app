@@ -4,6 +4,7 @@ export type QuestStatus = "ACTIVE" | "COMPLETED" | "ARCHIVED";
 export type QuestStepStatus = "PENDING" | "COMPLETED" | "SKIPPED";
 export type DailyPlanStatus = "PLANNED" | "ACTIVE" | "CLOSED";
 export type DailyPlanItemStatus = "PENDING" | "COMPLETED" | "FAILED";
+export type DayQuality = "EMPTY" | "BAD" | "NORMAL" | "GOOD";
 export type SourceType = "TASK" | "HABIT" | "QUEST" | "MANUAL";
 export type HpState = "GREAT" | "NORMAL" | "TIRED" | "EXHAUSTED" | "CRITICAL";
 export type UserRole = "USER" | "ADMIN" | string;
@@ -26,6 +27,19 @@ export interface GameStats {
   streak: number;
   streakShield: boolean;
   nextShieldAt: number;
+  selectedTheme?: string;
+  selectedCharacter?: string;
+  unlocks?: UnlockResponse[];
+}
+
+export interface UnlockResponse {
+  key: string;
+  type: "THEME" | "CHARACTER" | string;
+  targetKey: string;
+  title: string;
+  requiredLevel: number;
+  unlocked: boolean;
+  unlockedAt?: string | null;
 }
 
 export interface ProfileResponse {
@@ -105,6 +119,9 @@ export interface DailyPlanResponse {
   items: DailyPlanItemResponse[];
   completedCount?: number;
   failedCount?: number;
+  totalCountAtClose?: number;
+  completionRateAtClose?: number;
+  dayQuality?: DayQuality;
   xpEarned?: number;
   hpDelta?: number;
   streakAfterClose?: number;
@@ -357,7 +374,10 @@ export interface AchievementResponse {
   description: string;
   category: string;
   xpReward: number;
-  unlockedAt: string;
+  requiredValue: number;
+  unlocked: boolean;
+  unlockedAt?: string | null;
+  progress: number;
 }
 
 export interface AdminUserResponse {

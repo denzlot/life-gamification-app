@@ -82,8 +82,8 @@ class TelegramUpdateServiceTest {
 
         assertThat(token.isAvailable(LocalDateTime.now())).isFalse();
         verify(telegramCallbackTokenRepository).save(token);
-        verify(telegramBotClient).answerCallbackQuery("callback-1", "Status: completed");
-        verify(telegramBotClient).editMessageText(eq(123L), eq(77L), eq("Today:"), isNull());
+        verify(telegramBotClient).answerCallbackQuery("callback-1", "Статус: выполнено");
+        verify(telegramBotClient).editMessageText(eq(123L), eq(77L), eq("Сегодня:"), isNull());
     }
 
     @Test
@@ -114,7 +114,7 @@ class TelegramUpdateServiceTest {
                 }
                 """));
 
-        verify(telegramBotClient).answerCallbackQuery("callback-1", "This action is no longer available.");
+        verify(telegramBotClient).answerCallbackQuery("callback-1", "Действие больше недоступно.");
         verify(dailyPlanService, never()).cycleItemStatusFromTelegram(any(), any(), any());
         verifyNoInteractions(telegramLinkService);
     }

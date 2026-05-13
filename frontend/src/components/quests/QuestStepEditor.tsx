@@ -72,11 +72,17 @@ export function QuestStepEditor({ step, questTotal, onSaved }: QuestStepEditorPr
       <form className="line-item step-edit compact-create-form" onSubmit={save}>
         <div className="step-edit-fields">
           <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required />
-          <div className="optional-toolbar">
-            <OptionChip active={options.date} onClick={() => setOptions((state) => ({ ...state, date: !state.date }))}>{`Дата: ${formatDate(form.scheduledDate)}`}</OptionChip>
-            <OptionChip active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>{form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}</OptionChip>
-            <OptionChip active={options.deadline || Boolean(form.deadlineTime)} onClick={() => setOptions((state) => ({ ...state, deadline: !state.deadline }))}>{form.deadlineTime ? `Дедлайн: ${formatTime(form.deadlineTime)}` : "Дедлайн"}</OptionChip>
-            <OptionChip active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionChip>
+          <div className="step-edit-control-row">
+            <div className="step-edit-options">
+              <OptionChip active={options.date} onClick={() => setOptions((state) => ({ ...state, date: !state.date }))}>{`Дата: ${formatDate(form.scheduledDate)}`}</OptionChip>
+              <OptionChip active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>{form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}</OptionChip>
+              <OptionChip active={options.deadline || Boolean(form.deadlineTime)} onClick={() => setOptions((state) => ({ ...state, deadline: !state.deadline }))}>{form.deadlineTime ? `Дедлайн: ${formatTime(form.deadlineTime)}` : "Дедлайн"}</OptionChip>
+              <OptionChip active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionChip>
+            </div>
+            <div className="item-tail wide-tail step-edit-actions">
+              <Button variant="thin" disabled={busy}>Сохранить</Button>
+              <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Отмена</Button>
+            </div>
           </div>
           <RevealSection open={options.date} className="option-reveal--wide">
             <DateWheelInput value={form.scheduledDate} onChange={(value) => setForm({ ...form, scheduledDate: value || step.scheduledDate })} allowClear={false} />
@@ -90,10 +96,6 @@ export function QuestStepEditor({ step, questTotal, onSaved }: QuestStepEditorPr
           <RevealSection open={options.description} className="option-reveal--wide">
             <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
           </RevealSection>
-        </div>
-        <div className="item-tail wide-tail">
-          <Button variant="thin" disabled={busy}>Сохранить</Button>
-          <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Отмена</Button>
         </div>
       </form>
     );

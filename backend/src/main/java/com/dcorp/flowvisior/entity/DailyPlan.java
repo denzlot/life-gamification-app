@@ -44,6 +44,16 @@ public class DailyPlan {
     @Column(name = "failed_count", nullable = false)
     private int failedCount;
 
+    @Column(name = "total_count_at_close", nullable = false)
+    private int totalCountAtClose;
+
+    @Column(name = "completion_rate_at_close", nullable = false)
+    private double completionRateAtClose;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "day_quality", nullable = false, length = 20)
+    private DayQuality dayQuality = DayQuality.EMPTY;
+
     @Column(name = "xp_earned", nullable = false)
     private int xpEarned;
 
@@ -80,12 +90,16 @@ public class DailyPlan {
     }
 
     public void close(int completedCount, int failedCount,
-                      int xpEarned, int hpDelta,
+                      int totalCountAtClose, double completionRateAtClose,
+                      DayQuality dayQuality, int xpEarned, int hpDelta,
                       int streakAfterClose, boolean shieldUsed) {
         this.status = DailyPlanStatus.CLOSED;
         this.closedAt = LocalDateTime.now();
         this.completedCount = completedCount;
         this.failedCount = failedCount;
+        this.totalCountAtClose = totalCountAtClose;
+        this.completionRateAtClose = completionRateAtClose;
+        this.dayQuality = dayQuality;
         this.xpEarned = xpEarned;
         this.hpDelta = hpDelta;
         this.streakAfterClose = streakAfterClose;
@@ -132,6 +146,12 @@ public class DailyPlan {
 
     public int getFailedCount() { return failedCount; }
 
+    public int getTotalCountAtClose() { return totalCountAtClose; }
+
+    public double getCompletionRateAtClose() { return completionRateAtClose; }
+
+    public DayQuality getDayQuality() { return dayQuality; }
+
     public int getXpEarned() { return xpEarned; }
 
     public int getHpDelta() { return hpDelta; }
@@ -142,4 +162,3 @@ public class DailyPlan {
 
     public String getNote() { return note; }
 }
-

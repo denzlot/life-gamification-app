@@ -22,17 +22,20 @@ public class HabitService {
     private final DailyPlanRepository dailyPlanRepository;
     private final DailyPlanItemRepository dailyPlanItemRepository;
     private final AuthenticatedUserService authenticatedUserService;
+    private final AchievementService achievementService;
 
     public HabitService(
             HabitRepository habitRepository,
             DailyPlanRepository dailyPlanRepository,
             DailyPlanItemRepository dailyPlanItemRepository,
-            AuthenticatedUserService authenticatedUserService
+            AuthenticatedUserService authenticatedUserService,
+            AchievementService achievementService
     ) {
         this.habitRepository = habitRepository;
         this.dailyPlanRepository = dailyPlanRepository;
         this.dailyPlanItemRepository = dailyPlanItemRepository;
         this.authenticatedUserService = authenticatedUserService;
+        this.achievementService = achievementService;
     }
 
     public List<HabitResponse> getHabits() {
@@ -59,6 +62,7 @@ public class HabitService {
 
         Habit savedHabit = habitRepository.save(habit);
         addHabitToOpenPlans(savedHabit, user);
+        achievementService.checkAndGrant(user);
 
         return new HabitResponse(savedHabit);
     }

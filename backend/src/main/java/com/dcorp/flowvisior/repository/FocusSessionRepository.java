@@ -16,7 +16,11 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
 
     List<FocusSession> findByUserOrderByCompletedAtDesc(User user);
 
+    long countByUser(User user);
+
     boolean existsByUserAndSourceTypeAndSourceIdIn(User user, ActivitySourceType sourceType, List<Long> sourceIds);
+
+    boolean existsByUserAndOvertimeSecondsGreaterThan(User user, int overtimeSeconds);
 
     @Query("""
             select coalesce(sum(session.creditedDurationSeconds), 0)

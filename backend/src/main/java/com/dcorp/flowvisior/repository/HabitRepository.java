@@ -14,4 +14,6 @@ public interface HabitRepository extends JpaRepository<Habit, Long> {
     List<Habit> findByUserAndActiveTrueOrderByCreatedAtDesc(User user);
 
     Optional<Habit> findByIdAndUser(Long id, User user);
+
+    long countByUser(User user);
 }

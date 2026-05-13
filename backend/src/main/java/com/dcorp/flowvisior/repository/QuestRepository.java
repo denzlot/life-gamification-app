@@ -18,5 +18,9 @@ public interface QuestRepository extends JpaRepository<Quest, Long> {
 
     int countByUserAndStatus(User user, QuestStatus status);
 
+    int countByUserAndStatusAndTotalStepsGreaterThanEqual(User user, QuestStatus status, int totalSteps);
+
+    long countByUser(User user);
+
     Optional<Quest> findByIdAndUser(Long id, User user);
 }

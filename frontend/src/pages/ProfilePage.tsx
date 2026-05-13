@@ -47,7 +47,8 @@ export function ProfilePage() {
     setAchLoading(true);
     setError(null);
     try {
-      setAchievements(await api.profile.achievements());
+      const catalog = await api.profile.achievements();
+      setAchievements(catalog.filter((achievement) => achievement.unlocked));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось загрузить достижения");
     } finally {
@@ -114,6 +115,12 @@ export function ProfilePage() {
   }, []);
 
   useEffect(() => {
+    if (profile?.gameStats.selectedCharacter) {
+      setSelectedCharacterId(profile.gameStats.selectedCharacter as CharacterId);
+    }
+  }, [profile?.gameStats.selectedCharacter]);
+
+  useEffect(() => {
     return () => {
       applyTheme(readTheme());
     };
@@ -177,7 +184,7 @@ export function ProfilePage() {
               <div>
                 <strong>{achievement.title}</strong>
                 <p className="muted">{achievement.description}</p>
-                <small>{achievement.category} · <span className="xp-token">+{achievement.xpReward} XP</span> · {formatDateTime(achievement.unlockedAt)}</small>
+                <small>{achievement.category} · <span className="xp-token">+{achievement.xpReward} XP</span> · {achievement.unlockedAt ? formatDateTime(achievement.unlockedAt) : "открыто"}</small>
               </div>
             </article>
           ))}
@@ -235,7 +242,7 @@ export function ProfilePage() {
                 disabled={telegramBusy || !telegram.remindersEnabled}
                 onChange={(event) => updateTelegramSettings({ ...telegram, plannedRemindersEnabled: event.target.checked })}
               />
-              Planned time
+              Плановое время
             </label>
             <label>
               <input
@@ -244,7 +251,7 @@ export function ProfilePage() {
                 disabled={telegramBusy || !telegram.remindersEnabled}
                 onChange={(event) => updateTelegramSettings({ ...telegram, deadlineRemindersEnabled: event.target.checked })}
               />
-              Deadline
+              Дедлайн
             </label>
             <Button variant="danger" onClick={unlinkTelegram} disabled={telegramBusy}>Отвязать Telegram</Button>
           </div>

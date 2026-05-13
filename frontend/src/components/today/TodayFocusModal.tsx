@@ -50,8 +50,8 @@ const focusTypeOrder: Record<SourceType, number> = {
   MANUAL: 3
 };
 
-function isCompleted(item: DailyPlanItemResponse) {
-  return item.status === "COMPLETED";
+function isPending(item: DailyPlanItemResponse) {
+  return item.status === "PENDING";
 }
 
 function isFinished(item: DailyPlanItemResponse) {
@@ -123,7 +123,7 @@ export function TodayFocusModal({
   onCompleteItem,
   onClose
 }: TodayFocusModalProps) {
-  const focusItems = useMemo(() => sortFocusItems(items.filter((item) => !isCompleted(item))), [items]);
+  const focusItems = useMemo(() => sortFocusItems(items.filter(isPending)), [items]);
   const [typeFilter, setTypeFilter] = useState<SourceType | "ALL">("ALL");
   const filteredItems = useMemo(
     () => focusItems.filter((item) => typeFilter === "ALL" || item.sourceType === typeFilter),
@@ -143,7 +143,7 @@ export function TodayFocusModal({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const selectedItem = filteredItems.find((item) => item.id === selectedItemId);
-    if (!selectedItem || isCompleted(selectedItem)) return;
+    if (!selectedItem || !isPending(selectedItem)) return;
     const durationMinutes = clampFocusDurationMinutes(durationMinutesDraft);
     setDurationMinutesDraft(durationMinutes);
     onStart(selectedItem, durationMinutes);
@@ -167,7 +167,7 @@ export function TodayFocusModal({
   const creditedSeconds = creditedMode === "actual" ? actualElapsedSeconds : plannedDurationSeconds;
   const canMarkCompleted = Boolean(
     currentActiveItem
-    && currentActiveItem.status !== "COMPLETED"
+    && currentActiveItem.status === "PENDING"
     && canCompleteItem
     && !timer.savedAt
   );
@@ -177,7 +177,9 @@ export function TodayFocusModal({
       ? "Задача не найдена"
       : currentActiveItem.status === "COMPLETED"
         ? "Уже выполнено"
-        : canCompleteItem
+        : currentActiveItem.status === "FAILED"
+          ? "Пункт уже не выполнен"
+          : canCompleteItem
           ? "Отметить выполненной"
           : "День закрыт";
   const sessionTimeLabel = isOvertime

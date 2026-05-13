@@ -16,13 +16,16 @@ public class FocusSessionService {
 
     private final AuthenticatedUserService authenticatedUserService;
     private final FocusSessionRepository focusSessionRepository;
+    private final AchievementService achievementService;
 
     public FocusSessionService(
             AuthenticatedUserService authenticatedUserService,
-            FocusSessionRepository focusSessionRepository
+            FocusSessionRepository focusSessionRepository,
+            AchievementService achievementService
     ) {
         this.authenticatedUserService = authenticatedUserService;
         this.focusSessionRepository = focusSessionRepository;
+        this.achievementService = achievementService;
     }
 
     @Transactional
@@ -58,7 +61,9 @@ public class FocusSessionService {
                             request.getCompletedAt(),
                             request.getPlanDate()
                     );
-                    return new FocusSessionResponse(focusSessionRepository.save(session));
+                    FocusSession saved = focusSessionRepository.save(session);
+                    achievementService.checkAndGrant(user);
+                    return new FocusSessionResponse(saved);
                 });
     }
 

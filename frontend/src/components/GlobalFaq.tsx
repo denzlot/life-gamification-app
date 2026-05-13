@@ -1,0 +1,60 @@
+import { useEffect, useState } from "react";
+import { Button } from "./Button";
+
+const faq = [
+  { tag: "старт", title: "С чего начать?", text: "Создайте задачу, привычку или квест, затем откройте Today. Для стрика достаточно выполнить хотя бы один пункт дня." },
+  { tag: "стрик", title: "Как работает стрик?", text: "Стрик продолжается только после выполненного пункта: задача, привычка, шаг квеста или ручной пункт. Просто открыть день недостаточно." },
+  { tag: "день", title: "Как оценивается день?", text: "Пустой — ничего не выполнено. Плохой — меньше половины плана. Нормальный — минимум половина. Хороший — около 80% или больше." },
+  { tag: "XP", title: "Как работает XP?", text: "XP приходит за закрытие дня, стрики и одноразовые достижения. Хороший день дает лишь немного больше, чем нормальный." },
+  { tag: "HP", title: "Как работает HP?", text: "HP падает за пустые и плохие дни. Нормальные и хорошие дни не лечат HP; восстановление приходит через стабильный стрик." },
+  { tag: "щит", title: "Что делает щит?", text: "Щит сгорает на пустом дне, сохраняет стрик и защищает HP. XP за такой день все равно не начисляется." },
+  { tag: "unlock", title: "Как открыть темы?", text: "Светлая и темная темы доступны сразу. Cosmos открывается на Level 3, Vampire и Nosferatu — на Level 5." },
+  { tag: "квест", title: "Что такое квесты?", text: "Квест — большая цель, разбитая на шаги. Шаги попадают в план по датам и постепенно закрывают весь маршрут." },
+  { tag: "focus", title: "Что такое Focus?", text: "Focus привязывает таймер к конкретному пункту. Засчитанное время сохраняется и попадает в статистику." },
+  { tag: "честно", title: "Почему fake tasks не помогают?", text: "Повторного ежедневного бонуса за пачку задач нет. Основные награды одноразовые, а XP дня почти не растет от искусственного дробления." }
+];
+
+export function GlobalFaq() {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
+
+  return (
+    <>
+      <button type="button" className="faq-float-button" onClick={() => setOpen(true)} aria-label="Открыть FAQ">FAQ</button>
+      {open ? (
+        <div className="faq-modal-backdrop" role="presentation" onMouseDown={() => setOpen(false)}>
+          <section className="faq-modal" role="dialog" aria-modal="true" aria-labelledby="faq-title" onMouseDown={(event) => event.stopPropagation()}>
+            <header className="faq-modal-head">
+              <div>
+                <p className="eyebrow">помощь</p>
+                <h2 id="faq-title">Короткий справочник</h2>
+              </div>
+              <Button variant="ghost" onClick={() => setOpen(false)}>Закрыть</Button>
+            </header>
+            <div className="faq-lead">
+              <strong>Главное правило простое:</strong>
+              <span>регулярность важнее фарма, а один честный пункт уже сохраняет день.</span>
+            </div>
+            <div className="faq-list">
+              {faq.map((item) => (
+                <article key={item.title}>
+                  <span>{item.tag}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </>
+  );
+}

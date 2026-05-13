@@ -21,11 +21,12 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
     async (silent = false) => {
       if (!user) return [];
       const list = await api.profile.achievements();
-      const nextKeys = list.map((item) => item.key);
+      const unlockedList = list.filter((item) => item.unlocked);
+      const nextKeys = unlockedList.map((item) => item.key);
       const raw = localStorage.getItem(storageKey);
       const known = raw ? (JSON.parse(raw) as string[]) : [];
       const knownSet = new Set(known);
-      const fresh = list.filter((item) => !knownSet.has(item.key));
+      const fresh = unlockedList.filter((item) => !knownSet.has(item.key));
 
       if (!silent && known.length > 0) {
         fresh.forEach((item) => {

@@ -7,52 +7,39 @@ import { ErrorLine, Loader } from "../components/Loader";
 import { useAchievementWatcher } from "../context/AchievementContext";
 import { formatDateTime } from "../utils/format";
 
-interface AchievementCatalogItem {
-  key: string;
-  title: string;
-  description: string;
-  category: string;
-  requiredValue: number;
-  xpReward: number;
-}
-
-const achievementCatalog: AchievementCatalogItem[] = [
-  { key: "streak_7", title: "Неделя без пропусков", description: "7 дней подряд. Даёт XP, немного HP и щит стрика.", category: "STREAK", requiredValue: 7, xpReward: 70 },
-  { key: "streak_30", title: "Месяц дисциплины", description: "30 дней подряд. Большая награда за стабильность.", category: "STREAK", requiredValue: 30, xpReward: 250 },
-  { key: "streak_100", title: "Легенда стрика", description: "100 дней подряд. Полностью восстанавливает HP.", category: "STREAK", requiredValue: 100, xpReward: 1000 },
-  { key: "level_5", title: "Набирает обороты", description: "Достигни уровня 5.", category: "LEVEL", requiredValue: 5, xpReward: 100 },
-  { key: "level_10", title: "Ветеран", description: "Достигни уровня 10.", category: "LEVEL", requiredValue: 10, xpReward: 250 },
-  { key: "level_20", title: "Мастер", description: "Достигни уровня 20.", category: "LEVEL", requiredValue: 20, xpReward: 500 },
-  { key: "tasks_10", title: "Первые шаги", description: "Выполни 10 задач.", category: "TASKS", requiredValue: 10, xpReward: 25 },
-  { key: "tasks_100", title: "Сотня", description: "Выполни 100 задач.", category: "TASKS", requiredValue: 100, xpReward: 150 },
-  { key: "habits_50", title: "Привычка привилась", description: "Выполни привычки 50 раз.", category: "HABITS", requiredValue: 50, xpReward: 100 },
-  { key: "quests_1", title: "Первый квест", description: "Заверши первый квест.", category: "QUESTS", requiredValue: 1, xpReward: 75 },
-  { key: "shield_used", title: "Щит сработал", description: "Щит защитил стрик.", category: "SPECIAL", requiredValue: 1, xpReward: 50 },
-  { key: "full_hp", title: "В идеальной форме", description: "Восстанови HP до максимума.", category: "SPECIAL", requiredValue: 100, xpReward: 30 }
-];
-
 const categoryLabels: Record<string, string> = {
   ALL: "Все",
-  STREAK: "Стрик",
-  LEVEL: "Уровни",
+  START: "Начало",
   TASKS: "Задачи",
   HABITS: "Привычки",
   QUESTS: "Квесты",
+  FOCUS: "Focus",
+  STREAK: "Стрик",
+  DAYS: "Дни",
+  LEVEL: "Уровни",
   SPECIAL: "Особые"
 };
 
 function categoryIcon(category: string) {
-  if (category === "STREAK") return "🔥";
-  if (category === "LEVEL") return "✦";
-  if (category === "TASKS") return "✓";
-  if (category === "HABITS") return "↻";
-  if (category === "QUESTS") return "⌁";
-  return "◆";
+  if (category === "START") return "I";
+  if (category === "STREAK") return "S";
+  if (category === "LEVEL") return "L";
+  if (category === "TASKS") return "T";
+  if (category === "HABITS") return "H";
+  if (category === "QUESTS") return "Q";
+  if (category === "FOCUS") return "F";
+  if (category === "DAYS") return "D";
+  return "*";
+}
+
+function progressText(achievement: AchievementResponse) {
+  if (achievement.unlocked) return "готово";
+  return `${achievement.progress}/${achievement.requiredValue}`;
 }
 
 export function AchievementsPage() {
   const { syncAchievements } = useAchievementWatcher();
-  const [unlocked, setUnlocked] = useState<AchievementResponse[]>([]);
+  const [catalog, setCatalog] = useState<AchievementResponse[]>([]);
   const [category, setCategory] = useState("ALL");
   const [showLocked, setShowLocked] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -63,7 +50,7 @@ export function AchievementsPage() {
     setLoading(true);
     setError(null);
     try {
-      setUnlocked(await api.profile.achievements());
+      setCatalog(await api.profile.achievements());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось загрузить достижения");
     } finally {
@@ -79,7 +66,7 @@ export function AchievementsPage() {
     setRefreshing(true);
     setError(null);
     try {
-      setUnlocked(await syncAchievements(true));
+      setCatalog(await syncAchievements(true));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось обновить достижения");
     } finally {
@@ -87,36 +74,53 @@ export function AchievementsPage() {
     }
   }
 
-  const unlockedByKey = useMemo(() => new Map(unlocked.map((item) => [item.key, item])), [unlocked]);
-  const cards = useMemo(() => achievementCatalog
-    .map((item) => ({ ...item, unlocked: unlockedByKey.get(item.key) ?? null }))
+  const cards = useMemo(() => catalog
     .filter((item) => category === "ALL" || item.category === category)
-    .filter((item) => showLocked || item.unlocked), [category, showLocked, unlockedByKey]);
+    .filter((item) => showLocked || item.unlocked), [catalog, category, showLocked]);
 
-  const unlockedCount = unlockedByKey.size;
-  const progress = Math.round((unlockedCount / achievementCatalog.length) * 100);
-  const categories = ["ALL", ...Array.from(new Set(achievementCatalog.map((item) => item.category)))];
+  const unlockedCount = catalog.filter((item) => item.unlocked).length;
+  const lockedCount = Math.max(0, catalog.length - unlockedCount);
+  const earnedXp = catalog
+    .filter((item) => item.unlocked)
+    .reduce((sum, item) => sum + item.xpReward, 0);
+  const progress = catalog.length ? Math.round((unlockedCount / catalog.length) * 100) : 0;
+  const categories = ["ALL", ...Array.from(new Set(catalog.map((item) => item.category)))];
 
   return (
     <section className="page achievements-page centered-page">
       <header className="page-header split-header compact-header achievements-hero">
         <div>
           <p className="eyebrow">коллекция</p>
-          <h1>Все достижения</h1>
-          <p className="muted">Открытые и ещё закрытые цели в одном месте.</p>
+          <h1>Достижения</h1>
+          <p className="muted">Открытые награды, ближайшие цели и понятный прогресс без скрытой витрины.</p>
         </div>
-        <Button variant="ghost" onClick={refreshAchievements} disabled={refreshing}>{refreshing ? "Обновляем" : "Проверить"}</Button>
+        <Button variant="ghost" onClick={refreshAchievements} disabled={refreshing}>{refreshing ? "Проверяем" : "Обновить"}</Button>
       </header>
 
       <section className="section-line achievement-progress-panel clean-section">
         <div>
           <p className="eyebrow">прогресс</p>
-          <h2>{unlockedCount}/{achievementCatalog.length} открыто</h2>
+          <h2>{unlockedCount}/{catalog.length} открыто</h2>
         </div>
         <div className="achievement-progress-meter" aria-label={`Открыто ${progress}% достижений`}>
           <span style={{ width: `${progress}%` }} />
         </div>
         <strong>{progress}%</strong>
+      </section>
+
+      <section className="achievement-overview" aria-label="Сводка достижений">
+        <div>
+          <span>Открыто</span>
+          <strong>{unlockedCount}</strong>
+        </div>
+        <div>
+          <span>В работе</span>
+          <strong>{lockedCount}</strong>
+        </div>
+        <div>
+          <span>Получено XP</span>
+          <strong>{earnedXp}</strong>
+        </div>
       </section>
 
       <section className="section-line clean-section achievements-filter-panel">
@@ -140,22 +144,32 @@ export function AchievementsPage() {
 
       <div className="achievement-catalog-grid">
         {cards.map((achievement) => {
-          const unlockedAchievement = achievement.unlocked;
+          const required = Math.max(achievement.requiredValue, 1);
+          const itemProgress = Math.min(100, Math.round((achievement.progress / required) * 100));
+          const categoryLabel = categoryLabels[achievement.category] ?? achievement.category;
+
           return (
-            <article className={`achievement-card ${unlockedAchievement ? "unlocked" : "locked"}`} key={achievement.key}>
+            <article className={`achievement-card ${achievement.unlocked ? "unlocked" : "locked"}`} key={achievement.key}>
               <div className="achievement-card-icon">{categoryIcon(achievement.category)}</div>
               <div className="achievement-card-body">
                 <div className="achievement-card-title">
-                  <strong>{achievement.title}</strong>
-                  <span>{unlockedAchievement ? "открыто" : "закрыто"}</span>
+                  <div>
+                    <span className="achievement-category-label">{categoryLabel}</span>
+                    <strong>{achievement.title}</strong>
+                  </div>
+                  <span className={`achievement-state-chip ${achievement.unlocked ? "is-open" : ""}`}>
+                    {achievement.unlocked ? "открыто" : "закрыто"}
+                  </span>
                 </div>
                 <p>{achievement.description}</p>
                 <div className="achievement-card-meta">
-                  <span>{categoryLabels[achievement.category] ?? achievement.category}</span>
-                  <span>цель: {achievement.requiredValue}</span>
+                  <span>{progressText(achievement)}</span>
                   <span className="xp-token">+{achievement.xpReward} XP</span>
                 </div>
-                {unlockedAchievement ? <small>Открыто: {formatDateTime(unlockedAchievement.unlockedAt)}</small> : <small>Продолжай выполнять планы, чтобы разблокировать.</small>}
+                <div className="achievement-mini-meter" aria-hidden="true"><span style={{ width: `${itemProgress}%` }} /></div>
+                {achievement.unlocked && achievement.unlockedAt
+                  ? <small>Открыто: {formatDateTime(achievement.unlockedAt)}</small>
+                  : <small>{achievement.progress > 0 ? "Уже начато, осталось дожать." : "Пока не начато."}</small>}
               </div>
             </article>
           );
