@@ -8,11 +8,13 @@ import com.dcorp.flowvisior.service.AuthenticatedUserService;
 import com.dcorp.flowvisior.service.GameService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/daily-plan-items")
@@ -33,6 +35,7 @@ public class DailyPlanItemController {
     }
 
     @PostMapping("/{id}/complete")
+    @Transactional
     public ResponseEntity<Void> complete(
             @PathVariable Long id,
             @Valid @RequestBody(required = false) CompleteDailyPlanItemRequest request
@@ -44,6 +47,7 @@ public class DailyPlanItemController {
     }
 
     @PostMapping("/{id}/fail")
+    @Transactional
     public ResponseEntity<Void> fail(@PathVariable Long id) {
         User user = authenticatedUserService.getCurrentUser();
         DailyPlanItem item = getItemForUser(id, user);
@@ -52,6 +56,7 @@ public class DailyPlanItemController {
     }
 
     @PostMapping("/{id}/reset")
+    @Transactional
     public ResponseEntity<Void> reset(@PathVariable Long id) {
         User user = authenticatedUserService.getCurrentUser();
         DailyPlanItem item = getItemForUser(id, user);
@@ -60,6 +65,7 @@ public class DailyPlanItemController {
     }
 
     @PatchMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> update(
             @PathVariable Long id,
             @Valid @RequestBody UpdateDailyPlanItemRequest request
@@ -78,12 +84,12 @@ public class DailyPlanItemController {
     }
 
     private DailyPlanItem getItemForUser(Long id, User user) {
-        DailyPlanItem item = dailyPlanItemRepository.findById(id)
+        DailyPlanItem item = dailyPlanItemRepository.findByIdWithDailyPlanAndUser(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Item not found"
                 ));
 
-        if (!item.getDailyPlan().getUser().getId().equals(user.getId())) {
+        if (!Objects.equals(item.getDailyPlan().getUser().getId(), user.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found");
         }
 

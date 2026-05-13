@@ -200,12 +200,6 @@ public class GameService {
         );
     }
 
-    // Старый метод оставлен для совместимости вызовов, если они где-то остались.
-    public void applyStreakLogic(UserGameStats stats, boolean dayWasProductive) {
-        applyDayClose(stats, dayWasProductive, LocalDate.now());
-    }
-
-
     private void validateFocusSessionForItem(DailyPlanItem item, CreateFocusSessionRequest focusSession) {
         if (focusSession.getSourceType() != item.getSourceType()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Focus session source type does not match item");

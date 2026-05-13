@@ -380,3 +380,22 @@ export interface UpdateGameStatsRequest {
 export interface UpdateUserStatusRequest {
   status: UserStatus;
 }
+
+export interface TelegramSettingsResponse {
+  linked: boolean;
+  remindersEnabled: boolean;
+  plannedRemindersEnabled: boolean;
+  deadlineRemindersEnabled: boolean;
+}
+
+export interface TelegramSettingsRequest {
+  remindersEnabled: boolean;
+  plannedRemindersEnabled: boolean;
+  deadlineRemindersEnabled: boolean;
+}
+
+export interface CreateTelegramLinkResponse {
+  linkCode: string;
+  deepLink?: string | null;
+  expiresAt: string;
+}

@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class DailyPlanService {
@@ -63,13 +64,71 @@ public class DailyPlanService {
     @Transactional
     public DailyPlanResponse getPlan(LocalDate planDate) {
         User user = authenticatedUserService.getCurrentUser();
+        DailyPlan dailyPlan = getExistingPlanForUser(user, planDate);
+        return responseFor(dailyPlan);
+    }
+
+    @Transactional
+    public DailyPlan getExistingPlanForUser(User user, LocalDate planDate) {
         autoCloseOverduePlans(user);
 
         DailyPlan dailyPlan = dailyPlanRepository.findByUserAndPlanDate(user, planDate)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Daily plan not started"));
 
         syncPlannedItems(dailyPlan, user, planDate);
-        return responseFor(dailyPlan);
+        return dailyPlan;
+    }
+
+    @Transactional
+    public DailyPlan getOrPreparePlanForUser(User user, LocalDate planDate) {
+        autoCloseOverduePlans(user);
+
+        if (planDate.isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Daily plan not found");
+        }
+
+        DailyPlan dailyPlan = dailyPlanRepository.findByUserAndPlanDate(user, planDate)
+                .orElseGet(() -> dailyPlanRepository.save(new DailyPlan(user, planDate, DailyPlanStatus.PLANNED)));
+
+        syncPlannedItems(dailyPlan, user, planDate);
+        autoFailExpiredDeadlines(dailyPlan);
+        return dailyPlan;
+    }
+
+    @Transactional
+    public List<DailyPlanItem> getItemsForUserPlan(User user, LocalDate planDate) {
+        DailyPlan dailyPlan = getOrPreparePlanForUser(user, planDate);
+        return dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(dailyPlan);
+    }
+
+    @Transactional
+    public DailyPlanItemStatus cycleItemStatusFromTelegram(User user, DailyPlanItem item, LocalDate allowedDate) {
+        if (!Objects.equals(item.getDailyPlan().getUser().getId(), user.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found");
+        }
+
+        if (!item.getDailyPlan().getPlanDate().equals(allowedDate)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This action is no longer available");
+        }
+
+        if (item.getSourceType() == ActivitySourceType.MANUAL) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This action is not allowed");
+        }
+
+        return switch (item.getStatus()) {
+            case PENDING -> {
+                gameService.complete(item, user);
+                yield DailyPlanItemStatus.COMPLETED;
+            }
+            case COMPLETED -> {
+                gameService.fail(item, user);
+                yield DailyPlanItemStatus.FAILED;
+            }
+            case FAILED -> {
+                gameService.reset(item, user);
+                yield DailyPlanItemStatus.PENDING;
+            }
+        };
     }
 
     @Transactional
@@ -113,7 +172,7 @@ public class DailyPlanService {
         DailyPlan dailyPlan = dailyPlanRepository.findById(planId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Daily plan not found"));
 
-        if (!dailyPlan.getUser().getId().equals(user.getId())) {
+        if (!Objects.equals(dailyPlan.getUser().getId(), user.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Daily plan not found");
         }
 

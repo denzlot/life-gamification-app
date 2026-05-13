@@ -19,6 +19,9 @@ import type {
   QuestStepResponse,
   StatsResponse,
   TaskResponse,
+  TelegramSettingsRequest,
+  TelegramSettingsResponse,
+  CreateTelegramLinkResponse,
   UpdateDailyPlanItemRequest,
   UpdateDailyPlanNoteRequest,
   UpdateGameStatsRequest,
@@ -216,6 +219,14 @@ export const api = {
   },
   history: {
     get: (page = 0, size = 20) => request<HistoryPageResponse>(withQuery("/history", { page, size }))
+  },
+  telegram: {
+    settings: () => request<TelegramSettingsResponse>("/telegram/settings"),
+    updateSettings: (payload: TelegramSettingsRequest) =>
+      request<TelegramSettingsResponse>("/telegram/settings", { method: "PUT", body: json(payload) }),
+    createLinkCode: () =>
+      request<CreateTelegramLinkResponse>("/telegram/link-code", { method: "POST" }),
+    unlink: () => request<void>("/telegram/link", { method: "DELETE" })
   },
   admin: {
     users: () => request<AdminUserResponse[]>("/admin/users"),

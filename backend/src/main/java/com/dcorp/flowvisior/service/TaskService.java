@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class TaskService {
@@ -59,7 +60,7 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
 
-        if (!task.getUser().getId().equals(user.getId())) {
+        if (!Objects.equals(task.getUser().getId(), user.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found");
         }
 
