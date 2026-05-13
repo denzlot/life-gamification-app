@@ -46,7 +46,7 @@
 :root[data-theme="light"] .drawer-panel,
 :root[data-theme="light"] .task-drawer,
 :root[data-theme="light"] .create-drawer-form,
-:root[data-theme="light"] .avatar-quote-bubble { background: #ffffff; color: var(--text); }
+:root[data-theme="light"] .avatar-quote-bubble { background: #f6f8fa; color: var(--text); }
 
 :root[data-theme="light"] .item-type-badge,
 :root[data-theme="light"] .calendar-stats-row span,

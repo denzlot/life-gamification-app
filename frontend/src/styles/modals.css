@@ -40,12 +40,13 @@
 .form-modal-backdrop .optional-toolbar { margin-bottom: 0.4rem !important; }
 .form-modal-backdrop .form-actions { margin-top: 0.55rem !important; }
 
-/* Time + deadline: flex slots animate width (max-width) in sync with option-reveal height — avoid width:0, it kills the grid 0fr→1fr transition. */
+/* Time + deadline: keep columns stable and animate only reveal height.
+   Width animation caused modal height overshoot when switching these chips. */
 .form-modal-backdrop .modal-twin-row {
   grid-column: 1 / -1 !important;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 0.85rem 1rem;
 }
 /* Collapsed row: cancel one parent row-gap so toolbar ↔ next block spacing matches a single gap (matches modal-form-card row gap). */
@@ -56,33 +57,14 @@
 .form-modal-backdrop .modal-twin-row > .option-reveal {
   box-sizing: border-box;
   min-width: 0;
-  transition:
-    flex-grow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    flex-shrink 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    flex-basis 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    max-width 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .form-modal-backdrop .modal-twin-row > .option-reveal:not(.is-open) {
-  flex-grow: 0;
-  flex-shrink: 1;
-  flex-basis: 0;
-  max-width: 0;
   overflow: hidden;
   pointer-events: none;
 }
-.form-modal-backdrop .modal-twin-row--pair > .option-reveal.is-open {
-  flex-grow: 1;
-  flex-shrink: 1;
-  flex-basis: calc(50% - 0.5rem);
-  max-width: calc(50% - 0.5rem);
-}
-.form-modal-backdrop .modal-twin-row--time-only > .option-reveal.is-open,
-.form-modal-backdrop .modal-twin-row--deadline-only > .option-reveal.is-open {
-  flex-grow: 0;
-  flex-shrink: 1;
-  flex-basis: calc(50% - 0.5rem);
-  max-width: calc(50% - 0.5rem);
-}
+.form-modal-backdrop .modal-twin-row > .option-reveal:first-child { grid-column: 1; }
+.form-modal-backdrop .modal-twin-row > .option-reveal:nth-child(2) { grid-column: 2; }
+.form-modal-backdrop .modal-twin-row--deadline-only > .option-reveal:nth-child(2) { grid-column: 1; }
 .form-modal-backdrop .modal-form-head { display: flex !important;
   align-items: flex-start !important;
   justify-content: space-between !important;
@@ -119,14 +101,10 @@
 @media (max-width: 900px) {
 .form-modal-backdrop .modal-form-card,
 .form-modal-backdrop .mini-form-grid { grid-template-columns: 1fr !important; }
-.form-modal-backdrop .modal-twin-row--pair > .option-reveal.is-open,
-.form-modal-backdrop .modal-twin-row--time-only > .option-reveal.is-open,
-.form-modal-backdrop .modal-twin-row--deadline-only > .option-reveal.is-open {
-  flex-grow: 1;
-  flex-shrink: 1;
-  flex-basis: 100%;
-  max-width: 100%;
-}
+.form-modal-backdrop .modal-twin-row { grid-template-columns: 1fr; }
+.form-modal-backdrop .modal-twin-row > .option-reveal:first-child,
+.form-modal-backdrop .modal-twin-row > .option-reveal:nth-child(2),
+.form-modal-backdrop .modal-twin-row--deadline-only > .option-reveal:nth-child(2) { grid-column: 1; }
 }
 
 @media (max-width: 620px) {
