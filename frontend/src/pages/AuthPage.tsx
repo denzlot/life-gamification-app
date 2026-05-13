@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, type CSSProperties } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import logoMark from "../assets/logo-mark.svg";
 import { Button } from "../components/Button";
@@ -11,6 +11,33 @@ import { useAuth } from "../context/AuthContext";
 type Mode = "login" | "register";
 
 type RegisterStep = "welcome" | "character";
+
+function AuthMissionPreview({ isLogin }: { isLogin: boolean }) {
+  return (
+    <aside className="auth-mission-preview" aria-hidden="true">
+      <div className="auth-preview-top">
+        <span className="auth-preview-kicker">{isLogin ? "save loaded" : "new run"}</span>
+        <span className="auth-preview-status">{isLogin ? "session ready" : "slot empty"}</span>
+      </div>
+      <div className="auth-preview-core">
+        <div className="auth-progress-dial">
+          <strong>{isLogin ? "72" : "01"}</strong>
+          <span>{isLogin ? "focus" : "level"}</span>
+        </div>
+        <div className="auth-route-stack">
+          <span className="is-done">Today open</span>
+          <span>Quest chain</span>
+          <span>HP shield</span>
+        </div>
+      </div>
+      <div className="auth-preview-rows">
+        <span style={{ "--row-width": "82%" } as CSSProperties} />
+        <span style={{ "--row-width": "58%" } as CSSProperties} />
+        <span style={{ "--row-width": "71%" } as CSSProperties} />
+      </div>
+    </aside>
+  );
+}
 
 function AppPreviewGhost() {
   return (
@@ -156,24 +183,29 @@ export function AuthPage({ mode }: { mode: Mode }) {
     <main className="auth-screen refined-auth-screen">
       <ThemeSwitchButton />
       <section className="auth-panel refined-auth-panel">
-        <div className="auth-intro">
-          <div className="brand auth-brand refined-auth-brand">
-            <span className="brand-mark brand-mark-image"><img src={logoMark} alt="" className="brand-logo-image" /></span>
-            <span>
-              <strong>Flowvisior</strong>
-              <small>life gamification</small>
-            </span>
+        <div className="auth-story">
+          <div className="auth-intro">
+            <div className="brand auth-brand refined-auth-brand">
+              <span className="brand-mark brand-mark-image"><img src={logoMark} alt="" className="brand-logo-image" /></span>
+              <span>
+                <strong>Flowvisior</strong>
+                <small>{isLogin ? "командный центр" : "создание героя"}</small>
+              </span>
+            </div>
+            <p className="eyebrow">{isLogin ? "возвращение" : "новый игрок"}</p>
+            <h1>{isLogin ? "Продолжить день" : "Начать маршрут"}</h1>
+            <p className="muted auth-copy">
+              {isLogin
+                ? "Вернись к задачам, квестам и фокусу без лишнего шума."
+                : "Собери профиль, выбери ритм и открой первый игровой день."}
+            </p>
+            <div className="auth-feature-lines" aria-hidden="true">
+              <span>Today</span>
+              <span>Quests</span>
+              <span>HP / XP</span>
+            </div>
           </div>
-          <p className="eyebrow">{isLogin ? "возвращение" : "новый игрок"}</p>
-          <h1>{isLogin ? "Войти в игру" : "Создать профиль"}</h1>
-          <p className="muted auth-copy">
-            Собирай день в линию: задачи, привычки, квесты, опыт и здоровье персонажа.
-          </p>
-          <div className="auth-feature-lines" aria-hidden="true">
-            <span>Today</span>
-            <span>Quests</span>
-            <span>HP / XP</span>
-          </div>
+          <AuthMissionPreview isLogin={isLogin} />
         </div>
 
         <form className="auth-form" onSubmit={submit}>
@@ -193,10 +225,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               type="password"
-              minLength={6}
+              minLength={8}
               required
               autoComplete={isLogin ? "current-password" : "new-password"}
-              placeholder="минимум 6 символов"
+              placeholder="минимум 8 символов"
             />
           </Field>
           <ErrorLine error={error} />
