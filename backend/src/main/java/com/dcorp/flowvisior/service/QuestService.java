@@ -67,6 +67,10 @@ public class QuestService {
     @Transactional
     public QuestResponse createQuest(CreateQuestRequest request) {
         User user = authenticatedUserService.getCurrentUser();
+        if (hasManualSteps(request)) {
+            validateManualSteps(request);
+        }
+        int totalSteps = resolveTotalSteps(request);
 
         Quest quest = new Quest(
                 user,
@@ -76,7 +80,7 @@ public class QuestService {
                 request.getDeadlineTime(),
                 request.getStartDate(),
                 request.getDurationDays(),
-                request.getTotalSteps()
+                totalSteps
         );
 
         Quest savedQuest = questRepository.save(quest);
@@ -241,6 +245,10 @@ public class QuestService {
     }
 
     private List<QuestStep> generateSteps(Quest quest, CreateQuestRequest request) {
+        if (hasManualSteps(request)) {
+            return generateManualSteps(quest, request);
+        }
+
         List<QuestStep> steps = new ArrayList<>();
 
         List<LocalDate> scheduledDates = calculateScheduleDates(
@@ -266,6 +274,72 @@ public class QuestService {
         }
 
         return steps;
+    }
+
+    private List<QuestStep> generateManualSteps(Quest quest, CreateQuestRequest request) {
+        List<QuestStep> steps = new ArrayList<>();
+        List<CreateQuestRequest.CreateQuestStepRequest> requestSteps = request.getSteps();
+
+        for (int index = 0; index < requestSteps.size(); index++) {
+            CreateQuestRequest.CreateQuestStepRequest stepRequest = requestSteps.get(index);
+            LocalDate baselineDate = stepRequest.getBaselineScheduledDate();
+
+            steps.add(new QuestStep(
+                    quest,
+                    index + 1,
+                    stepRequest.getTitle(),
+                    stepRequest.getDescription(),
+                    baselineDate,
+                    baselineDate,
+                    stepRequest.getPlannedTime() != null ? stepRequest.getPlannedTime() : request.getPlannedTime(),
+                    stepRequest.getDeadlineTime() != null ? stepRequest.getDeadlineTime() : request.getDeadlineTime()
+            ));
+        }
+
+        return steps;
+    }
+
+    private int resolveTotalSteps(CreateQuestRequest request) {
+        if (hasManualSteps(request)) {
+            return request.getSteps().size();
+        }
+        return request.getTotalSteps();
+    }
+
+    private boolean hasManualSteps(CreateQuestRequest request) {
+        return request.getSteps() != null && !request.getSteps().isEmpty();
+    }
+
+    private void validateManualSteps(CreateQuestRequest request) {
+        List<CreateQuestRequest.CreateQuestStepRequest> steps = request.getSteps();
+        if (steps == null || steps.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Manual quest plan must contain steps");
+        }
+
+        if (steps.size() > 365) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Manual quest plan cannot contain more than 365 steps");
+        }
+
+        if (request.getTotalSteps() > 0 && steps.size() != request.getTotalSteps()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Manual quest plan step count must match total steps");
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = request.getStartDate();
+        LocalDate targetDate = startDate.plusDays(Math.max(1, request.getDurationDays()) - 1L);
+
+        for (CreateQuestRequest.CreateQuestStepRequest step : steps) {
+            LocalDate baselineDate = step.getBaselineScheduledDate();
+            if (baselineDate == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Manual quest step date is required");
+            }
+            if (baselineDate.isBefore(today)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Manual quest step date cannot be in the past");
+            }
+            if (baselineDate.isBefore(startDate) || baselineDate.isAfter(targetDate)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Manual quest step date must be within quest range");
+            }
+        }
     }
 
     private String generateStepTitle(String baseStepTitle, int stepNumber) {

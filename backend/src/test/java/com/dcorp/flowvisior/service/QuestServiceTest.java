@@ -296,6 +296,90 @@ class QuestServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void createQuestUsesManualStepBaselineDatesWhenProvided() {
+        User user = new User("user", "{noop}password");
+        LocalDate startDate = LocalDate.now().plusDays(1);
+        CreateQuestRequest request = manualCreateQuestRequest(
+                startDate,
+                10,
+                List.of(
+                        manualStep("Manual 1", "First", startDate.plusDays(2), null, null),
+                        manualStep("Manual 2", "Second", startDate.plusDays(6), LocalTime.of(10, 0), LocalTime.of(17, 0))
+                )
+        );
+
+        when(authenticatedUserService.getCurrentUser()).thenReturn(user);
+        when(questRepository.save(org.mockito.ArgumentMatchers.any(Quest.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service().createQuest(request);
+
+        ArgumentCaptor<List<QuestStep>> captor = ArgumentCaptor.forClass(List.class);
+        verify(questStepRepository).saveAll(captor.capture());
+
+        assertThat(captor.getValue()).hasSize(2);
+        assertThat(captor.getValue().get(0).getTitle()).isEqualTo("Manual 1");
+        assertThat(captor.getValue().get(0).getScheduledDate()).isEqualTo(startDate.plusDays(2));
+        assertThat(captor.getValue().get(0).getBaselineScheduledDate()).isEqualTo(startDate.plusDays(2));
+        assertThat(captor.getValue().get(0).getPlannedTime()).isEqualTo(LocalTime.of(9, 0));
+        assertThat(captor.getValue().get(1).getTitle()).isEqualTo("Manual 2");
+        assertThat(captor.getValue().get(1).getScheduledDate()).isEqualTo(startDate.plusDays(6));
+        assertThat(captor.getValue().get(1).getBaselineScheduledDate()).isEqualTo(startDate.plusDays(6));
+        assertThat(captor.getValue().get(1).getPlannedTime()).isEqualTo(LocalTime.of(10, 0));
+        assertThat(captor.getValue().get(1).getDeadlineTime()).isEqualTo(LocalTime.of(17, 0));
+    }
+
+    @Test
+    void createQuestRejectsManualPlanWithMismatchedStepCount() {
+        User user = new User("user", "{noop}password");
+        LocalDate startDate = LocalDate.now().plusDays(1);
+        CreateQuestRequest request = manualCreateQuestRequest(
+                startDate,
+                10,
+                List.of(manualStep("Only one", null, startDate, null, null))
+        );
+
+        when(authenticatedUserService.getCurrentUser()).thenReturn(user);
+
+        assertThatThrownBy(() -> service().createQuest(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Manual quest plan step count must match total steps");
+    }
+
+    @Test
+    void createQuestRejectsManualPlanDatesOutsideAllowedRange() {
+        User user = new User("user", "{noop}password");
+        LocalDate startDate = LocalDate.now().plusDays(1);
+        CreateQuestRequest beforeRange = manualCreateQuestRequest(
+                startDate,
+                7,
+                List.of(
+                        manualStep("First", null, startDate.minusDays(1), null, null),
+                        manualStep("Second", null, startDate.plusDays(1), null, null)
+                )
+        );
+        CreateQuestRequest afterRange = manualCreateQuestRequest(
+                startDate,
+                7,
+                List.of(
+                        manualStep("First", null, startDate.plusDays(1), null, null),
+                        manualStep("Second", null, startDate.plusDays(8), null, null)
+                )
+        );
+
+        when(authenticatedUserService.getCurrentUser()).thenReturn(user);
+
+        assertThatThrownBy(() -> service().createQuest(beforeRange))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Manual quest step date must be within quest range");
+
+        assertThatThrownBy(() -> service().createQuest(afterRange))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Manual quest step date must be within quest range");
+    }
+
+    @Test
     void updateQuestStepSynchronizesOpenDailyPlanItemsForPendingStep() {
         User user = new User("user", "{noop}password");
         LocalDate today = LocalDate.now();
@@ -440,6 +524,69 @@ class QuestServiceTest {
 
             @Override
             public String getBaseStepDescription() { return "Step description"; }
+        };
+    }
+
+    private CreateQuestRequest manualCreateQuestRequest(
+            LocalDate startDate,
+            int durationDays,
+            List<CreateQuestRequest.CreateQuestStepRequest> steps
+    ) {
+        return new CreateQuestRequest() {
+            @Override
+            public String getTitle() { return "Manual Quest"; }
+
+            @Override
+            public String getDescription() { return "Description"; }
+
+            @Override
+            public LocalTime getPlannedTime() { return LocalTime.of(9, 0); }
+
+            @Override
+            public LocalTime getDeadlineTime() { return LocalTime.of(18, 0); }
+
+            @Override
+            public LocalDate getStartDate() { return startDate; }
+
+            @Override
+            public int getDurationDays() { return durationDays; }
+
+            @Override
+            public int getTotalSteps() { return 2; }
+
+            @Override
+            public String getBaseStepTitle() { return "Step"; }
+
+            @Override
+            public String getBaseStepDescription() { return "Step description"; }
+
+            @Override
+            public List<CreateQuestRequest.CreateQuestStepRequest> getSteps() { return steps; }
+        };
+    }
+
+    private CreateQuestRequest.CreateQuestStepRequest manualStep(
+            String title,
+            String description,
+            LocalDate baselineScheduledDate,
+            LocalTime plannedTime,
+            LocalTime deadlineTime
+    ) {
+        return new CreateQuestRequest.CreateQuestStepRequest() {
+            @Override
+            public String getTitle() { return title; }
+
+            @Override
+            public String getDescription() { return description; }
+
+            @Override
+            public LocalDate getBaselineScheduledDate() { return baselineScheduledDate; }
+
+            @Override
+            public LocalTime getPlannedTime() { return plannedTime; }
+
+            @Override
+            public LocalTime getDeadlineTime() { return deadlineTime; }
         };
     }
 }

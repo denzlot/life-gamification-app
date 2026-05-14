@@ -181,6 +181,16 @@ export interface CreateQuestRequest {
   totalSteps: number;
   baseStepTitle: string;
   baseStepDescription?: string | null;
+  planMode?: "AUTO" | "MANUAL";
+  steps?: CreateQuestStepRequest[];
+}
+
+export interface CreateQuestStepRequest {
+  title: string;
+  description?: string | null;
+  baselineScheduledDate?: string | null;
+  plannedTime?: string | null;
+  deadlineTime?: string | null;
 }
 
 export interface UpdateQuestRequest {

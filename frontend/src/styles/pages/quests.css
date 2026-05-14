@@ -174,6 +174,273 @@
 .route-step-preview-list { grid-template-columns: 1fr; max-height: 12rem; }
 }
 .form-modal-backdrop .quest-form { --modal-width: 820px; }
+.form-modal-backdrop .quest-form .quest-title-field {
+  grid-column: 1 !important;
+  width: min(100%, 28rem);
+}
+
+.form-modal-backdrop .quest-form .quest-title-field .input {
+  min-height: 40px;
+}
+
+.form-modal-backdrop .quest-form .quest-form-schedule-reveal,
+.form-modal-backdrop .quest-form .quest-form-description-reveal {
+  grid-column: auto !important;
+  width: 100%;
+}
+
+.form-modal-backdrop .quest-form .quest-form-schedule-reveal .option-reveal-inner,
+.form-modal-backdrop .quest-form .quest-form-description-reveal .option-reveal-inner {
+  width: 100%;
+}
+
+.form-modal-backdrop .quest-form .mini-form-grid {
+  grid-template-columns: repeat(2, minmax(14rem, 1fr)) !important;
+}
+
+.form-modal-backdrop .quest-form .mini-form-grid > .field:has(.textarea),
+.form-modal-backdrop .quest-form .quest-compact-textarea-field {
+  grid-column: auto !important;
+}
+
+.form-modal-backdrop .quest-form .quest-compact-textarea-field .textarea,
+.form-modal-backdrop .quest-form .mini-form-grid .textarea {
+  min-height: 40px !important;
+  height: 40px;
+  max-height: 86px !important;
+}
+
+.form-modal-backdrop .quest-form .quest-form-description-reveal .field {
+  width: min(100%, 28rem);
+}
+
+.form-modal-backdrop .quest-form .quest-form-schedule-reveal {
+  grid-column: 1 !important;
+}
+
+.form-modal-backdrop .quest-form .quest-form-description-reveal {
+  grid-column: 2 !important;
+}
+
+.form-modal-backdrop .quest-form .quest-form-description-reveal .field {
+  width: 100%;
+}
+
+.form-modal-backdrop .quest-form--manual {
+  --modal-width: 980px;
+  max-height: min(90vh, 900px) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  align-content: start !important;
+}
+
+.form-modal-backdrop .quest-form--manual > .quest-title-field {
+  grid-column: 1 !important;
+}
+
+.quest-plan-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+.quest-manual-plan {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.78rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-2), transparent 16%);
+  animation: v21-slideDown 180ms ease-out both;
+}
+
+.quest-manual-toolbar {
+  margin-bottom: 0 !important;
+}
+
+.form-modal-backdrop .quest-form--manual .option-reveal,
+.form-modal-backdrop .quest-form--manual .modal-twin-row,
+.form-modal-backdrop .quest-form--manual .error-line {
+  position: relative;
+  z-index: 0;
+}
+
+.form-modal-backdrop .quest-form--manual .modal-twin-row--empty {
+  margin-bottom: 0;
+}
+
+.form-modal-backdrop .quest-form--manual .quest-manual-controls {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.85rem 1rem;
+  align-items: start;
+  min-width: 0;
+}
+
+.form-modal-backdrop .quest-form--manual .quest-manual-controls > .option-reveal,
+.form-modal-backdrop .quest-form--manual .quest-manual-controls > .modal-twin-row {
+  grid-column: 1 / -1 !important;
+}
+
+.form-modal-backdrop .quest-form--manual .quest-manual-paired-reveals {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(14rem, 1fr));
+  gap: 0.85rem 1rem;
+  align-items: start;
+  min-width: 0;
+}
+
+.form-modal-backdrop .quest-form--manual .quest-manual-paired-reveals .option-reveal {
+  grid-column: auto !important;
+}
+
+@media (max-width: 720px) {
+  .form-modal-backdrop .quest-form .quest-title-field,
+  .form-modal-backdrop .quest-form .quest-form-description-reveal,
+  .form-modal-backdrop .quest-form .quest-form-schedule-reveal {
+    grid-column: 1 / -1 !important;
+    width: 100%;
+  }
+
+  .form-modal-backdrop .quest-form .quest-form-description-reveal .field {
+    width: 100%;
+  }
+
+  .form-modal-backdrop .quest-form .mini-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-modal-backdrop .quest-form--manual .quest-manual-paired-reveals {
+    grid-template-columns: 1fr;
+    margin-bottom: 0;
+  }
+}
+
+.quest-manual-plan-head,
+.quest-manual-step-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.quest-manual-plan-head .eyebrow { margin-bottom: 0.12rem; }
+
+.quest-manual-calendar {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr));
+  gap: 0.4rem;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 0.2rem;
+}
+
+.quest-manual-day {
+  position: relative;
+  display: grid;
+  gap: 0.08rem;
+  min-height: 3.9rem;
+  padding: 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--border), var(--text) 4%);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface), var(--bg) 5%);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 100ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.quest-manual-day:hover,
+.quest-manual-day.selected {
+  border-color: color-mix(in srgb, var(--accent), transparent 28%);
+  background: color-mix(in srgb, var(--accent), transparent 90%);
+}
+
+.quest-manual-day:active { transform: scale(0.98); }
+.quest-manual-day span { font-family: var(--font-mono); font-weight: 900; }
+.quest-manual-day small { color: var(--muted); font-size: 0.68rem; }
+.quest-manual-day b {
+  position: absolute;
+  top: 0.34rem;
+  right: 0.38rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent), transparent 12%);
+  color: var(--bg);
+  font-size: 0.68rem;
+}
+
+.quest-manual-step-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+  max-height: 8.4rem;
+  overflow: auto;
+  padding: 0.1rem;
+}
+
+.quest-manual-step {
+  --node-size: 2.25rem;
+  flex: 0 0 auto;
+}
+
+.quest-manual-step.unassigned {
+  color: var(--muted) !important;
+  border-style: dashed !important;
+}
+
+.quest-manual-step.assigned {
+  color: var(--accent) !important;
+  border-color: color-mix(in srgb, var(--text), transparent 34%) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text), transparent 64%) !important;
+}
+
+.quest-manual-step.assigned.selected {
+  border-color: color-mix(in srgb, var(--accent), transparent 12%) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent), transparent 86%), inset 0 0 0 1px color-mix(in srgb, var(--text), transparent 58%) !important;
+}
+
+.quest-manual-selected {
+  min-width: min(16rem, 100%);
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.58rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface), var(--bg) 6%);
+}
+
+.quest-manual-selected strong,
+.quest-manual-selected small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quest-manual-selected small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.quest-manual-selected span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 760px) {
+  .quest-manual-plan-head,
+  .quest-manual-step-board { grid-template-columns: 1fr; }
+  .quest-manual-calendar { grid-template-columns: repeat(auto-fill, minmax(3.8rem, 1fr)); max-height: 16rem; }
+}
 
 .quest-calendar-help { display: flex; justify-content: space-between; gap: 0.75rem; align-items: center; margin-top: 0.7rem; color: var(--muted); border-top: 1px solid var(--border-soft); padding-top: 0.65rem; }
 .quest-calendar-help a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--accent); }
