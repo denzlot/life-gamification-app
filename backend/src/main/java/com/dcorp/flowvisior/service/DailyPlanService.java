@@ -102,6 +102,19 @@ public class DailyPlanService {
     }
 
     @Transactional
+    public List<DailyPlanItem> getItemsForExistingUserPlan(User user, LocalDate planDate) {
+        autoCloseOverduePlans(user);
+
+        return dailyPlanRepository.findByUserAndPlanDate(user, planDate)
+                .map(dailyPlan -> {
+                    syncPlannedItems(dailyPlan, user, planDate);
+                    autoFailExpiredDeadlines(dailyPlan);
+                    return dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(dailyPlan);
+                })
+                .orElseGet(List::of);
+    }
+
+    @Transactional
     public DailyPlanItemStatus cycleItemStatusFromTelegram(User user, DailyPlanItem item, LocalDate allowedDate) {
         if (!Objects.equals(item.getDailyPlan().getUser().getId(), user.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found");
@@ -272,8 +285,35 @@ public class DailyPlanService {
                 );
 
         for (DailyPlan plan : stalePlannedPlans) {
-            closePlanInternal(user, plan, true);
+            closePlannedPlanWithoutGameDelta(plan);
         }
+    }
+
+    private void closePlannedPlanWithoutGameDelta(DailyPlan dailyPlan) {
+        if (dailyPlan.isClosed()) {
+            return;
+        }
+
+        List<DailyPlanItem> items = dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(dailyPlan);
+        long completedCount = items.stream()
+                .filter(i -> i.getStatus() == DailyPlanItemStatus.COMPLETED)
+                .count();
+        long failedCount = items.stream()
+                .filter(i -> i.getStatus() == DailyPlanItemStatus.FAILED)
+                .count();
+
+        dailyPlan.close(
+                (int) completedCount,
+                (int) failedCount,
+                items.size(),
+                0d,
+                DayQuality.EMPTY,
+                0,
+                0,
+                0,
+                false
+        );
+        dailyPlanRepository.save(dailyPlan);
     }
 
     private DailyPlanResponse closePlanInternal(User user, DailyPlan dailyPlan, boolean automatic) {

@@ -21,11 +21,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DailyPlanServiceTest {
@@ -96,6 +100,58 @@ class DailyPlanServiceTest {
         verifyNoInteractions(gameService);
     }
 
+    @Test
+    void autoCloseOverduePlansClosesStalePlannedPlanWithoutGameDelta() {
+        LocalDate today = LocalDate.now();
+        User user = user("owner", 1L);
+        DailyPlan planned = new DailyPlan(user, today.minusDays(1), DailyPlanStatus.PLANNED);
+        DailyPlanItem completed = item(planned, ActivitySourceType.TASK);
+        DailyPlanItem pending = item(planned, ActivitySourceType.HABIT);
+        completed.complete();
+
+        when(dailyPlanRepository.findByUserAndStatusAndPlanDateLessThanEqualOrderByPlanDateAsc(
+                user, DailyPlanStatus.ACTIVE, today
+        )).thenReturn(List.of());
+        when(dailyPlanRepository.findByUserAndStatusAndPlanDateLessThanEqualOrderByPlanDateAsc(
+                user, DailyPlanStatus.PLANNED, today.minusDays(1)
+        )).thenReturn(List.of(planned));
+        when(dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(planned))
+                .thenReturn(List.of(completed, pending));
+
+        service().autoCloseOverduePlans(user);
+
+        assertThat(planned.isClosed()).isTrue();
+        assertThat(planned.getCompletedCount()).isEqualTo(1);
+        assertThat(planned.getFailedCount()).isZero();
+        assertThat(planned.getTotalCountAtClose()).isEqualTo(2);
+        assertThat(planned.getCompletionRateAtClose()).isZero();
+        assertThat(planned.getDayQuality()).isEqualTo(com.dcorp.flowvisior.entity.DayQuality.EMPTY);
+        assertThat(planned.getXpEarned()).isZero();
+        assertThat(planned.getHpDelta()).isZero();
+        verify(dailyPlanRepository).save(planned);
+        verifyNoInteractions(gameService, userGameStatsRepository, activityLogRepository, achievementService);
+    }
+
+    @Test
+    void getItemsForExistingUserPlanDoesNotCreateMissingPlan() {
+        LocalDate today = LocalDate.now();
+        User user = user("owner", 1L);
+
+        when(dailyPlanRepository.findByUserAndStatusAndPlanDateLessThanEqualOrderByPlanDateAsc(
+                user, DailyPlanStatus.ACTIVE, today
+        )).thenReturn(List.of());
+        when(dailyPlanRepository.findByUserAndStatusAndPlanDateLessThanEqualOrderByPlanDateAsc(
+                user, DailyPlanStatus.PLANNED, today.minusDays(1)
+        )).thenReturn(List.of());
+        when(dailyPlanRepository.findByUserAndPlanDate(user, today)).thenReturn(Optional.empty());
+
+        List<DailyPlanItem> items = service().getItemsForExistingUserPlan(user, today);
+
+        assertThat(items).isEmpty();
+        verify(dailyPlanRepository, never()).save(org.mockito.ArgumentMatchers.any(DailyPlan.class));
+        verifyNoInteractions(dailyPlanItemRepository);
+    }
+
     private DailyPlanService service() {
         return new DailyPlanService(
                 dailyPlanRepository,
@@ -119,6 +175,10 @@ class DailyPlanServiceTest {
 
     private DailyPlanItem item(User user, ActivitySourceType sourceType) {
         DailyPlan dailyPlan = new DailyPlan(user, LocalDate.now(), DailyPlanStatus.ACTIVE);
+        return item(dailyPlan, sourceType);
+    }
+
+    private DailyPlanItem item(DailyPlan dailyPlan, ActivitySourceType sourceType) {
         return new DailyPlanItem(dailyPlan, sourceType, 10L, "Item", 0, 0, 0);
     }
 }

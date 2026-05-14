@@ -76,7 +76,7 @@ public class TelegramReminderService {
         }
 
         LocalDate today = now.toLocalDate();
-        List<DailyPlanItem> items = dailyPlanService.getItemsForUserPlan(user, today)
+        List<DailyPlanItem> items = dailyPlanService.getItemsForExistingUserPlan(user, today)
                 .stream()
                 .filter(item -> isActualPendingToday(item, today))
                 .toList();
