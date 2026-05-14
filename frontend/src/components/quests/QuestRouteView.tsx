@@ -3,6 +3,7 @@ import { api } from "../../api/http";
 import type { QuestResponse, QuestStepResponse, UpdateQuestStepRequest } from "../../api/types";
 import { Button } from "../Button";
 import { DateWheelInput, Field, TextArea, TextInput, TimeWheelInput } from "../FormFields";
+import { ErrorLine } from "../Loader";
 import { addDays, computePace, groupQuestSteps, shortStepWord } from "../../utils/calendarSchedule";
 import { formatDate, formatTime, pct, todayISO } from "../../utils/format";
 
@@ -22,6 +23,7 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
   const [selectedStepId, setSelectedStepId] = useState<number | null>(steps[0]?.id ?? null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [editingStepId, setEditingStepId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<UpdateQuestStepRequest>({
     title: steps[0]?.title ?? "",
     description: steps[0]?.description ?? "",
@@ -35,7 +37,7 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
   }, [steps, selectedStepId]);
 
   const selectedStep = steps.find((step) => step.id === selectedStepId) ?? steps[0] ?? null;
-  const selectedStepEditable = selectedStep?.status !== "COMPLETED";
+  const selectedStepCompleted = selectedStep?.status === "COMPLETED";
 
   useEffect(() => {
     if (!selectedStep) return;
@@ -47,6 +49,7 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
       deadlineTime: selectedStep.deadlineTime ?? ""
     });
     setEditingStepId(null);
+    setError(null);
   }, [selectedStep?.id]);
 
   const today = todayISO();
@@ -61,7 +64,13 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
       : "по плану";
 
   async function shiftStep(step: QuestStepResponse, targetDate: string) {
+    if (targetDate < today) {
+      setError("Нельзя перенести шаг в прошлое");
+      return;
+    }
+
     setBusyId(step.id);
+    setError(null);
     try {
       await api.quests.updateStep(step.id, {
         title: step.title,
@@ -71,6 +80,8 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
         deadlineTime: step.deadlineTime ?? null
       });
       await onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось перенести шаг");
     } finally {
       setBusyId(null);
     }
@@ -78,18 +89,26 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
 
   async function saveRouteEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selectedStep || selectedStep.status === "COMPLETED") return;
+    if (!selectedStep) return;
+    if (!selectedStepCompleted && form.scheduledDate < today) {
+      setError("Нельзя перенести шаг в прошлое");
+      return;
+    }
+
     setBusyId(selectedStep.id);
+    setError(null);
     try {
       await api.quests.updateStep(selectedStep.id, {
         title: form.title.trim(),
         description: form.description?.trim() || null,
-        scheduledDate: form.scheduledDate,
-        plannedTime: form.plannedTime || null,
-        deadlineTime: form.deadlineTime || null
+        scheduledDate: selectedStepCompleted ? selectedStep.scheduledDate : form.scheduledDate,
+        plannedTime: selectedStepCompleted ? selectedStep.plannedTime ?? null : form.plannedTime || null,
+        deadlineTime: selectedStepCompleted ? selectedStep.deadlineTime ?? null : form.deadlineTime || null
       });
       setEditingStepId(null);
       await onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось сохранить шаг");
     } finally {
       setBusyId(null);
     }
@@ -141,29 +160,32 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
                   {selectedStep.scheduledDate === today ? "Отложить на завтра" : "На сегодня"}
                 </Button>
               ) : null}
-              {selectedStepEditable ? (
-                <Button type="button" variant="thin" onClick={() => setEditingStepId((current) => current === selectedStep.id ? null : selectedStep.id)}>
-                  {editingStepId === selectedStep.id ? "Скрыть" : "Изменить шаг"}
-                </Button>
-              ) : null}
+              <Button type="button" variant="thin" onClick={() => setEditingStepId((current) => current === selectedStep.id ? null : selectedStep.id)}>
+                {editingStepId === selectedStep.id ? "Скрыть" : "Изменить шаг"}
+              </Button>
             </div>
           </div>
 
-          {selectedStepEditable && editingStepId === selectedStep.id ? (
+          {editingStepId === selectedStep.id ? (
             <form className="route-step-edit compact-create-form" onSubmit={saveRouteEdit}>
               <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} />
-              <div className="route-step-edit-grid">
-                <Field label="Дата"><DateWheelInput value={form.scheduledDate} onChange={(value) => setForm({ ...form, scheduledDate: value || selectedStep.scheduledDate })} allowClear={false} /></Field>
-                <Field label="Время"><TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} /></Field>
-                <Field label="Дедлайн"><TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field>
-              </div>
+              {!selectedStepCompleted ? (
+                <div className="route-step-edit-grid">
+                  <Field label="Дата"><DateWheelInput value={form.scheduledDate} onChange={(value) => setForm({ ...form, scheduledDate: value || selectedStep.scheduledDate })} allowClear={false} /></Field>
+                  <Field label="Время"><TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} /></Field>
+                  <Field label="Дедлайн"><TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field>
+                </div>
+              ) : null}
               <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} rows={3} placeholder="Описание шага" />
+              <ErrorLine error={error} />
               <div className="form-actions route-edit-actions">
                 <Button disabled={busyId === selectedStep.id || !form.title.trim()}>Сохранить</Button>
                 <Button type="button" variant="ghost" onClick={() => setEditingStepId(null)}>Отмена</Button>
               </div>
             </form>
-          ) : null}
+          ) : (
+            <ErrorLine error={error} />
+          )}
         </>
       ) : null}
     </div>

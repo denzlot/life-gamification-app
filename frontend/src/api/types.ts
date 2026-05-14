@@ -162,6 +162,7 @@ export interface QuestStepResponse {
   title: string;
   description?: string | null;
   scheduledDate: string;
+  baselineScheduledDate?: string | null;
   plannedTime?: string | null;
   deadlineTime?: string | null;
   status: QuestStepStatus;

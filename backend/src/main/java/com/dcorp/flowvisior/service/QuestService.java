@@ -6,6 +6,7 @@ import com.dcorp.flowvisior.entity.DailyPlan;
 import com.dcorp.flowvisior.entity.DailyPlanItem;
 import com.dcorp.flowvisior.entity.Quest;
 import com.dcorp.flowvisior.entity.QuestStep;
+import com.dcorp.flowvisior.entity.QuestStepStatus;
 import com.dcorp.flowvisior.entity.QuestStatus;
 import com.dcorp.flowvisior.entity.User;
 import com.dcorp.flowvisior.repository.DailyPlanItemRepository;
@@ -20,6 +21,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class QuestService {
@@ -160,17 +162,48 @@ public class QuestService {
         QuestStep questStep = questStepRepository.findByIdAndQuest_User(id, user)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quest step not found"));
 
-        questStep.update(
-                request.getTitle(),
-                request.getDescription(),
-                request.getScheduledDate(),
-                request.getPlannedTime(),
-                request.getDeadlineTime()
-        );
+        validateQuestStepUpdate(questStep, request);
+
+        if (questStep.getStatus() == QuestStepStatus.COMPLETED) {
+            questStep.updateText(request.getTitle(), request.getDescription());
+        } else {
+            questStep.update(
+                    request.getTitle(),
+                    request.getDescription(),
+                    request.getScheduledDate(),
+                    request.getPlannedTime(),
+                    request.getDeadlineTime()
+            );
+        }
 
         syncOpenDailyPlanItems(questStep);
 
         return new QuestStepResponse(questStep);
+    }
+
+    private void validateQuestStepUpdate(QuestStep questStep, UpdateQuestStepRequest request) {
+        if (request.getScheduledDate() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quest step scheduled date is required");
+        }
+
+        if (questStep.getStatus() == QuestStepStatus.COMPLETED) {
+            if (!Objects.equals(questStep.getScheduledDate(), request.getScheduledDate())
+                    || !Objects.equals(questStep.getPlannedTime(), request.getPlannedTime())
+                    || !Objects.equals(questStep.getDeadlineTime(), request.getDeadlineTime())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Completed quest step schedule cannot be changed"
+                );
+            }
+            return;
+        }
+
+        if (request.getScheduledDate().isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Quest step cannot be scheduled in the past"
+            );
+        }
     }
 
     private void syncOpenDailyPlanItems(QuestStep questStep) {
@@ -225,6 +258,7 @@ public class QuestService {
                     stepNumber,
                     title,
                     request.getBaseStepDescription(),
+                    scheduledDate,
                     scheduledDate,
                     request.getPlannedTime(),
                     request.getDeadlineTime()
