@@ -1,6 +1,12 @@
 import type { DailyPlanItemStatus } from "../../api/types";
 import { signed } from "../../utils/format";
 
+type QualityHint = {
+  tone: string;
+  label: string;
+  text: string;
+};
+
 function HpXpLine({ xp, hp }: { xp: number; hp: number }) {
   return (
     <span className="reward-line">
@@ -15,19 +21,27 @@ export function TodayPlanSummary({
   completedPct,
   isClosed,
   xpEarned = 0,
-  hpDelta = 0
+  hpDelta = 0,
+  qualityHint = null
 }: {
   counts: Record<DailyPlanItemStatus, number>;
   completedPct: number;
   isClosed: boolean;
   xpEarned?: number | null;
   hpDelta?: number | null;
+  qualityHint?: QualityHint | null;
 }) {
   return (
     <div className="section-title-row plan-title-row compact-plan-title-row">
       <h2 className="inline-plan-title">
         Лист дня
         <span>выполнено {counts.COMPLETED} · в плане {counts.PENDING} · не выполнено {counts.FAILED}</span>
+        {qualityHint ? (
+          <small className={`plan-quality-inline plan-quality-inline-${qualityHint.tone}`}>
+            <b>{qualityHint.label}</b>
+            <em>{qualityHint.text}</em>
+          </small>
+        ) : null}
         {isClosed ? <HpXpLine xp={xpEarned ?? 0} hp={hpDelta ?? 0} /> : null}
       </h2>
       <div className="plan-progress">

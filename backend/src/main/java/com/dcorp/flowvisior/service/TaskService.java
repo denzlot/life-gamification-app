@@ -18,13 +18,16 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final AuthenticatedUserService authenticatedUserService;
+    private final AchievementService achievementService;
 
     public TaskService(
             TaskRepository taskRepository,
-            AuthenticatedUserService authenticatedUserService
+            AuthenticatedUserService authenticatedUserService,
+            AchievementService achievementService
     ) {
         this.taskRepository = taskRepository;
         this.authenticatedUserService = authenticatedUserService;
+        this.achievementService = achievementService;
     }
 
     public List<TaskResponse> getAllTasks() {
@@ -50,6 +53,7 @@ public class TaskService {
         );
 
         Task savedTask = taskRepository.save(task);
+        achievementService.checkAndGrant(user);
 
         return new TaskResponse(savedTask);
     }

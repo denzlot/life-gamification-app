@@ -9,6 +9,11 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "user_game_stats")
 public class UserGameStats {
+    private static final int[] LEVEL_THRESHOLDS = {
+            0, 300, 900, 1600, 2400, 3400, 4600, 6000, 7600, 9500,
+            12000, 15000, 18000, 21500, 25000, 30000, 35000, 40000, 45000, 50000
+    };
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,6 +42,12 @@ public class UserGameStats {
 
     @Column(name = "last_productive_date")
     private LocalDate lastProductiveDate;
+
+    @Column(name = "selected_theme", nullable = false, length = 40)
+    private String selectedTheme = "dark";
+
+    @Column(name = "selected_character", nullable = false, length = 40)
+    private String selectedCharacter = "lolbot";
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -106,6 +117,14 @@ public class UserGameStats {
         return lastProductiveDate;
     }
 
+    public String getSelectedTheme() {
+        return selectedTheme;
+    }
+
+    public String getSelectedCharacter() {
+        return selectedCharacter;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -132,12 +151,12 @@ public class UserGameStats {
 
     public void recalculateLevel() {
         int nextLevel = 1;
-        while (true) {
-            int xpRequired = 500 * nextLevel * (nextLevel + 1) / 2;
-            if (this.xp < xpRequired) {
+        for (int index = 0; index < LEVEL_THRESHOLDS.length; index++) {
+            if (this.xp >= LEVEL_THRESHOLDS[index]) {
+                nextLevel = index + 1;
+            } else {
                 break;
             }
-            nextLevel++;
         }
         this.level = nextLevel;
     }
@@ -156,5 +175,13 @@ public class UserGameStats {
 
     public void setLastProductiveDate(LocalDate date) {
         this.lastProductiveDate = date;
+    }
+
+    public void setSelectedTheme(String selectedTheme) {
+        this.selectedTheme = selectedTheme;
+    }
+
+    public void setSelectedCharacter(String selectedCharacter) {
+        this.selectedCharacter = selectedCharacter;
     }
 }

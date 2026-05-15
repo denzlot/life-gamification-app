@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "./Button";
+import { GlobalFaq } from "./GlobalFaq";
 import { ThemeSwitchButton } from "./ThemeSwitchButton";
 import { useAuth } from "../context/AuthContext";
 
@@ -88,6 +89,7 @@ export function AppShell() {
       <main className="main-view">
         <Outlet />
       </main>
+      <GlobalFaq />
       <ThemeSwitchButton />
     </div>
   );

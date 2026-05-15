@@ -42,6 +42,9 @@ class QuestServiceTest {
     @Mock
     private AuthenticatedUserService authenticatedUserService;
 
+    @Mock
+    private AchievementService achievementService;
+
     @Test
     void deleteQuestRejectsQuestWhenStepIsAlreadyUsedInDailyPlan() {
         User user = new User("user", "{noop}password");
@@ -122,7 +125,8 @@ class QuestServiceTest {
                 questRepository,
                 questStepRepository,
                 dailyPlanItemRepository,
-                authenticatedUserService
+                authenticatedUserService,
+                achievementService
         );
     }
 

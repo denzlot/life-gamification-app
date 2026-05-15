@@ -20,8 +20,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class TelegramReminderService {
@@ -74,19 +76,33 @@ public class TelegramReminderService {
         }
 
         LocalDate today = now.toLocalDate();
-        List<DailyPlanItem> items = dailyPlanService.getItemsForUserPlan(user, today);
+        List<DailyPlanItem> items = dailyPlanService.getItemsForExistingUserPlan(user, today)
+                .stream()
+                .filter(item -> isActualPendingToday(item, today))
+                .toList();
+        Set<String> sentReminderKeys = sentReminderKeys(user, items);
         for (DailyPlanItem item : items) {
-            if (!isActualPendingToday(item, today)) {
-                continue;
-            }
-
             if (user.isTelegramPlannedRemindersEnabled()) {
-                maybeSendReminder(user, item, TelegramReminderType.PLANNED, item.getPlannedTime(), now);
+                maybeSendReminder(user, item, TelegramReminderType.PLANNED, item.getPlannedTime(), now, sentReminderKeys);
             }
             if (user.isTelegramDeadlineRemindersEnabled()) {
-                maybeSendReminder(user, item, TelegramReminderType.DEADLINE, item.getDeadlineTime(), now);
+                maybeSendReminder(user, item, TelegramReminderType.DEADLINE, item.getDeadlineTime(), now, sentReminderKeys);
             }
         }
+    }
+
+    private Set<String> sentReminderKeys(User user, List<DailyPlanItem> items) {
+        List<Long> itemIds = items.stream()
+                .map(DailyPlanItem::getId)
+                .filter(id -> id != null)
+                .toList();
+        if (itemIds.isEmpty()) {
+            return new HashSet<>();
+        }
+        return telegramSentReminderRepository.findSentReminderKeys(user, itemIds)
+                .stream()
+                .map(key -> reminderKey(key.getDailyPlanItemId(), key.getReminderType()))
+                .collect(java.util.stream.Collectors.toCollection(HashSet::new));
     }
 
     private void maybeSendReminder(
@@ -94,7 +110,8 @@ public class TelegramReminderService {
             DailyPlanItem item,
             TelegramReminderType reminderType,
             LocalTime targetTime,
-            LocalDateTime now
+            LocalDateTime now,
+            Set<String> sentReminderKeys
     ) {
         if (targetTime == null) {
             return;
@@ -107,7 +124,8 @@ public class TelegramReminderService {
             return;
         }
 
-        if (telegramSentReminderRepository.existsByUserAndDailyPlanItemAndReminderType(user, item, reminderType)) {
+        String reminderKey = reminderKey(item.getId(), reminderType);
+        if (sentReminderKeys.contains(reminderKey)) {
             return;
         }
 
@@ -119,6 +137,7 @@ public class TelegramReminderService {
 
         if (sent) {
             telegramSentReminderRepository.save(new TelegramSentReminder(user, item, reminderType));
+            sentReminderKeys.add(reminderKey);
         }
     }
 
@@ -149,27 +168,38 @@ public class TelegramReminderService {
     }
 
     private String reminderText(DailyPlanItem item, TelegramReminderType reminderType, LocalTime targetTime) {
-        return "Reminder: [" + typeLabel(item.getSourceType()) + "] "
+        return "Напоминание: [" + typeLabel(item.getSourceType()) + "] "
                 + safeTitle(item.getTitle())
                 + "\n"
-                + reminderType.name().toLowerCase() + " "
+                + reminderTypeLabel(reminderType) + " "
                 + targetTime.format(TIME_FORMAT)
                 + "\n"
-                + "Status: pending";
+                + "Статус: в плане";
+    }
+
+    private String reminderKey(Long itemId, TelegramReminderType reminderType) {
+        return itemId + ":" + reminderType.name();
+    }
+
+    private String reminderTypeLabel(TelegramReminderType reminderType) {
+        return switch (reminderType) {
+            case PLANNED -> "план";
+            case DEADLINE -> "дедлайн";
+        };
     }
 
     private String typeLabel(ActivitySourceType type) {
         return switch (type) {
-            case TASK -> "task";
-            case HABIT -> "habit";
-            case QUEST -> "quest";
-            case MANUAL -> "plan";
+            case TASK -> "задача";
+            case HABIT -> "привычка";
+            case QUEST -> "квест";
+            case MANUAL -> "план";
         };
     }
 
     private String safeTitle(String title) {
         if (title == null || title.isBlank()) {
-            return "Untitled";
+            return "Без названия";
         }
         String clean = title.replace('\n', ' ').replace('\r', ' ').trim();
         return clean.length() <= 120 ? clean : clean.substring(0, 119) + "...";
@@ -177,7 +207,7 @@ public class TelegramReminderService {
 
     private String safeTitle(String title, int limit) {
         if (title == null || title.isBlank()) {
-            return "Untitled";
+            return "Без названия";
         }
         String clean = title.replace('\n', ' ').replace('\r', ' ').trim();
         return clean.length() <= limit ? clean : clean.substring(0, limit - 1) + "...";

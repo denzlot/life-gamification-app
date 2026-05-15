@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from "react";
 import { api } from "../api/http";
 import type { ProfileResponse } from "../api/types";
+import { applyTheme, CHARACTER_EVENT, CHARACTER_STORAGE_KEY, type CharacterId, type ThemeName } from "../utils/character";
 import { applyHpState } from "../utils/hp";
 import { useAuth } from "./AuthContext";
 
@@ -29,6 +30,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const next = await api.profile.get();
       setProfile(next);
       applyHpState(next.gameStats);
+      const selectedTheme = (next.gameStats.selectedTheme ?? "dark") as ThemeName;
+      const selectedCharacter = (next.gameStats.selectedCharacter ?? "lolbot") as CharacterId;
+      applyTheme(selectedTheme);
+      localStorage.setItem(CHARACTER_STORAGE_KEY, selectedCharacter);
+      window.dispatchEvent(new CustomEvent(CHARACTER_EVENT, { detail: { id: selectedCharacter } }));
       return next;
     } finally {
       setLoading(false);

@@ -18,35 +18,35 @@ import { TodayPage } from "./pages/TodayPage";
 
 function ProtectedShell() {
   return (
-    <GameProvider>
-      <AchievementProvider>
-        <AppShell />
-      </AchievementProvider>
-    </GameProvider>
+    <AchievementProvider>
+      <AppShell />
+    </AchievementProvider>
   );
 }
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<AuthPage mode="login" />} />
-      <Route path="/register" element={<AuthPage mode="register" />} />
-      <Route element={<AuthGuard />}>
-        <Route element={<ProtectedShell />}>
-          <Route path="/" element={<Navigate to="/today" replace />} />
-          <Route path="/today" element={<TodayPage />} />
-          <Route path="/habits" element={<HabitsPage />} />
-          <Route path="/quests" element={<QuestsPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/calendar/:date" element={<DayDetailsPage />} />
-          <Route path="/stats" element={<StatsPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/achievements" element={<AchievementsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
+    <GameProvider>
+      <Routes>
+        <Route path="/login" element={<AuthPage mode="login" />} />
+        <Route path="/register" element={<AuthPage mode="register" />} />
+        <Route element={<AuthGuard />}>
+          <Route element={<ProtectedShell />}>
+            <Route path="/" element={<Navigate to="/today" replace />} />
+            <Route path="/today" element={<TodayPage />} />
+            <Route path="/habits" element={<HabitsPage />} />
+            <Route path="/quests" element={<QuestsPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/calendar/:date" element={<DayDetailsPage />} />
+            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/history" element={<HistoryPage />} />
+            <Route path="/achievements" element={<AchievementsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
+          </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </GameProvider>
   );
 }

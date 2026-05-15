@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface UserAchievementRepository extends JpaRepository<UserAchievement, Long> {
@@ -21,6 +22,8 @@ public interface UserAchievementRepository extends JpaRepository<UserAchievement
 
     @Query("SELECT ua.achievement.key FROM UserAchievement ua WHERE ua.user = :user")
     Set<String> findUnlockedKeysByUser(User user);
+
+    Optional<UserAchievement> findByUserAndAchievement_Key(User user, String key);
 
     boolean existsByUserAndAchievement_Key(User user, String key);
 }

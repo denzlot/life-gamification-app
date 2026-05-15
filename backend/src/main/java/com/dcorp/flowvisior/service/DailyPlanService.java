@@ -102,6 +102,19 @@ public class DailyPlanService {
     }
 
     @Transactional
+    public List<DailyPlanItem> getItemsForExistingUserPlan(User user, LocalDate planDate) {
+        autoCloseOverduePlans(user);
+
+        return dailyPlanRepository.findByUserAndPlanDate(user, planDate)
+                .map(dailyPlan -> {
+                    syncPlannedItems(dailyPlan, user, planDate);
+                    autoFailExpiredDeadlines(dailyPlan);
+                    return dailyPlanItemRepository.findByDailyPlanOrderByCreatedAtAsc(dailyPlan);
+                })
+                .orElseGet(List::of);
+    }
+
+    @Transactional
     public DailyPlanItemStatus cycleItemStatusFromTelegram(User user, DailyPlanItem item, LocalDate allowedDate) {
         if (!Objects.equals(item.getDailyPlan().getUser().getId(), user.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found");
@@ -289,7 +302,17 @@ public class DailyPlanService {
                 .filter(i -> i.getStatus() == DailyPlanItemStatus.FAILED)
                 .count();
 
-        dailyPlan.close((int) completedCount, (int) failedCount, 0, 0, 0, false);
+        dailyPlan.close(
+                (int) completedCount,
+                (int) failedCount,
+                items.size(),
+                0d,
+                DayQuality.EMPTY,
+                0,
+                0,
+                0,
+                false
+        );
         dailyPlanRepository.save(dailyPlan);
     }
 
@@ -306,14 +329,15 @@ public class DailyPlanService {
                 .filter(i -> i.getStatus() == DailyPlanItemStatus.FAILED)
                 .count();
 
-        boolean dayWasProductive = completedCount > 0;
+        int totalCount = items.size();
+        double completionRate = totalCount == 0 ? 0d : (double) completedCount / totalCount;
+        DayQuality dayQuality = DayQuality.fromCounts((int) completedCount, totalCount);
 
         UserGameStats stats = userGameStatsRepository.findByUser(user)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Game stats not found"));
 
-        GameService.DayGameDelta delta = gameService.applyDayClose(stats, dayWasProductive, dailyPlan.getPlanDate());
+        GameService.DayGameDelta delta = gameService.applyDayClose(stats, dayQuality, dailyPlan.getPlanDate(), totalCount);
         userGameStatsRepository.save(stats);
-        achievementService.checkAndGrant(user);
 
         activityLogRepository.save(new ActivityLog(
                 user, dailyPlan, null,
@@ -326,6 +350,9 @@ public class DailyPlanService {
         dailyPlan.close(
                 (int) completedCount,
                 (int) failedCount,
+                totalCount,
+                completionRate,
+                dayQuality,
                 delta.getXpDelta(),
                 delta.getHpDelta(),
                 stats.getStreak(),
@@ -333,12 +360,16 @@ public class DailyPlanService {
         );
 
         dailyPlanRepository.save(dailyPlan);
+        achievementService.checkAndGrant(user);
 
         return new ClosedDailyPlanResponse(
                 dailyPlan,
                 items,
                 (int) completedCount,
                 (int) failedCount,
+                totalCount,
+                completionRate,
+                dayQuality,
                 delta.getXpDelta(),
                 delta.getHpDelta(),
                 stats.getStreak(),
@@ -485,6 +516,9 @@ public class DailyPlanService {
     private static final class ClosedDailyPlanResponse extends DailyPlanResponse {
         private final int completedCount;
         private final int failedCount;
+        private final int totalCount;
+        private final double completionRate;
+        private final DayQuality dayQuality;
         private final int xpEarned;
         private final int hpDelta;
         private final int streakAfterClose;
@@ -496,6 +530,9 @@ public class DailyPlanService {
                 List<DailyPlanItem> items,
                 int completedCount,
                 int failedCount,
+                int totalCount,
+                double completionRate,
+                DayQuality dayQuality,
                 int xpEarned,
                 int hpDelta,
                 int streakAfterClose,
@@ -505,6 +542,9 @@ public class DailyPlanService {
             super(dailyPlan, items);
             this.completedCount = completedCount;
             this.failedCount = failedCount;
+            this.totalCount = totalCount;
+            this.completionRate = completionRate;
+            this.dayQuality = dayQuality;
             this.xpEarned = xpEarned;
             this.hpDelta = hpDelta;
             this.streakAfterClose = streakAfterClose;
@@ -514,6 +554,9 @@ public class DailyPlanService {
 
         public int getCompletedCount() { return completedCount; }
         public int getFailedCount() { return failedCount; }
+        public int getTotalCount() { return totalCount; }
+        public double getCompletionRate() { return completionRate; }
+        public DayQuality getDayQuality() { return dayQuality; }
         public int getXpEarned() { return xpEarned; }
         public int getHpDelta() { return hpDelta; }
         public int getStreakAfterClose() { return streakAfterClose; }

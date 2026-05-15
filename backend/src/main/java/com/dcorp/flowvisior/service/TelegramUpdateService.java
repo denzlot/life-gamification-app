@@ -34,7 +34,7 @@ public class TelegramUpdateService {
     private static final int TITLE_LIMIT = 120;
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final Pattern CALLBACK_NONCE_PATTERN = Pattern.compile("[A-Za-z0-9_-]{16,64}");
-    private static final String CALLBACK_UNAVAILABLE = "This action is no longer available.";
+    private static final String CALLBACK_UNAVAILABLE = "Действие больше недоступно.";
 
     private final SecureRandom secureRandom = new SecureRandom();
     private final UserRepository userRepository;
@@ -98,7 +98,7 @@ public class TelegramUpdateService {
             case "/help" -> sendHelp(chatId);
             case "/unlink" -> withLinkedUser(chatId, user -> {
                 telegramLinkService.unlink(user);
-                telegramBotClient.sendMessage(chatId, "Telegram has been unlinked from your account.");
+                telegramBotClient.sendMessage(chatId, "Telegram отвязан от аккаунта.");
             });
             default -> sendHelp(chatId);
         }
@@ -106,16 +106,16 @@ public class TelegramUpdateService {
 
     private void handleStart(Long chatId, String linkCode) {
         if (linkCode.isBlank()) {
-            telegramBotClient.sendMessage(chatId, "Open the app, create a new Telegram link code, then send /start <linkCode> here.");
+            telegramBotClient.sendMessage(chatId, "Откройте приложение, создайте новый Telegram-код и отправьте сюда /start <код>.");
             sendHelp(chatId);
             return;
         }
 
         try {
             telegramLinkService.linkByCode(linkCode, chatId);
-            telegramBotClient.sendMessage(chatId, "Telegram has been linked. Use /today to see your plan.");
+            telegramBotClient.sendMessage(chatId, "Telegram привязан. Отправьте /today, чтобы увидеть план на сегодня.");
         } catch (ResponseStatusException exception) {
-            telegramBotClient.sendMessage(chatId, "Could not link Telegram: " + safeReason(exception));
+            telegramBotClient.sendMessage(chatId, "Не удалось привязать Telegram: " + safeReason(exception));
         }
     }
 
@@ -157,10 +157,10 @@ public class TelegramUpdateService {
             DailyPlanItemStatus status = dailyPlanService.cycleItemStatusFromTelegram(user, token.getDailyPlanItem(), LocalDate.now());
             token.use();
             telegramCallbackTokenRepository.save(token);
-            telegramBotClient.answerCallbackQuery(callbackQueryId, "Status: " + statusLabel(status));
+            telegramBotClient.answerCallbackQuery(callbackQueryId, "Статус: " + statusLabel(status));
             refreshPlanMessage(callbackQuery, chatId, user);
         } catch (ResponseStatusException exception) {
-            telegramBotClient.answerCallbackQuery(callbackQueryId, "Task was not found or has already changed.");
+            telegramBotClient.answerCallbackQuery(callbackQueryId, "Пункт не найден или уже изменился.");
         }
     }
 
@@ -168,8 +168,8 @@ public class TelegramUpdateService {
         List<DailyPlanItem> items = dailyPlanService.getItemsForUserPlan(user, planDate);
         if (items.isEmpty()) {
             telegramBotClient.sendMessage(chatId, planDate.equals(LocalDate.now())
-                    ? "No tasks for today."
-                    : "No tasks for the selected day.");
+                    ? "На сегодня задач нет."
+                    : "На выбранный день задач нет.");
             return;
         }
 
@@ -229,7 +229,7 @@ public class TelegramUpdateService {
 
     private String planText(LocalDate planDate, List<DailyPlanItem> items) {
         StringBuilder text = new StringBuilder();
-        text.append(planDate.equals(LocalDate.now()) ? "Today:\n" : "Tomorrow:\n");
+        text.append(planDate.equals(LocalDate.now()) ? "Сегодня:\n" : "Завтра:\n");
         for (int i = 0; i < items.size(); i++) {
             text.append(i + 1)
                     .append(". ")
@@ -247,10 +247,10 @@ public class TelegramUpdateService {
     private String formatItem(DailyPlanItem item) {
         List<String> details = new ArrayList<>();
         if (item.getPlannedTime() != null) {
-            details.add("planned " + formatTime(item.getPlannedTime()));
+            details.add("план " + formatTime(item.getPlannedTime()));
         }
         if (item.getDeadlineTime() != null) {
-            details.add("deadline " + formatTime(item.getDeadlineTime()));
+            details.add("дедлайн " + formatTime(item.getDeadlineTime()));
         }
         details.add(statusLabel(item.getStatus()));
 
@@ -260,29 +260,29 @@ public class TelegramUpdateService {
     }
 
     private String statusText(User user) {
-        String linked = user.isTelegramLinked() ? "linked" : "not linked";
-        String reminders = user.isTelegramRemindersEnabled() ? "enabled" : "disabled";
-        String planned = user.isTelegramPlannedRemindersEnabled() ? "planned time: enabled" : "planned time: disabled";
-        String deadline = user.isTelegramDeadlineRemindersEnabled() ? "deadline: enabled" : "deadline: disabled";
-        return "Telegram " + linked + ". Reminders " + reminders + ". " + planned + ", " + deadline + ".";
+        String linked = user.isTelegramLinked() ? "привязан" : "не привязан";
+        String reminders = user.isTelegramRemindersEnabled() ? "включены" : "выключены";
+        String planned = user.isTelegramPlannedRemindersEnabled() ? "план: включен" : "план: выключен";
+        String deadline = user.isTelegramDeadlineRemindersEnabled() ? "дедлайн: включен" : "дедлайн: выключен";
+        return "Telegram " + linked + ". Напоминания " + reminders + ". " + planned + ", " + deadline + ".";
     }
 
     private void sendHelp(Long chatId) {
         telegramBotClient.sendMessage(chatId, """
-                Available commands:
-                /start <linkCode> - link Telegram
-                /today - today's tasks
-                /tomorrow - tomorrow's tasks
-                /status - link and reminder status
-                /help - help
-                /unlink - unlink Telegram
+                Доступные команды:
+                /start <код> - привязать Telegram
+                /today - задачи на сегодня
+                /tomorrow - задачи на завтра
+                /status - статус привязки и напоминаний
+                /help - помощь
+                /unlink - отвязать Telegram
                 """.trim());
     }
 
     private void withLinkedUser(Long chatId, UserConsumer consumer) {
         userRepository.findByTelegramChatId(chatId).ifPresentOrElse(
                 consumer::accept,
-                () -> telegramBotClient.sendMessage(chatId, "Telegram is not linked. Create a link code in the app and send /start <linkCode>.")
+                () -> telegramBotClient.sendMessage(chatId, "Telegram не привязан. Создайте код в приложении и отправьте /start <код>.")
         );
     }
 
@@ -302,19 +302,25 @@ public class TelegramUpdateService {
         String text = message.path("text").asText("").trim().toLowerCase(Locale.ROOT);
         Long chatId = extractChatId(message);
         if (chatId != null && text.startsWith("/start")) {
-            telegramBotClient.sendMessage(chatId, "Please open a private chat with this bot to link your account.");
+            telegramBotClient.sendMessage(chatId, "Откройте личный чат с ботом, чтобы привязать аккаунт.");
         }
     }
 
     private String safeReason(ResponseStatusException exception) {
-        return exception.getReason() == null || exception.getReason().isBlank()
-                ? "link code is invalid or expired"
-                : exception.getReason();
+        String reason = exception.getReason();
+        if (reason == null || reason.isBlank()) {
+            return "код недействителен или истек";
+        }
+        return switch (reason) {
+            case "Telegram is already linked to another account" -> "этот Telegram уже привязан к другому аккаунту";
+            case "Account is already linked to another Telegram chat" -> "аккаунт уже привязан к другому Telegram-чату";
+            default -> reason;
+        };
     }
 
     private String safeTitle(String title) {
         if (title == null || title.isBlank()) {
-            return "Untitled";
+            return "Без названия";
         }
         String clean = title.replace('\n', ' ').replace('\r', ' ').trim();
         return clean.length() <= TITLE_LIMIT ? clean : clean.substring(0, TITLE_LIMIT - 1) + "...";
@@ -322,7 +328,7 @@ public class TelegramUpdateService {
 
     private String safeTitle(String title, int limit) {
         if (title == null || title.isBlank()) {
-            return "Untitled";
+            return "Без названия";
         }
         String clean = title.replace('\n', ' ').replace('\r', ' ').trim();
         return clean.length() <= limit ? clean : clean.substring(0, limit - 1) + "...";
@@ -330,18 +336,18 @@ public class TelegramUpdateService {
 
     private String typeLabel(ActivitySourceType type) {
         return switch (type) {
-            case TASK -> "task";
-            case HABIT -> "habit";
-            case QUEST -> "quest";
-            case MANUAL -> "plan";
+            case TASK -> "задача";
+            case HABIT -> "привычка";
+            case QUEST -> "квест";
+            case MANUAL -> "план";
         };
     }
 
     private String statusLabel(DailyPlanItemStatus status) {
         return switch (status) {
-            case PENDING -> "pending";
-            case COMPLETED -> "completed";
-            case FAILED -> "failed";
+            case PENDING -> "в плане";
+            case COMPLETED -> "выполнено";
+            case FAILED -> "не выполнено";
         };
     }
 

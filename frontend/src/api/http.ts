@@ -162,6 +162,8 @@ export const api = {
   },
   profile: {
     get: () => request<ProfileResponse>("/profile"),
+    updatePreferences: (payload: { theme?: string | null; character?: string | null }) =>
+      request<ProfileResponse>("/profile/preferences", { method: "PATCH", body: json(payload) }),
     achievements: () => request<AchievementResponse[]>("/profile/achievements")
   },
   dashboard: {

@@ -62,9 +62,10 @@ export function avatarMoodLabel(mood: AvatarMood) {
 }
 
 export function xpForLevel(level: number) {
-  return (500 * (level - 1) * level) / 2;
+  const thresholds = [0, 300, 900, 1600, 2400, 3400, 4600, 6000, 7600, 9500, 12000, 15000, 18000, 21500, 25000, 30000, 35000, 40000, 45000, 50000];
+  return thresholds[Math.max(0, Math.min(level - 1, thresholds.length - 1))] ?? thresholds[thresholds.length - 1];
 }
 
 export function xpForNextLevel(level: number) {
-  return (500 * level * (level + 1)) / 2;
+  return xpForLevel(level + 1);
 }

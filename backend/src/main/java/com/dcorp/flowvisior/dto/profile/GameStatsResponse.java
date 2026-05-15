@@ -3,6 +3,8 @@ package com.dcorp.flowvisior.dto.profile;
 import com.dcorp.flowvisior.entity.HpState;
 import com.dcorp.flowvisior.entity.UserGameStats;
 
+import java.util.List;
+
 public class GameStatsResponse {
 
     private final int xp;
@@ -13,8 +15,11 @@ public class GameStatsResponse {
     private final int streak;
     private final boolean streakShield;
     private final int nextShieldAt;
+    private final String selectedTheme;
+    private final String selectedCharacter;
+    private final List<UnlockResponse> unlocks;
 
-    public GameStatsResponse(UserGameStats stats) {
+    public GameStatsResponse(UserGameStats stats, List<UnlockResponse> unlocks) {
         this.xp = stats.getXp();
         this.level = stats.getLevel();
         this.hp = stats.getHp();
@@ -23,6 +28,9 @@ public class GameStatsResponse {
         this.streak = stats.getStreak();
         this.streakShield = stats.isStreakShield();
         this.nextShieldAt = (stats.getStreak() / 7 + 1) * 7;
+        this.selectedTheme = stats.getSelectedTheme();
+        this.selectedCharacter = stats.getSelectedCharacter();
+        this.unlocks = unlocks;
     }
 
     public int getXp() { return xp; }
@@ -33,4 +41,7 @@ public class GameStatsResponse {
     public int getStreak() { return streak; }
     public boolean isStreakShield() { return streakShield; }
     public int getNextShieldAt() { return nextShieldAt; }
+    public String getSelectedTheme() { return selectedTheme; }
+    public String getSelectedCharacter() { return selectedCharacter; }
+    public List<UnlockResponse> getUnlocks() { return unlocks; }
 }

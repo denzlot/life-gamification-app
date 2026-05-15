@@ -28,17 +28,20 @@ public class QuestService {
     private final QuestStepRepository questStepRepository;
     private final DailyPlanItemRepository dailyPlanItemRepository;
     private final AuthenticatedUserService authenticatedUserService;
+    private final AchievementService achievementService;
 
     public QuestService(
             QuestRepository questRepository,
             QuestStepRepository questStepRepository,
             DailyPlanItemRepository dailyPlanItemRepository,
-            AuthenticatedUserService authenticatedUserService
+            AuthenticatedUserService authenticatedUserService,
+            AchievementService achievementService
     ) {
         this.questRepository = questRepository;
         this.questStepRepository = questStepRepository;
         this.dailyPlanItemRepository = dailyPlanItemRepository;
         this.authenticatedUserService = authenticatedUserService;
+        this.achievementService = achievementService;
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +79,7 @@ public class QuestService {
 
         Quest savedQuest = questRepository.save(quest);
         questStepRepository.saveAll(generateSteps(savedQuest, request));
+        achievementService.checkAndGrant(user);
 
         return new QuestResponse(savedQuest);
     }

@@ -1,6 +1,6 @@
 package com.dcorp.flowvisior.dto.achievement;
 
-import com.dcorp.flowvisior.entity.UserAchievement;
+import com.dcorp.flowvisior.entity.Achievement;
 import java.time.LocalDateTime;
 
 public class AchievementResponse {
@@ -11,16 +11,22 @@ public class AchievementResponse {
     private final String description;
     private final String category;
     private final int xpReward;
+    private final int requiredValue;
+    private final boolean unlocked;
     private final LocalDateTime unlockedAt;
+    private final int progress;
 
-    public AchievementResponse(UserAchievement ua) {
-        this.id = ua.getAchievement().getId();
-        this.key = ua.getAchievement().getKey();
-        this.title = ua.getAchievement().getTitle();
-        this.description = ua.getAchievement().getDescription();
-        this.category = ua.getAchievement().getCategory();
-        this.xpReward = ua.getAchievement().getXpReward();
-        this.unlockedAt = ua.getUnlockedAt();
+    public AchievementResponse(Achievement achievement, boolean unlocked, LocalDateTime unlockedAt, int progress) {
+        this.id = achievement.getId();
+        this.key = achievement.getKey();
+        this.title = achievement.getTitle();
+        this.description = achievement.getDescription();
+        this.category = achievement.getCategory();
+        this.xpReward = achievement.getXpReward();
+        this.requiredValue = achievement.getRequiredValue();
+        this.unlocked = unlocked;
+        this.unlockedAt = unlockedAt;
+        this.progress = progress;
     }
 
     public Long getId() { return id; }
@@ -29,5 +35,8 @@ public class AchievementResponse {
     public String getDescription() { return description; }
     public String getCategory() { return category; }
     public int getXpReward() { return xpReward; }
+    public int getRequiredValue() { return requiredValue; }
+    public boolean isUnlocked() { return unlocked; }
     public LocalDateTime getUnlockedAt() { return unlockedAt; }
+    public int getProgress() { return progress; }
 }

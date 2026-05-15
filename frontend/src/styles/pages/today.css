@@ -20,6 +20,39 @@
 .character-panel { border-top: 0 !important; border-bottom: 0 !important; padding-top: 0 !important; margin-top: 0 !important; background: transparent !important; }
 .character-panel .avatar-frame { width: 100%; }
 .today-pre-character-card { max-width: 780px; margin: 0 auto 1rem; display: grid; grid-template-columns: minmax(220px, 0.46fr) minmax(0, 1fr); align-items: end; gap: 1rem; }
+.plan-quality-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.22rem 0.52rem;
+  max-width: min(100%, 42rem);
+  margin-top: 0.12rem;
+  color: var(--muted);
+  font-family: var(--font-text);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.38;
+}
+
+.plan-quality-inline b {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 820;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.plan-quality-inline em {
+  min-width: 0;
+  color: var(--muted);
+  font-style: normal;
+}
+
+.plan-quality-inline-empty b,
+.plan-quality-inline-bad b { color: var(--danger); }
+.plan-quality-inline-normal b { color: var(--accent); }
+.plan-quality-inline-good b { color: var(--good); }
 .today-pre-avatar-slot .avatar-picture-wrap { min-height: 240px !important; height: 260px !important; }
 .today-pre-avatar-slot .avatar-img { width: min(92%, 242px) !important; max-height: 94% !important; transform: scale(1.3) translateY(30px); transform-origin: center bottom; }
 .today-pre-stats-slot { align-self: stretch; display: grid; align-content: center; border-left: 1px solid var(--border-soft); padding-left: 1rem; }
@@ -43,6 +76,15 @@
 .today-hero > .day-date-inline { grid-column: 1 !important; grid-row: 2 !important; margin: 0 !important; max-width: none !important; }
 .today-hero > .day-status-row { grid-column: 2 !important; grid-row: 1 / 3 !important; align-self: center !important; justify-self: end !important; justify-content: flex-end !important; margin-top: 0 !important; }
 .today-controls-row { display: flex !important; align-items: center !important; gap: 0.55rem !important; flex-wrap: wrap !important; margin: 0.15rem 0 0.5rem !important; }
+.today-inline-toolbar .btn-primary {
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-2), var(--bg) 18%);
+  border-color: color-mix(in srgb, var(--border), var(--accent) 12%);
+}
+
+.today-inline-toolbar .btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--surface-2), var(--accent) 7%);
+}
 
 @media (max-width: 1100px) {
   .character-panel { grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1fr); align-items: center; }

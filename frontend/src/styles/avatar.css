@@ -36,6 +36,7 @@
 .hud-suffix { margin-left: 0.25rem; color: var(--muted); font-size: 0.75rem; }
 
 .hud-note { margin: 0; color: var(--muted); align-items: center; gap: 0.55rem; flex-wrap: wrap; }
+.hud-xp-line { margin: -0.22rem 0 0; color: var(--muted); font-size: 0.78rem; line-height: 1.35; }
 
 .status-dot { width: 0.45rem; height: 0.45rem; border-radius: 999px; display: inline-block; }
 
@@ -134,6 +135,161 @@
 
 .avatar-quote-bubble { font-size: 0.86rem !important; }
 
+.hud {
+  gap: 0.6rem;
+  padding-top: 0.04rem;
+}
+
+.hud-level-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.06rem 0 0.58rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.hud-level-row span,
+.hud-unlock-line span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 820;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.hud-level-row strong {
+  min-width: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 1.02rem;
+  font-weight: 840;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.hud-level-row em,
+.hud-unlock-line em {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-style: normal;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.hud-meter-stack {
+  display: grid;
+  gap: 0.42rem;
+  padding: 0 0 0.08rem;
+}
+
+.hud-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.hud-stat-strip + .hud-stat-strip {
+  border-top: 0;
+}
+
+.hud-stat-strip-secondary {
+  border-bottom: 0;
+}
+
+.hud-metric {
+  display: grid;
+  align-content: start;
+  gap: 0.18rem;
+  min-width: 0;
+  padding: 0.5rem 0.54rem;
+  border-right: 1px solid var(--border-soft);
+}
+
+.hud-metric:first-child {
+  padding-left: 0;
+}
+
+.hud-metric:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.hud-metric.hud-stat-hp,
+.hud-metric.hud-stat-xp {
+  padding-left: 0.54rem;
+  border-left: 0;
+}
+
+.hud-metric.hud-stat-hp:first-child,
+.hud-metric.hud-stat-xp:first-child {
+  padding-left: 0;
+}
+
+.hud-label {
+  min-width: 0;
+  letter-spacing: 0.1em;
+}
+
+.hud-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud-unlock-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.14rem 0.7rem;
+  margin: 0;
+  padding-top: 0.58rem;
+  border-top: 1px solid var(--border-soft);
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.hud-unlock-line span {
+  grid-column: 1 / -1;
+}
+
+.hud-unlock-line strong {
+  min-width: 0;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.hud-unlock-line.is-complete strong {
+  color: var(--good);
+}
+
+.meter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+@media (max-width: 620px) {
+  .hud-level-row,
+  .hud-unlock-line {
+    grid-template-columns: 1fr;
+  }
+
+  .hud-level-row strong,
+  .hud-level-row em,
+  .hud-unlock-line em {
+    text-align: left;
+  }
+
+  .hud-stat-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .character-chooser { display: grid; gap: 1rem; }
 
 /* Registration step: chooser mounts fresh — reuse global page entrance instead of a hard cut. */
@@ -150,6 +306,8 @@
 
 .character-card:hover,
 .character-card.active { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent), transparent 28%); background: color-mix(in srgb, var(--accent), transparent 91%); }
+.character-card.locked { cursor: not-allowed; opacity: 0.62; filter: grayscale(0.35); }
+.character-card.locked:hover { transform: none; border-color: var(--border-soft); background: color-mix(in srgb, var(--surface), var(--bg) 7%); }
 
 .character-card-preview { display: grid; place-items: center; overflow: hidden; border-radius: 14px; background: color-mix(in srgb, var(--surface-2), transparent 20%); }
 
@@ -313,4 +471,3 @@
 @media (prefers-reduced-motion: reduce) {
   .character-theme-cosmos::after { animation: none; }
 }
-

@@ -94,6 +94,37 @@ function closeDayQuestion(completedCount: number) {
   return "В этом дне пока нет выполненных задач. Если закрыть его сейчас, персонаж потеряет HP. Закрыть день?";
 }
 
+function dayQualityHint(completedCount: number, totalCount: number) {
+  if (completedCount <= 0) {
+    return {
+      tone: "empty",
+      label: "Пустой",
+      text: "Выполните хотя бы один пункт, чтобы сохранить стрик."
+    };
+  }
+
+  const completionRate = totalCount > 0 ? completedCount / totalCount : 0;
+  if (completionRate < 0.5) {
+    return {
+      tone: "bad",
+      label: "Плохой",
+      text: "Стрик сохранен, но день пока слабый. Еще несколько пунктов улучшат оценку."
+    };
+  }
+  if (completionRate < 0.8) {
+    return {
+      tone: "normal",
+      label: "Нормальный",
+      text: "День уже засчитан. Еще немного, и он станет хорошим."
+    };
+  }
+  return {
+    tone: "good",
+    label: "Хороший",
+    text: "План почти закрыт. Спокойно доведи остаток или фиксируй результат."
+  };
+}
+
 export function TodayPage() {
   const today = todayISO();
   const cachedPlan = useMemo(() => readCachedTodayPlan(today), [today]);
@@ -168,6 +199,7 @@ export function TodayPage() {
   const counts = useMemo(() => countDailyPlanItemStatuses(items), [items]);
   const isClosed = plan?.status === "CLOSED";
   const completedPct = pct(counts.COMPLETED, items.length);
+  const qualityHint = useMemo(() => dayQualityHint(counts.COMPLETED, items.length), [counts.COMPLETED, items.length]);
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -427,6 +459,7 @@ export function TodayPage() {
                   isClosed={isClosed}
                   xpEarned={plan.xpEarned}
                   hpDelta={plan.hpDelta}
+                  qualityHint={!isClosed ? qualityHint : null}
                 />
 
                 <TodayToolbar
