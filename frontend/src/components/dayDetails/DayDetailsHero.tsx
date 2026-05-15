@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { addDays } from "../../utils/calendarSchedule";
+import { dayQualityIcon, dayQualityLabel } from "../../utils/dayQuality";
 import { planStatusLabel, todayISO } from "../../utils/format";
 import type { CalendarDayResponse, DailyPlanResponse } from "../../api/types";
 
@@ -21,6 +22,8 @@ interface DayDetailsHeroProps {
 export function DayDetailsHero({ date, plan, summary, onNavigateDate }: DayDetailsHeroProps) {
   const today = todayISO();
   const statusText = plan ? planStatusLabel(plan.status) : summary?.status === "EMPTY" ? "день не открыт" : planStatusLabel(summary?.status);
+  const quality = plan?.status === "CLOSED" ? plan.dayQuality : summary?.status === "CLOSED" ? summary.dayQuality : null;
+  const qualityLabel = dayQualityLabel(quality);
 
   return (
     <header className="day-hero">
@@ -32,6 +35,16 @@ export function DayDetailsHero({ date, plan, summary, onNavigateDate }: DayDetai
       </div>
       <div className="day-status-row">
         <span>{statusText}</span>
+        {quality ? (
+          <span
+            className={`day-quality-pill quality-${quality.toLowerCase()}`}
+            title={`Качество дня: ${qualityLabel}`}
+            aria-label={`Качество дня: ${qualityLabel}`}
+          >
+            <i aria-hidden="true">{dayQualityIcon(quality)}</i>
+            {qualityLabel}
+          </span>
+        ) : null}
         <Link className="day-calendar-link" to="/calendar">календарь</Link>
       </div>
       {date === today ? <span className="sr-only">Сегодняшний день открывается на странице Today.</span> : null}

@@ -10,6 +10,12 @@
 .day-status-row b { color: var(--text); }
 
 .day-status-row { padding: 0.34rem 0.62rem; border-radius: 9px; letter-spacing: 0.1em; }
+.day-quality-pill { display: inline-flex; align-items: center; gap: 0.24rem; min-height: 1.28rem; padding: 0.1rem 0.36rem; border: 1px solid color-mix(in srgb, currentColor, transparent 48%); border-radius: 7px; line-height: 1; text-transform: none; letter-spacing: 0; background: color-mix(in srgb, currentColor, transparent 94%); }
+.day-quality-pill i { display: inline-grid; place-items: center; width: 0.68rem; height: 0.74rem; font-style: normal; font-size: 0.58rem; font-weight: 900; }
+.day-quality-pill.quality-good { color: var(--good); }
+.day-quality-pill.quality-normal { color: var(--accent); }
+.day-quality-pill.quality-bad { color: var(--danger); }
+.day-quality-pill.quality-empty { color: var(--muted-2); }
 .day-switcher { margin-top: 0.75rem; gap: 0.8rem; }
 .day-switcher a,
 .day-switcher button { font-size: 0.72rem; }

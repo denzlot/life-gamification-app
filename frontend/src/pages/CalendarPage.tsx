@@ -140,7 +140,8 @@ export function CalendarPage() {
         xpEarned: 0,
         hpDelta: 0,
         streakDay: 0,
-        shieldUsed: false
+        shieldUsed: false,
+        dayQuality: null
       };
       return byDate.get(fixedIso) ?? overlayCalendarDay(fallback, planningCatalog);
     });

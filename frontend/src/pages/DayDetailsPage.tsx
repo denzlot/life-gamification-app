@@ -30,7 +30,8 @@ function emptyCalendarDay(date: string): CalendarDayResponse {
     xpEarned: 0,
     hpDelta: 0,
     streakDay: 0,
-    shieldUsed: false
+    shieldUsed: false,
+    dayQuality: null
   };
 }
 
