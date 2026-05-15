@@ -32,4 +32,4 @@ export function SelectInput(props: SelectHTMLAttributes<HTMLSelectElement>) {
 }
 
 // Preserve the old import path while keeping wheel-specific logic out of this generic fields file.
-export { DateWheelInput, NumberWheelInput, TimeWheelInput } from "./WheelInputs";
+export { NumberWheelInput, TimeWheelInput } from "./WheelInputs";

@@ -4,7 +4,7 @@ import type { QuestStepResponse, UpdateQuestStepRequest } from "../../api/types"
 import { Button } from "../Button";
 import { RevealSection } from "../RevealSection";
 import { OptionChip } from "../OptionChip";
-import { DateWheelInput, TextArea, TextInput, TimeWheelInput } from "../FormFields";
+import { TextArea, TextInput, TimeWheelInput } from "../FormFields";
 import { ErrorLine } from "../Loader";
 import { addDays } from "../../utils/calendarSchedule";
 import { formatDate, formatTime, pct, stepStatusLabel, todayISO } from "../../utils/format";
@@ -129,7 +129,7 @@ export function QuestStepEditor({ step, questTotal, onSaved }: QuestStepEditorPr
             </div>
           </div>
           <RevealSection open={!isCompleted && options.date} className="option-reveal--wide">
-            <DateWheelInput value={form.scheduledDate} onChange={(value) => setForm({ ...form, scheduledDate: value || step.scheduledDate })} allowClear={false} />
+            <TextInput type="date" value={form.scheduledDate} onChange={(event) => setForm({ ...form, scheduledDate: event.target.value || step.scheduledDate })} />
           </RevealSection>
           <RevealSection open={!isCompleted && options.time} className="option-reveal--wide">
             <TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} />

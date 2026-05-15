@@ -23,6 +23,9 @@ public interface DailyPlanRepository extends JpaRepository<DailyPlan, Long> {
     List<DailyPlan> findByUserAndStatusAndPlanDateGreaterThanEqualOrderByPlanDateAsc(
             User user, DailyPlanStatus status, LocalDate planDate);
 
+    List<DailyPlan> findByUserAndStatusInAndPlanDateGreaterThanEqualOrderByPlanDateAsc(
+            User user, List<DailyPlanStatus> statuses, LocalDate planDate);
+
     List<DailyPlan> findByUserAndStatusAndPlanDateLessThanEqualOrderByPlanDateAsc(
             User user, DailyPlanStatus status, LocalDate planDate);
 }

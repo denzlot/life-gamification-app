@@ -4,7 +4,7 @@ import type { CreateQuestRequest, CreateQuestStepRequest, QuestResponse } from "
 import { Button } from "../Button";
 import { FormModal } from "../FormModal";
 import { OptionChip } from "../OptionChip";
-import { DateWheelInput, Field, NumberWheelInput, TextArea, TextInput, TimeWheelInput } from "../FormFields";
+import { Field, NumberWheelInput, TextArea, TextInput, TimeWheelInput } from "../FormFields";
 import { ErrorLine } from "../Loader";
 import { ModalTwinTimeRow } from "../ModalTwinTimeRow";
 import { RevealSection } from "../RevealSection";
@@ -257,7 +257,7 @@ export function QuestFormModal({
               <div className="quest-manual-paired-reveals">
                 <RevealSection open={options.schedule} className="quest-form-schedule-reveal quest-manual-reveal quest-manual-reveal--schedule">
                   <Field label="Дата старта">
-                    <DateWheelInput value={form.startDate} onChange={updateStartDate} allowClear={false} />
+                    <TextInput type="date" value={form.startDate} onChange={(event) => updateStartDate(event.target.value)} />
                   </Field>
                 </RevealSection>
 
@@ -378,7 +378,7 @@ export function QuestFormModal({
 
             <RevealSection open={Boolean(!editing && options.schedule)} className="option-reveal--wide quest-form-schedule-reveal">
               <Field label="Дата старта">
-                <DateWheelInput value={form.startDate} onChange={updateStartDate} allowClear={false} />
+                <TextInput type="date" value={form.startDate} onChange={(event) => updateStartDate(event.target.value)} />
               </Field>
             </RevealSection>
 

@@ -6,6 +6,7 @@ export type DailyPlanStatus = "PLANNED" | "ACTIVE" | "CLOSED";
 export type DailyPlanItemStatus = "PENDING" | "COMPLETED" | "FAILED";
 export type DayQuality = "EMPTY" | "BAD" | "NORMAL" | "GOOD";
 export type SourceType = "TASK" | "HABIT" | "QUEST" | "MANUAL";
+export type HabitScheduleType = "WEEKLY" | "MONTHLY" | "INTERVAL";
 export type HpState = "GREAT" | "NORMAL" | "TIRED" | "EXHAUSTED" | "CRITICAL";
 export type UserRole = "USER" | "ADMIN" | string;
 export type UserStatus = "ACTIVE" | "BANNED";
@@ -75,7 +76,11 @@ export interface HabitResponse {
   description?: string | null;
   plannedTime?: string | null;
   deadlineTime?: string | null;
+  scheduleType: HabitScheduleType;
   scheduleDays: number[];
+  monthlyDay?: number | null;
+  intervalDays?: number | null;
+  intervalStartDate?: string | null;
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -86,7 +91,11 @@ export interface CreateHabitRequest {
   description?: string | null;
   plannedTime?: string | null;
   deadlineTime?: string | null;
+  scheduleType?: HabitScheduleType;
   scheduleDays?: number[];
+  monthlyDay?: number | null;
+  intervalDays?: number | null;
+  intervalStartDate?: string | null;
 }
 
 export type UpdateHabitRequest = CreateHabitRequest;
