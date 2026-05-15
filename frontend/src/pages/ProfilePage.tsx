@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/http";
 import type { AchievementResponse, CreateTelegramLinkResponse, TelegramSettingsResponse } from "../api/types";
+import { AchievementCategoryIcon } from "../components/AchievementCategoryIcon";
 import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { CharacterChooser } from "../components/CharacterChooser";
@@ -9,6 +10,7 @@ import { EmptyState } from "../components/EmptyState";
 import { GameHud } from "../components/GameHud";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useGame } from "../context/GameContext";
+import { achievementCategoryLabels } from "../utils/achievementUi";
 import { applyTheme, getCharacter, readSelectedCharacter, readTheme, type CharacterId } from "../utils/character";
 import { formatDateTime } from "../utils/format";
 
@@ -177,17 +179,32 @@ export function ProfilePage() {
         </div>
         {achLoading ? <Loader /> : null}
         {!achLoading && achievements.length === 0 ? <EmptyState title="Достижений пока нет" text="Игровой цикл откроет первые достижения." /> : null}
-        <div className="achievement-grid">
-          {achievements.map((achievement) => (
-            <article className="achievement-row" key={achievement.key}>
-              <div className="achievement-icon">{achievement.category.slice(0, 2)}</div>
-              <div>
-                <strong>{achievement.title}</strong>
-                <p className="muted">{achievement.description}</p>
-                <small>{achievement.category} · <span className="xp-token">+{achievement.xpReward} XP</span> · {achievement.unlockedAt ? formatDateTime(achievement.unlockedAt) : "открыто"}</small>
-              </div>
-            </article>
-          ))}
+        <div className="achievement-list profile-achievement-list">
+          {achievements.map((achievement) => {
+            const categoryLabel = achievementCategoryLabels[achievement.category] ?? achievement.category;
+
+            return (
+              <article className="achievement-row unlocked" key={achievement.key}>
+                <div className="achievement-row-icon">
+                  <AchievementCategoryIcon category={achievement.category} />
+                </div>
+                <div className="achievement-row-body">
+                  <div className="achievement-row-title">
+                    <div>
+                      <span className="achievement-category-label">{categoryLabel}</span>
+                      <strong>{achievement.title}</strong>
+                    </div>
+                    <span className="achievement-state-chip is-open">открыто</span>
+                  </div>
+                  <p>{achievement.description}</p>
+                  <div className="achievement-card-meta">
+                    <span className="xp-token">+{achievement.xpReward} XP</span>
+                    <span>{achievement.unlockedAt ? formatDateTime(achievement.unlockedAt) : "открыто"}</span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 
