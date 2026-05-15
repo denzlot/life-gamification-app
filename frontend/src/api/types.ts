@@ -314,6 +314,7 @@ export interface CalendarDayResponse {
   hpDelta: number;
   streakDay: number;
   shieldUsed: boolean;
+  dayQuality?: DayQuality | null;
 }
 
 export interface HistoryItemResponse {

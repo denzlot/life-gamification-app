@@ -148,7 +148,12 @@ button.calendar-cell:hover { background: rgba(255, 255, 255, 0.025); color: var(
 .calendar-route-panel { max-width: 820px; margin: 0 auto 0.5rem; display: flex; justify-content: center; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
 .quest-calendar-grid .weekday { padding: 0.22rem !important; }
 .calendar-top small:empty { display: none; }
-.completed-day-line { color: var(--muted); font-size: 0.68rem !important; }
+.completed-day-line { display: inline-flex; align-items: center; color: var(--muted); font-size: 0.68rem; }
+.day-quality-dot { display: inline-grid; place-items: center; width: 1.02rem; height: 1.02rem; border: 1px solid color-mix(in srgb, currentColor, transparent 48%); border-radius: 6px; font-size: 0.62rem; font-weight: 800; line-height: 1; background: color-mix(in srgb, currentColor, transparent 93%); }
+.day-quality-dot.quality-good { color: var(--good); }
+.day-quality-dot.quality-normal { color: var(--accent); }
+.day-quality-dot.quality-bad { color: var(--danger); }
+.day-quality-dot.quality-empty { color: var(--muted-2); }
 .smaller-calendar-grid .workload-line,
 .smaller-calendar-grid .reward-line,
 .smaller-calendar-grid .quest-step-line,
@@ -236,10 +241,10 @@ button.calendar-cell:hover { background: rgba(255, 255, 255, 0.025); color: var(
 .workload-chip.total { border-color: color-mix(in srgb, var(--accent), transparent 56%); background: color-mix(in srgb, var(--accent), transparent 90%); }
 .workload-chip i { font-size: 0.64rem; }
 .workload-mini-blocks { justify-content: flex-start; }
-.workload-chip { justify-content: center; border-width: 1px; font-size: 0.6rem !important; }
-.workload-chip.done { color: color-mix(in srgb, var(--good), var(--text) 24%) !important; border-color: color-mix(in srgb, var(--good), transparent 42%) !important; background: color-mix(in srgb, var(--good), transparent 86%) !important; }
-.workload-chip.pending { color: color-mix(in srgb, var(--danger), var(--text) 18%) !important; }
-.workload-chip.pending i { color: var(--danger) !important; }
+.workload-chip { justify-content: center; border-width: 1px; font-size: 0.6rem; }
+.workload-chip.done { color: color-mix(in srgb, var(--good), var(--text) 24%); border-color: color-mix(in srgb, var(--good), transparent 42%); background: color-mix(in srgb, var(--good), transparent 86%); }
+.workload-chip.pending { color: color-mix(in srgb, var(--danger), var(--text) 18%); }
+.workload-chip.pending i { color: var(--danger); }
 .calendar-page .calendar-panel { margin-top: 0 !important; }
 .calendar-header-actions .center-jump-button { position: static !important; grid-column: auto !important; grid-row: auto !important; }
 .calendar-route-toggle { border: 1px solid color-mix(in srgb, var(--border), var(--accent) 18%); background: color-mix(in srgb, var(--surface), var(--accent) 5%); color: var(--muted); }
@@ -253,7 +258,7 @@ button.calendar-cell:hover { background: rgba(255, 255, 255, 0.025); color: var(
 .calendar-route-quest-list strong,
 .calendar-route-quest-list span { display: block; min-width: 0; }
 .calendar-route-quest-list span { color: var(--muted); font-size: 0.72rem; }
-.workload-chip { min-width: auto !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+.workload-chip { min-width: auto; box-shadow: none; }
 .calendar-cell .reward-line { flex-wrap: wrap; max-width: 100%; line-height: 1.05; }
 
 @media (max-width: 920px) {
@@ -278,11 +283,12 @@ button.calendar-cell:hover { background: rgba(255, 255, 255, 0.025); color: var(
 .workload-chip,
 .workload-chip.done,
 .workload-chip.pending,
-.workload-chip.total { all: unset !important; display: inline-flex !important; align-items: center !important; gap: 0.12rem !important; font-size: 0.58rem !important; font-weight: 800 !important; line-height: 1 !important; font-family: var(--font-mono) !important; }
+.workload-chip.total { display: inline-flex; align-items: center; gap: 0.12rem; min-height: 0.98rem; padding: 0.06rem 0.22rem; border: 1px solid color-mix(in srgb, currentColor, transparent 58%); border-radius: 6px; font-size: 0.56rem; font-weight: 800; line-height: 1; font-family: var(--font-mono); background: color-mix(in srgb, currentColor, transparent 94%); }
 .workload-chip i,
 .workload-chip.done i,
 .workload-chip.pending i,
-.workload-chip.total i { all: unset !important; display: inline !important; font-style: normal !important; font-size: 0.58rem !important; font-weight: 900 !important; line-height: 1 !important; }
+.workload-chip.total i { display: inline-grid; place-items: center; width: 0.56rem; height: 0.64rem; font-style: normal; font-size: 0.56rem; font-weight: 900; line-height: 1; }
+.workload-chip i.workload-icon { color: currentColor; }
 
 .centered-title-header:not(.calendar-title-header) { max-width: none !important; margin-inline: 0 !important; text-align: left !important; margin-bottom: 1.2rem !important; display: block !important; }
 .centered-title-header:not(.calendar-title-header) .eyebrow { display: block !important; margin-bottom: 0.2rem !important; }
@@ -355,19 +361,19 @@ button.calendar-cell:hover { background: rgba(255, 255, 255, 0.025); color: var(
 .calendar-pace-summary.pace-behind .pace-status strong { color: var(--danger); }
 .calendar-pace-summary.pace-ahead .pace-status strong { color: var(--good); }
 .workload-chip.done,
-.workload-chip.done i { color: var(--good) !important; }
+.workload-chip.done i { color: var(--good); }
 .workload-chip.pending,
-.workload-chip.pending i { color: var(--danger) !important; }
+.workload-chip.pending i { color: var(--danger); }
 .workload-chip.total.future,
-.workload-chip.total.future i { color: var(--info) !important; }
+.workload-chip.total.future i { color: var(--info); }
 .workload-chip.total.planned,
-.workload-chip.total.planned i { color: var(--accent) !important; }
-.workload-chip.pending { border-color: color-mix(in srgb, var(--danger), transparent 36%) !important;
-  background: color-mix(in srgb, var(--danger), transparent 90%) !important; }
-.workload-chip.total.future { border-color: color-mix(in srgb, var(--info), transparent 36%) !important;
-  background: color-mix(in srgb, var(--info), transparent 90%) !important; }
-.workload-chip.total.planned { border-color: color-mix(in srgb, var(--accent), transparent 42%) !important;
-  background: color-mix(in srgb, var(--accent), transparent 92%) !important; }
+.workload-chip.total.planned i { color: var(--accent); }
+.workload-chip.pending { border-color: color-mix(in srgb, var(--danger), transparent 36%);
+  background: color-mix(in srgb, var(--danger), transparent 90%); }
+.workload-chip.total.future { border-color: color-mix(in srgb, var(--info), transparent 36%);
+  background: color-mix(in srgb, var(--info), transparent 90%); }
+.workload-chip.total.planned { border-color: color-mix(in srgb, var(--accent), transparent 42%);
+  background: color-mix(in srgb, var(--accent), transparent 92%); }
 .calendar-cell .reward-line { display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 0.16rem !important;

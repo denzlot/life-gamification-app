@@ -1,6 +1,7 @@
 package com.dcorp.flowvisior.dto.calendar;
 
 import com.dcorp.flowvisior.entity.DailyPlan;
+import com.dcorp.flowvisior.entity.DayQuality;
 
 import java.time.LocalDate;
 
@@ -20,6 +21,7 @@ public class CalendarDayResponse {
     private final int hpDelta;
     private final int streakDay;
     private final boolean shieldUsed;
+    private final DayQuality dayQuality;
 
     public CalendarDayResponse(
             DailyPlan plan,
@@ -46,6 +48,7 @@ public class CalendarDayResponse {
         this.hpDelta = plan.getHpDelta();
         this.streakDay = plan.getStreakAfterClose();
         this.shieldUsed = plan.isShieldUsed();
+        this.dayQuality = plan.isClosed() ? plan.getDayQuality() : null;
     }
 
     public CalendarDayResponse(DailyPlan plan, int completedCount, int totalCount) {
@@ -67,6 +70,7 @@ public class CalendarDayResponse {
         this.hpDelta = 0;
         this.streakDay = 0;
         this.shieldUsed = false;
+        this.dayQuality = null;
     }
 
     public LocalDate getDate() { return date; }
@@ -83,4 +87,5 @@ public class CalendarDayResponse {
     public int getHpDelta() { return hpDelta; }
     public int getStreakDay() { return streakDay; }
     public boolean isShieldUsed() { return shieldUsed; }
+    public DayQuality getDayQuality() { return dayQuality; }
 }
