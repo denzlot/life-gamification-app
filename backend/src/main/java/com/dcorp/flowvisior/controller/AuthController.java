@@ -20,6 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +35,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
+    private final PersistentTokenBasedRememberMeServices rememberMeServices;
     private final UserGameStatsService userGameStatsService;
     private final LoginAttemptService loginAttemptService;
 
@@ -42,6 +44,7 @@ public class AuthController {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             SecurityContextRepository securityContextRepository,
+            PersistentTokenBasedRememberMeServices rememberMeServices,
             UserGameStatsService userGameStatsService,
             LoginAttemptService loginAttemptService
     ) {
@@ -49,6 +52,7 @@ public class AuthController {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.securityContextRepository = securityContextRepository;
+        this.rememberMeServices = rememberMeServices;
         this.userGameStatsService = userGameStatsService;
         this.loginAttemptService = loginAttemptService;
     }
@@ -100,6 +104,7 @@ public class AuthController {
         httpServletRequest.getSession(true);
         httpServletRequest.changeSessionId();
         securityContextRepository.saveContext(context, httpServletRequest, httpServletResponse);
+        rememberMeServices.loginSuccess(httpServletRequest, httpServletResponse, authentication);
         loginAttemptService.recordSuccess(username, ipAddress);
 
         User user = userRepository.findByUsernameIgnoreCase(username).orElseThrow();
@@ -110,7 +115,14 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request) {
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof AnonymousAuthenticationToken) {
+            authentication = null;
+        }
+
+        rememberMeServices.logout(request, response, authentication);
+
         var session = request.getSession(false);
         if (session != null) {
             session.invalidate();
