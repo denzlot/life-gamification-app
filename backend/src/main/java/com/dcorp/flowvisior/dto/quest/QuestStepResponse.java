@@ -15,6 +15,7 @@ public class QuestStepResponse {
     private final String title;
     private final String description;
     private final LocalDate scheduledDate;
+    private final LocalDate baselineScheduledDate;
     private final LocalTime plannedTime;
     private final LocalTime deadlineTime;
     private final QuestStepStatus status;
@@ -29,6 +30,7 @@ public class QuestStepResponse {
         this.title = step.getTitle();
         this.description = step.getDescription();
         this.scheduledDate = step.getScheduledDate();
+        this.baselineScheduledDate = step.getBaselineScheduledDate();
         this.plannedTime = step.getPlannedTime();
         this.deadlineTime = step.getDeadlineTime();
         this.status = step.getStatus();
@@ -43,6 +45,7 @@ public class QuestStepResponse {
     public String getTitle() { return title; }
     public String getDescription() { return description; }
     public LocalDate getScheduledDate() { return scheduledDate; }
+    public LocalDate getBaselineScheduledDate() { return baselineScheduledDate; }
     public LocalTime getPlannedTime() { return plannedTime; }
     public LocalTime getDeadlineTime() { return deadlineTime; }
     public QuestStepStatus getStatus() { return status; }

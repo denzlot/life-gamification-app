@@ -5,26 +5,44 @@ import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
 import { FormModal } from "../components/FormModal";
 import { OptionChip } from "../components/OptionChip";
-import { Field, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
+import { Field, NumberWheelInput, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { ErrorLine, Loader } from "../components/Loader";
 import { ModalTwinTimeRow } from "../components/ModalTwinTimeRow";
 import { RevealSection } from "../components/RevealSection";
 import { useToast } from "../context/ToastContext";
 import { useAsync } from "../hooks/useAsync";
-import { formatTime } from "../utils/format";
+import { formatDate, formatTime, todayISO } from "../utils/format";
 
 const allDays = [1, 2, 3, 4, 5, 6, 7];
 const dayLabels: Record<number, string> = { 1: "Пн", 2: "Вт", 3: "Ср", 4: "Чт", 5: "Пт", 6: "Сб", 7: "Вс" };
+const scheduleModes = [
+  { value: "WEEKLY", label: "По дням" },
+  { value: "MONTHLY", label: "Раз в месяц" },
+  { value: "INTERVAL", label: "Раз в N дней" }
+] as const;
 
 const emptyForm: CreateHabitRequest = {
   title: "",
   description: "",
   plannedTime: "",
   deadlineTime: "",
+  scheduleType: "WEEKLY",
+  monthlyDay: 1,
+  intervalDays: 2,
+  intervalStartDate: todayISO(),
   scheduleDays: allDays
 };
 
-function formatSchedule(days?: number[]) {
+function formatSchedule(habit: HabitResponse) {
+  if (habit.scheduleType === "MONTHLY") {
+    return `раз в месяц, ${habit.monthlyDay ?? 1} число`;
+  }
+  if (habit.scheduleType === "INTERVAL") {
+    const days = habit.intervalDays ?? 1;
+    const start = habit.intervalStartDate ? ` с ${formatDate(habit.intervalStartDate)}` : "";
+    return `каждые ${days} дн.${start}`;
+  }
+  const days = habit.scheduleDays;
   const normalized = days?.length ? days : allDays;
   if (normalized.length === 7) return "каждый день";
   return normalized.map((day) => dayLabels[day]).join(", ");
@@ -54,6 +72,10 @@ export function HabitsPage() {
       description: habit.description ?? "",
       plannedTime: habit.plannedTime ?? "",
       deadlineTime: habit.deadlineTime ?? "",
+      scheduleType: habit.scheduleType ?? "WEEKLY",
+      monthlyDay: habit.monthlyDay ?? 1,
+      intervalDays: habit.intervalDays ?? 2,
+      intervalStartDate: habit.intervalStartDate ?? todayISO(),
       scheduleDays: habit.scheduleDays?.length ? habit.scheduleDays : allDays
     });
     setOptions({ time: Boolean(habit.plannedTime), deadline: Boolean(habit.deadlineTime), description: Boolean(habit.description) });
@@ -88,7 +110,11 @@ export function HabitsPage() {
       description: form.description?.trim() || null,
       plannedTime: form.plannedTime || null,
       deadlineTime: form.deadlineTime || null,
-      scheduleDays: form.scheduleDays?.length ? form.scheduleDays : allDays
+      scheduleType: form.scheduleType ?? "WEEKLY",
+      scheduleDays: form.scheduleDays?.length ? form.scheduleDays : allDays,
+      monthlyDay: form.scheduleType === "MONTHLY" ? form.monthlyDay ?? 1 : null,
+      intervalDays: form.scheduleType === "INTERVAL" ? form.intervalDays ?? 2 : null,
+      intervalStartDate: form.scheduleType === "INTERVAL" ? form.intervalStartDate || todayISO() : null
     };
     try {
       if (editing) await api.habits.update(editing.id, payload);
@@ -142,18 +168,51 @@ export function HabitsPage() {
               <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} placeholder="Например: выпить витамины" />
             </Field>
 
-            <div className="weekday-picker" aria-label="Дни привычки">
-              {allDays.map((day) => (
-                <button
-                  type="button"
-                  key={day}
-                  className={form.scheduleDays?.includes(day) ? "active" : ""}
-                  onClick={() => setForm({ ...form, scheduleDays: toggleDay(form.scheduleDays, day) })}
+            <div className="schedule-mode-toolbar optional-toolbar" aria-label="Режим расписания">
+              {scheduleModes.map((mode) => (
+                <OptionChip
+                  key={mode.value}
+                  active={(form.scheduleType ?? "WEEKLY") === mode.value}
+                  onClick={() => setForm({ ...form, scheduleType: mode.value })}
                 >
-                  {dayLabels[day]}
-                </button>
+                  {mode.label}
+                </OptionChip>
               ))}
             </div>
+
+            {(form.scheduleType ?? "WEEKLY") === "WEEKLY" ? (
+              <div className="weekday-picker" aria-label="Дни привычки">
+                {allDays.map((day) => (
+                  <button
+                    type="button"
+                    key={day}
+                    className={form.scheduleDays?.includes(day) ? "active" : ""}
+                    onClick={() => setForm({ ...form, scheduleDays: toggleDay(form.scheduleDays, day) })}
+                  >
+                    {dayLabels[day]}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {form.scheduleType === "MONTHLY" ? (
+              <div className="schedule-detail-row">
+                <Field label="День месяца" hint="Если такого дня нет, появится в последний день месяца.">
+                  <NumberWheelInput value={form.monthlyDay ?? 1} min={1} max={31} suffix="день" label="выбрать день месяца" onChange={(monthlyDay) => setForm({ ...form, monthlyDay })} />
+                </Field>
+              </div>
+            ) : null}
+
+            {form.scheduleType === "INTERVAL" ? (
+              <div className="schedule-detail-row two-fields">
+                <Field label="Каждые">
+                  <NumberWheelInput value={form.intervalDays ?? 2} min={1} max={365} suffix="дн." label="выбрать интервал" onChange={(intervalDays) => setForm({ ...form, intervalDays })} />
+                </Field>
+                <Field label="Старт">
+                  <TextInput type="date" value={form.intervalStartDate ?? todayISO()} onChange={(event) => setForm({ ...form, intervalStartDate: event.target.value || todayISO() })} />
+                </Field>
+              </div>
+            ) : null}
 
             <div className="optional-toolbar">
               <OptionChip active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>{form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}</OptionChip>
@@ -194,7 +253,7 @@ export function HabitsPage() {
                   <span className="item-type-badge">привычка</span>
                 </div>
                 <p className="muted compact-meta">
-                  {formatSchedule(habit.scheduleDays)}{habit.plannedTime ? ` · ${formatTime(habit.plannedTime)}` : ""}{habit.deadlineTime ? ` · дедлайн ${formatTime(habit.deadlineTime)}` : ""}
+                  {formatSchedule(habit)}{habit.plannedTime ? ` · ${formatTime(habit.plannedTime)}` : ""}{habit.deadlineTime ? ` · дедлайн ${formatTime(habit.deadlineTime)}` : ""}
                 </p>
               </div>
               <div className="item-tail wide-tail">

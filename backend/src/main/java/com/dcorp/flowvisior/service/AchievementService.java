@@ -144,9 +144,6 @@ public class AchievementService {
     ) {
         int progressFor(String key) {
             return switch (key) {
-                case "first_task_created" -> countAtLeast(taskCount);
-                case "first_habit_created" -> countAtLeast(habitCount);
-                case "first_quest_created" -> countAtLeast(questCount);
                 case "first_focus_completed", "focus_completed_1" -> countAtLeast(focusCount);
                 case "first_productive_day" -> countProductiveDays();
                 case "tasks_completed_1" -> uniqueCompletedSourceCount(ActivitySourceType.TASK, false);

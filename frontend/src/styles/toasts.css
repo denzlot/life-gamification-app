@@ -1,16 +1,138 @@
-/* Toast notification styles migrated from legacy.css. */
-.toast-stack { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 100; display: grid; gap: 0.75rem; width: min(360px, calc(100vw - 2.4rem)); }
+/* Shared toast notifications. Achievement toasts extend the same stack. */
 
-.toast { padding: 1rem; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface), #000 18%); box-shadow: 0 16px 50px var(--shadow); border-radius: 18px; }
+.toast-stack {
+  position: fixed;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.68rem;
+  width: min(360px, calc(100vw - 2.4rem));
+  pointer-events: none;
+}
 
-.toast-success { border-color: color-mix(in srgb, var(--good), transparent 45%); }
+.toast {
+  position: relative;
+  overflow: hidden;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface), #000 18%);
+  box-shadow: 0 16px 50px var(--shadow);
+  pointer-events: auto;
+  animation: fv-toast-in 260ms cubic-bezier(0.18, 0.9, 0.22, 1) both;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
 
-.toast-danger { border-color: color-mix(in srgb, var(--danger), transparent 45%); }
+.toast-success {
+  border-color: color-mix(in srgb, var(--good), transparent 45%);
+}
 
-.toast-info { border-color: color-mix(in srgb, var(--info), transparent 45%); }
+.toast-danger {
+  border-color: color-mix(in srgb, var(--danger), transparent 45%);
+}
 
-.toast-title { font-weight: 700; }
+.toast-info {
+  border-color: color-mix(in srgb, var(--info), transparent 45%);
+}
 
-.toast-text { color: var(--muted); margin-top: 0.25rem; }
+.toast-achievement {
+  padding-left: 1.1rem;
+  border-color: color-mix(in srgb, var(--good), transparent 28%);
+  background:
+    radial-gradient(circle at 11% 20%, color-mix(in srgb, var(--good), transparent 76%), transparent 5.8rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface), var(--good) 9%), color-mix(in srgb, var(--surface), #000 18%));
+  box-shadow:
+    0 18px 54px color-mix(in srgb, var(--shadow), #000 16%),
+    inset 0 1px 0 color-mix(in srgb, var(--good), transparent 66%);
+}
 
-.toast-container > * { animation: v21-slideDown 220ms cubic-bezier(0.22, 1, 0.36, 1) both !important; }
+.toast-title {
+  position: relative;
+  z-index: 1;
+  color: var(--text);
+  font-weight: 760;
+}
+
+.toast-achievement .toast-title {
+  color: color-mix(in srgb, var(--good), var(--text) 32%);
+}
+
+.toast-text {
+  position: relative;
+  z-index: 1;
+  color: var(--muted);
+  margin-top: 0.22rem;
+}
+
+.toast-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.toast-sparks span {
+  position: absolute;
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--good), transparent 20%);
+  opacity: 0;
+  animation: fv-toast-spark 1500ms ease-out infinite;
+}
+
+.toast-sparks span:nth-child(1) {
+  top: 0.72rem;
+  right: 1rem;
+}
+
+.toast-sparks span:nth-child(2) {
+  top: 1.65rem;
+  right: 4.2rem;
+  width: 0.22rem;
+  height: 0.22rem;
+  animation-delay: 220ms;
+}
+
+.toast-sparks span:nth-child(3) {
+  right: 2.1rem;
+  bottom: 0.85rem;
+  width: 0.24rem;
+  height: 0.24rem;
+  animation-delay: 460ms;
+}
+
+@keyframes fv-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fv-toast-spark {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.6);
+  }
+  24% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px) scale(1.08);
+  }
+}
+
+@media (max-width: 560px) {
+  .toast-stack {
+    right: 0.8rem;
+    bottom: 0.8rem;
+    width: calc(100vw - 1.6rem);
+  }
+}

@@ -27,6 +27,12 @@ public interface DailyPlanItemRepository extends JpaRepository<DailyPlanItem, Lo
             """)
     Optional<DailyPlanItem> findByIdWithDailyPlanAndUser(Long id);
 
+    Optional<DailyPlanItem> findByDailyPlanAndSourceTypeAndSourceId(
+            DailyPlan dailyPlan,
+            ActivitySourceType sourceType,
+            Long sourceId
+    );
+
     boolean existsByDailyPlanAndSourceTypeAndSourceId(
             DailyPlan dailyPlan,
             ActivitySourceType sourceType,

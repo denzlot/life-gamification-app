@@ -4,9 +4,9 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
+export function Field({ label, children, hint, className }: { label: string; children: ReactNode; hint?: string; className?: string }) {
   return (
-    <label className="field clean-field">
+    <label className={cx("field", "clean-field", className)}>
       <span>{label}</span>
       {children}
       {hint ? <small className="field-hint">{hint}</small> : null}
@@ -32,4 +32,4 @@ export function SelectInput(props: SelectHTMLAttributes<HTMLSelectElement>) {
 }
 
 // Preserve the old import path while keeping wheel-specific logic out of this generic fields file.
-export { DateWheelInput, NumberWheelInput, TimeWheelInput } from "./WheelInputs";
+export { NumberWheelInput, TimeWheelInput } from "./WheelInputs";

@@ -35,6 +35,9 @@ public class QuestStep {
     @Column(name = "scheduled_date", nullable = false)
     private LocalDate scheduledDate;
 
+    @Column(name = "baseline_scheduled_date", nullable = false)
+    private LocalDate baselineScheduledDate;
+
     @Column(name = "planned_time")
     private LocalTime plannedTime;
 
@@ -63,6 +66,7 @@ public class QuestStep {
             String title,
             String description,
             LocalDate scheduledDate,
+            LocalDate baselineScheduledDate,
             LocalTime plannedTime,
             LocalTime deadlineTime
     ) {
@@ -71,9 +75,22 @@ public class QuestStep {
         this.title = title;
         this.description = description;
         this.scheduledDate = scheduledDate;
+        this.baselineScheduledDate = baselineScheduledDate;
         this.plannedTime = plannedTime;
         this.deadlineTime = deadlineTime;
         this.status = QuestStepStatus.PENDING;
+    }
+
+    public QuestStep(
+            Quest quest,
+            int stepNumber,
+            String title,
+            String description,
+            LocalDate scheduledDate,
+            LocalTime plannedTime,
+            LocalTime deadlineTime
+    ) {
+        this(quest, stepNumber, title, description, scheduledDate, scheduledDate, plannedTime, deadlineTime);
     }
 
     @PrePersist
@@ -94,6 +111,11 @@ public class QuestStep {
         this.scheduledDate = scheduledDate;
         this.plannedTime = plannedTime;
         this.deadlineTime = deadlineTime;
+    }
+
+    public void updateText(String title, String description) {
+        this.title = title;
+        this.description = description;
     }
 
     public void complete() {
@@ -117,6 +139,7 @@ public class QuestStep {
     public String getTitle() { return title; }
     public String getDescription() { return description; }
     public LocalDate getScheduledDate() { return scheduledDate; }
+    public LocalDate getBaselineScheduledDate() { return baselineScheduledDate; }
     public LocalTime getPlannedTime() { return plannedTime; }
     public LocalTime getDeadlineTime() { return deadlineTime; }
     public QuestStepStatus getStatus() { return status; }

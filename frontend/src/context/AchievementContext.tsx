@@ -31,7 +31,7 @@ export function AchievementProvider({ children }: { children: ReactNode }) {
       if (!silent && known.length > 0) {
         fresh.forEach((item) => {
           notify({
-            tone: "success",
+            tone: "achievement",
             title: "Достижение открыто",
             text: `${item.title} · +${item.xpReward} XP`
           });

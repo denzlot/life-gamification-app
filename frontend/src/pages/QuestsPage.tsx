@@ -19,7 +19,9 @@ const emptyQuest: CreateQuestRequest = {
   durationDays: 30,
   totalSteps: 30,
   baseStepTitle: "Шаг",
-  baseStepDescription: ""
+  baseStepDescription: "",
+  planMode: "AUTO",
+  steps: []
 };
 
 const emptyQuestOptions = { schedule: false, time: false, deadline: false, description: false, steps: false };
@@ -83,7 +85,9 @@ export function QuestsPage() {
       durationDays: quest.durationDays,
       totalSteps: quest.totalSteps,
       baseStepTitle: "Шаг",
-      baseStepDescription: ""
+      baseStepDescription: "",
+      planMode: "AUTO",
+      steps: []
     });
     setOptions({ schedule: false, time: Boolean(quest.plannedTime), deadline: Boolean(quest.deadlineTime), description: Boolean(quest.description), steps: false });
   }
@@ -117,6 +121,15 @@ export function QuestsPage() {
         });
         notify({ tone: "success", title: "Квест обновлён" });
       } else {
+        const manualSteps = form.planMode === "MANUAL"
+          ? (form.steps ?? []).map((step) => ({
+              title: step.title.trim(),
+              description: step.description?.trim() || null,
+              baselineScheduledDate: step.baselineScheduledDate,
+              plannedTime: step.plannedTime || null,
+              deadlineTime: step.deadlineTime || null
+            }))
+          : undefined;
         const created = await api.quests.create({
           title: form.title.trim(),
           description: form.description?.trim() || null,
@@ -126,7 +139,8 @@ export function QuestsPage() {
           durationDays: Number(form.durationDays),
           totalSteps: Number(form.totalSteps),
           baseStepTitle: form.baseStepTitle.trim(),
-          baseStepDescription: form.baseStepDescription?.trim() || null
+          baseStepDescription: form.baseStepDescription?.trim() || null,
+          steps: manualSteps
         });
         setSelectedId(created.id);
         notify({ tone: "success", title: "Квест создан" });

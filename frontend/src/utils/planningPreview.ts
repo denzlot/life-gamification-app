@@ -40,6 +40,19 @@ function weekdayIndex(date: string) {
   return day === 0 ? 7 : day;
 }
 
+function dateParts(date: string) {
+  const [year, month, day] = date.split("-").map(Number);
+  return { year, month, day };
+}
+
+function daysBetween(startDate: string, endDate: string) {
+  const start = dateParts(startDate);
+  const end = dateParts(endDate);
+  const startUtc = Date.UTC(start.year, start.month - 1, start.day);
+  const endUtc = Date.UTC(end.year, end.month - 1, end.day);
+  return Math.floor((endUtc - startUtc) / 86_400_000);
+}
+
 function activeTaskForDate(task: TaskResponse, date: string) {
   const status = String(task.status).toUpperCase();
   return task.deadlineDate === date && status !== "COMPLETED" && status !== "FAILED";
@@ -47,6 +60,16 @@ function activeTaskForDate(task: TaskResponse, date: string) {
 
 function habitWorksOnDate(habit: HabitResponse, date: string) {
   if (!habit.active) return false;
+  if (habit.scheduleType === "MONTHLY") {
+    if (!habit.monthlyDay) return false;
+    const { year, month, day } = dateParts(date);
+    const lastDay = new Date(year, month, 0).getDate();
+    return day === Math.min(habit.monthlyDay, lastDay);
+  }
+  if (habit.scheduleType === "INTERVAL") {
+    if (!habit.intervalDays || !habit.intervalStartDate || date < habit.intervalStartDate) return false;
+    return daysBetween(habit.intervalStartDate, date) % habit.intervalDays === 0;
+  }
   const schedule = habit.scheduleDays?.length ? habit.scheduleDays : [1, 2, 3, 4, 5, 6, 7];
   return schedule.includes(weekdayIndex(date));
 }

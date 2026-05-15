@@ -50,6 +50,7 @@ public class HabitService {
     @Transactional
     public HabitResponse createHabit(CreateHabitRequest request) {
         User user = authenticatedUserService.getCurrentUser();
+        validateSchedule(request.getScheduleType(), request.getMonthlyDay(), request.getIntervalDays(), request.getIntervalStartDate());
 
         Habit habit = new Habit(
                 user,
@@ -57,11 +58,15 @@ public class HabitService {
                 request.getDescription(),
                 request.getPlannedTime(),
                 request.getDeadlineTime(),
-                request.getScheduleDays()
+                request.getScheduleType(),
+                request.getScheduleDays(),
+                request.getMonthlyDay(),
+                request.getIntervalDays(),
+                request.getIntervalStartDate()
         );
 
         Habit savedHabit = habitRepository.save(habit);
-        addHabitToOpenPlans(savedHabit, user);
+        syncHabitWithOpenPlans(savedHabit, user);
         achievementService.checkAndGrant(user);
 
         return new HabitResponse(savedHabit);
@@ -74,16 +79,19 @@ public class HabitService {
         Habit habit = habitRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Habit not found"));
 
+        validateSchedule(request.getScheduleType(), request.getMonthlyDay(), request.getIntervalDays(), request.getIntervalStartDate());
         habit.update(
                 request.getTitle(),
                 request.getDescription(),
                 request.getPlannedTime(),
                 request.getDeadlineTime(),
-                request.getScheduleDays()
+                request.getScheduleType(),
+                request.getScheduleDays(),
+                request.getMonthlyDay(),
+                request.getIntervalDays(),
+                request.getIntervalStartDate()
         );
-        if (habit.isActive()) {
-            addHabitToOpenPlans(habit, user);
-        }
+        syncHabitWithOpenPlans(habit, user);
 
         return new HabitResponse(habit);
     }
@@ -97,9 +105,7 @@ public class HabitService {
 
         habit.toggleActive();
 
-        if (habit.isActive()) {
-            addHabitToOpenPlans(habit, user);
-        }
+        syncHabitWithOpenPlans(habit, user);
 
         return new HabitResponse(habit);
     }
@@ -114,29 +120,26 @@ public class HabitService {
         habitRepository.delete(habit);
     }
 
-    private void addHabitToOpenPlans(Habit habit, User user) {
+    private void syncHabitWithOpenPlans(Habit habit, User user) {
         List<DailyPlan> openPlans = dailyPlanRepository
-                .findByUserAndStatusAndPlanDateGreaterThanEqualOrderByPlanDateAsc(
+                .findByUserAndStatusInAndPlanDateGreaterThanEqualOrderByPlanDateAsc(
                         user,
-                        DailyPlanStatus.ACTIVE,
+                        List.of(DailyPlanStatus.ACTIVE, DailyPlanStatus.PLANNED),
                         LocalDate.now()
                 );
 
         for (DailyPlan plan : openPlans) {
-            if (habit.worksOn(plan.getPlanDate())) {
-                addHabitToPlanIfMissing(plan, habit);
-            }
+            syncHabitWithPlan(plan, habit);
         }
     }
 
-    private void addHabitToPlanIfMissing(DailyPlan plan, Habit habit) {
-        boolean exists = dailyPlanItemRepository.existsByDailyPlanAndSourceTypeAndSourceId(
-                plan,
-                ActivitySourceType.HABIT,
-                habit.getId()
-        );
+    private void syncHabitWithPlan(DailyPlan plan, Habit habit) {
+        DailyPlanItem existing = dailyPlanItemRepository
+                .findByDailyPlanAndSourceTypeAndSourceId(plan, ActivitySourceType.HABIT, habit.getId())
+                .orElse(null);
 
-        if (!exists) {
+        boolean shouldExist = habit.isActive() && habit.worksOn(plan.getPlanDate());
+        if (shouldExist && existing == null) {
             dailyPlanItemRepository.save(new DailyPlanItem(
                     plan,
                     ActivitySourceType.HABIT,
@@ -149,6 +152,34 @@ public class HabitService {
                     0,
                     0
             ));
+            return;
+        }
+
+        if (existing == null || existing.getStatus() != DailyPlanItemStatus.PENDING) {
+            return;
+        }
+
+        if (shouldExist) {
+            existing.update(habit.getTitle(), habit.getDescription(), habit.getPlannedTime(), habit.getDeadlineTime());
+            dailyPlanItemRepository.save(existing);
+        } else {
+            dailyPlanItemRepository.delete(existing);
+        }
+    }
+
+    private void validateSchedule(
+            HabitScheduleType scheduleType,
+            Integer monthlyDay,
+            Integer intervalDays,
+            LocalDate intervalStartDate
+    ) {
+        HabitScheduleType normalizedType = scheduleType == null ? HabitScheduleType.WEEKLY : scheduleType;
+        if (normalizedType == HabitScheduleType.MONTHLY && (monthlyDay == null || monthlyDay < 1 || monthlyDay > 31)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "monthlyDay is required for monthly habits");
+        }
+        if (normalizedType == HabitScheduleType.INTERVAL
+                && (intervalDays == null || intervalDays < 1 || intervalDays > 3650 || intervalStartDate == null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "intervalDays and intervalStartDate are required for interval habits");
         }
     }
 }

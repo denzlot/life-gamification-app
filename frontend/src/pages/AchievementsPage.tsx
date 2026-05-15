@@ -1,36 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/http";
 import type { AchievementResponse } from "../api/types";
+import { AchievementCategoryIcon } from "../components/AchievementCategoryIcon";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorLine, Loader } from "../components/Loader";
 import { useAchievementWatcher } from "../context/AchievementContext";
+import { achievementCategoryLabels } from "../utils/achievementUi";
 import { formatDateTime } from "../utils/format";
-
-const categoryLabels: Record<string, string> = {
-  ALL: "Все",
-  START: "Начало",
-  TASKS: "Задачи",
-  HABITS: "Привычки",
-  QUESTS: "Квесты",
-  FOCUS: "Focus",
-  STREAK: "Стрик",
-  DAYS: "Дни",
-  LEVEL: "Уровни",
-  SPECIAL: "Особые"
-};
-
-function categoryIcon(category: string) {
-  if (category === "START") return "I";
-  if (category === "STREAK") return "S";
-  if (category === "LEVEL") return "L";
-  if (category === "TASKS") return "T";
-  if (category === "HABITS") return "H";
-  if (category === "QUESTS") return "Q";
-  if (category === "FOCUS") return "F";
-  if (category === "DAYS") return "D";
-  return "*";
-}
 
 function progressText(achievement: AchievementResponse) {
   if (achievement.unlocked) return "готово";
@@ -74,7 +51,7 @@ export function AchievementsPage() {
     }
   }
 
-  const cards = useMemo(() => catalog
+  const visibleAchievements = useMemo(() => catalog
     .filter((item) => category === "ALL" || item.category === category)
     .filter((item) => showLocked || item.unlocked), [catalog, category, showLocked]);
 
@@ -127,7 +104,8 @@ export function AchievementsPage() {
         <div className="filter-row achievement-filter-row">
           {categories.map((entry) => (
             <button type="button" key={entry} className={category === entry ? "active" : ""} onClick={() => setCategory(entry)}>
-              {categoryLabels[entry] ?? entry}
+              <AchievementCategoryIcon category={entry} />
+              {achievementCategoryLabels[entry] ?? entry}
             </button>
           ))}
         </div>
@@ -140,19 +118,21 @@ export function AchievementsPage() {
 
       {loading ? <Loader label="Загружаем достижения" /> : null}
       <ErrorLine error={error} />
-      {!loading && cards.length === 0 ? <EmptyState title="Ничего не найдено" text="Смени фильтр или включи закрытые достижения." /> : null}
+      {!loading && visibleAchievements.length === 0 ? <EmptyState title="Ничего не найдено" text="Смени фильтр или включи закрытые достижения." /> : null}
 
-      <div className="achievement-catalog-grid">
-        {cards.map((achievement) => {
+      <div className="achievement-list">
+        {visibleAchievements.map((achievement) => {
           const required = Math.max(achievement.requiredValue, 1);
           const itemProgress = Math.min(100, Math.round((achievement.progress / required) * 100));
-          const categoryLabel = categoryLabels[achievement.category] ?? achievement.category;
+          const categoryLabel = achievementCategoryLabels[achievement.category] ?? achievement.category;
 
           return (
-            <article className={`achievement-card ${achievement.unlocked ? "unlocked" : "locked"}`} key={achievement.key}>
-              <div className="achievement-card-icon">{categoryIcon(achievement.category)}</div>
-              <div className="achievement-card-body">
-                <div className="achievement-card-title">
+            <article className={`achievement-row ${achievement.unlocked ? "unlocked" : "locked"}`} key={achievement.key}>
+              <div className="achievement-row-icon">
+                <AchievementCategoryIcon category={achievement.category} />
+              </div>
+              <div className="achievement-row-body">
+                <div className="achievement-row-title">
                   <div>
                     <span className="achievement-category-label">{categoryLabel}</span>
                     <strong>{achievement.title}</strong>
