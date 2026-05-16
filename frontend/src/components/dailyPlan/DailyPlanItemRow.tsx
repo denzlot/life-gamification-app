@@ -4,7 +4,7 @@ import { formatTime } from "../../utils/format";
 import { formatFocusClockDuration } from "../../utils/focusTimerStorage";
 import { dailyPlanCycleLabel } from "../../utils/dailyPlanItems";
 import { TextInput } from "../FormFields";
-import { StatusCycleIcon } from "../StatusCycleIcon";
+import { StatusCycleButton } from "../StatusCycleButton";
 
 interface DailyPlanItemRowProps {
   item: DailyPlanItemResponse;
@@ -48,15 +48,12 @@ export function DailyPlanItemRow({
 
   return (
     <article className={`line-item plan-item status-${item.status.toLowerCase()}`}>
-      <button
-        type="button"
-        className={`status-cycle status-cycle-${item.status.toLowerCase()}`}
+      <StatusCycleButton
+        status={item.status}
         disabled={!canChangeStatus || busyItemId === item.id}
-        onClick={() => onCycle(item)}
+        onActivate={() => onCycle(item)}
         aria-label={`${dailyPlanCycleLabel(item.status)}: ${item.title}`}
-      >
-        <StatusCycleIcon status={item.status} />
-      </button>
+      />
 
       {item.description ? (
         <button

@@ -7,7 +7,7 @@ import { OptionChip } from "../OptionChip";
 import { TextArea, TextInput, TimeWheelInput } from "../FormFields";
 import { ErrorLine } from "../Loader";
 import { addDays } from "../../utils/calendarSchedule";
-import { formatDate, formatTime, pct, stepStatusLabel, todayISO } from "../../utils/format";
+import { formatDate, formatTime, pct, todayISO } from "../../utils/format";
 
 interface QuestStepEditorProps {
   step: QuestStepResponse;
@@ -98,32 +98,38 @@ export function QuestStepEditor({ step, questTotal, onSaved }: QuestStepEditorPr
   }
 
   const progress = questTotal ? pct(step.stepNumber, questTotal) : 0;
+  const meta = [
+    formatDate(step.scheduledDate),
+    step.plannedTime ? formatTime(step.plannedTime) : null,
+    step.deadlineTime ? `дедлайн ${formatTime(step.deadlineTime)}` : null,
+    `маршрут ${progress}%`
+  ].filter(Boolean).join(" · ");
 
   if (editing) {
     return (
-      <form className="line-item step-edit compact-create-form" onSubmit={save}>
+      <form className="step-edit compact-create-form" onSubmit={save}>
         <div className="step-edit-fields">
-          <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required />
+          <TextInput className="step-edit-title-input" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required />
           <div className="step-edit-control-row">
             <div className="step-edit-options">
               {!isCompleted ? (
-                <OptionChip active={options.date} onClick={() => setOptions((state) => ({ ...state, date: !state.date }))}>
+                <OptionChip className="step-option-chip step-option-chip--date" active={options.date} onClick={() => setOptions((state) => ({ ...state, date: !state.date }))}>
                   {`Дата: ${formatDate(form.scheduledDate)}`}
                 </OptionChip>
               ) : null}
               {!isCompleted ? (
-                <OptionChip active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>
+                <OptionChip className="step-option-chip step-option-chip--time" active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>
                   {form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}
                 </OptionChip>
               ) : null}
               {!isCompleted ? (
-                <OptionChip active={options.deadline || Boolean(form.deadlineTime)} onClick={() => setOptions((state) => ({ ...state, deadline: !state.deadline }))}>
+                <OptionChip className="step-option-chip step-option-chip--deadline" active={options.deadline || Boolean(form.deadlineTime)} onClick={() => setOptions((state) => ({ ...state, deadline: !state.deadline }))}>
                   {form.deadlineTime ? `Дедлайн: ${formatTime(form.deadlineTime)}` : "Дедлайн"}
                 </OptionChip>
               ) : null}
-              <OptionChip active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionChip>
+              <OptionChip className="step-option-chip step-option-chip--description" active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionChip>
             </div>
-            <div className="item-tail wide-tail step-edit-actions">
+            <div className="step-edit-actions">
               <Button variant="thin" disabled={busy}>Сохранить</Button>
               <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Отмена</Button>
             </div>
@@ -151,14 +157,10 @@ export function QuestStepEditor({ step, questTotal, onSaved }: QuestStepEditorPr
       <div className="quest-step-main">
         <div className="item-title-line">
           <strong>{step.stepNumber}. {step.title}</strong>
-          <span className="item-type-badge">шаг</span>
         </div>
-        <p className="muted">
-          {stepStatusLabel(step.status)} · {formatDate(step.scheduledDate)}{step.plannedTime ? ` · ${formatTime(step.plannedTime)}` : ""}{step.deadlineTime ? ` · дедлайн ${formatTime(step.deadlineTime)}` : ""} · маршрут {progress}%
-        </p>
+        <p className="muted">{meta}</p>
       </div>
       <div className="item-tail wide-tail">
-        <span>{stepStatusLabel(step.status)}</span>
         {step.status === "PENDING" ? (
           <Button variant="thin" disabled={busy} onClick={() => shiftStep(step.scheduledDate === today ? addDays(today, 1) : today)}>
             {step.scheduledDate === today ? "Отложить на завтра" : "На сегодня"}

@@ -2,7 +2,7 @@ import type { QuestResponse } from "../../api/types";
 import { Button } from "../Button";
 import { EmptyState } from "../EmptyState";
 import { ErrorLine, Loader } from "../Loader";
-import { formatDate, formatTime, questStatusLabel } from "../../utils/format";
+import { formatDate, formatTime } from "../../utils/format";
 
 interface QuestListPanelProps {
   quests: QuestResponse[];
@@ -34,44 +34,54 @@ export function QuestListPanel({
   onRemove
 }: QuestListPanelProps) {
   return (
-    <section className="section-line clean-section">
-      <div className="section-title-row quest-list-title-row">
-        <div>
+    <section className="section-line clean-section quest-panel quest-list-panel">
+      <div className="quest-panel-head">
+        <div className="quest-panel-title">
           <p className="eyebrow">список квестов</p>
         </div>
         <Button type="button" variant="ghost" onClick={onToggleArchived}>{showArchived ? "Показать активные" : "Архив"}</Button>
       </div>
-      {loading ? <Loader /> : <ErrorLine error={error} />}
-      {!loading && quests.length === 0 ? (
-        <EmptyState
-          title={showArchived ? "Архив пуст" : "Квестов пока нет"}
-          text={showArchived ? "Архивные квесты будут здесь. Их можно вернуть в активные." : "Создай длинную цель и получи шаги по датам."}
-        />
-      ) : null}
-      <div className="line-list typed-list">
-        {quests.map((quest) => (
-          <article className={`line-item clickable ${selectedId === quest.id ? "selected" : ""}`} key={quest.id} onClick={() => onSelect(quest.id)}>
-            <div className="quest-row-main">
-              <div className="item-title-line">
-                <strong>{quest.title}</strong>
-                <span className="item-type-badge">квест</span>
-              </div>
-              <p className="muted">
-                {questStatusLabel(quest.status)} · {formatDate(quest.startDate)} — {formatDate(quest.targetDate)}{quest.plannedTime ? ` · ${formatTime(quest.plannedTime)}` : ""}{quest.deadlineTime ? ` · дедлайн ${formatTime(quest.deadlineTime)}` : ""}
-              </p>
-            </div>
-            <div className="item-tail wide-tail">
-              <span>{quest.totalSteps} шагов</span>
-              <Button variant="thin" onClick={(event) => { event.stopPropagation(); onEdit(quest); }}>Изменить</Button>
-              {quest.status === "COMPLETED" ? null : quest.status === "ARCHIVED" ? (
-                <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); onRestore(quest); }}>Вернуть</Button>
-              ) : (
-                <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); onArchive(quest); }}>В архив</Button>
-              )}
-              <Button variant="danger" disabled={busy} onClick={(event) => { event.stopPropagation(); onRemove(quest); }}>Удалить</Button>
-            </div>
-          </article>
-        ))}
+
+      <div className="quest-panel-body">
+        {loading ? <Loader /> : <ErrorLine error={error} />}
+        {!loading && quests.length === 0 ? (
+          <div className="quest-empty-state">
+            <EmptyState
+              title={showArchived ? "Архив пуст" : "Квестов пока нет"}
+              text={showArchived ? "Архивные квесты будут здесь. Их можно вернуть в активные." : "Создай длинную цель и получи шаги по датам."}
+            />
+          </div>
+        ) : null}
+        <div className="line-list typed-list quest-list">
+          {quests.map((quest) => {
+            const meta = [
+              `${formatDate(quest.startDate)} — ${formatDate(quest.targetDate)}`,
+              quest.plannedTime ? formatTime(quest.plannedTime) : null,
+              quest.deadlineTime ? `дедлайн ${formatTime(quest.deadlineTime)}` : null
+            ].filter(Boolean).join(" · ");
+
+            return (
+              <article className={`line-item clickable ${selectedId === quest.id ? "selected" : ""}`} key={quest.id} onClick={() => onSelect(quest.id)}>
+                <div className="quest-row-main">
+                  <div className="item-title-line">
+                    <strong>{quest.title}</strong>
+                  </div>
+                  <p className="muted">{meta}</p>
+                </div>
+                <div className="item-tail wide-tail">
+                  <span>{quest.totalSteps} шагов</span>
+                  <Button variant="thin" onClick={(event) => { event.stopPropagation(); onEdit(quest); }}>Изменить</Button>
+                  {quest.status === "COMPLETED" ? null : quest.status === "ARCHIVED" ? (
+                    <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); onRestore(quest); }}>Вернуть</Button>
+                  ) : (
+                    <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); onArchive(quest); }}>В архив</Button>
+                  )}
+                  <Button variant="danger" disabled={busy} onClick={(event) => { event.stopPropagation(); onRemove(quest); }}>Удалить</Button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

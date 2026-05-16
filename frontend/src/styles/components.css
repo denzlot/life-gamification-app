@@ -73,13 +73,13 @@
 @media (max-width: 720px) {
 .item-title-line .item-type-badge { justify-self: start; }
 }
-.status-cycle { -webkit-tap-highlight-color: transparent; overflow: visible; }
+.status-cycle { -webkit-tap-highlight-color: transparent; touch-action: manipulation; overflow: visible; }
 .status-cycle-icon { width: 0.58rem; height: 0.58rem; display: block; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; shape-rendering: geometricPrecision; }
-.status-cycle { width: 1.18rem !important; height: 1.18rem !important; min-width: 1.18rem !important; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; display: inline-grid !important; place-items: center !important; color: var(--muted) !important; }
+.status-cycle { width: 1.72rem !important; height: 1.72rem !important; min-width: 1.72rem !important; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; display: inline-grid !important; place-items: center !important; color: var(--muted) !important; }
 .status-cycle:hover:not(:disabled) { color: var(--accent) !important; }
 .status-cycle::before,
 .status-cycle::after { content: none !important; display: none !important; }
-.status-cycle-svg { width: 100%; height: 100%; display: block; overflow: visible; shape-rendering: geometricPrecision; }
+.status-cycle-svg { width: 1.18rem; height: 1.18rem; display: block; overflow: visible; pointer-events: none; shape-rendering: geometricPrecision; }
 .status-cycle-ring,
 .status-cycle-mark { fill: none; stroke: currentColor; vector-effect: non-scaling-stroke; }
 .status-cycle-ring { stroke-width: 1.45; }

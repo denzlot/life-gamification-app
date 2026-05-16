@@ -16,7 +16,7 @@ import { formatTime } from "../../utils/format";
 import { Button } from "../Button";
 import { Field, NumberWheelInput } from "../FormFields";
 import { FormModal } from "../FormModal";
-import { StatusCycleIcon } from "../StatusCycleIcon";
+import { StatusCycleButton } from "../StatusCycleButton";
 
 interface TodayFocusModalProps {
   items: DailyPlanItemResponse[];
@@ -91,10 +91,6 @@ function normalizedDailyPlanStatus(status?: DailyPlanItemStatus | string | null)
 
 function statusClass(status?: DailyPlanItemStatus | string | null) {
   return `status-${normalizedDailyPlanStatus(status).toLowerCase()}`;
-}
-
-function statusCycleClass(status?: DailyPlanItemStatus | string | null) {
-  return `status-cycle-${normalizedDailyPlanStatus(status).toLowerCase()}`;
 }
 
 function taskMeta(task: Pick<DailyPlanItemResponse, "plannedTime" | "deadlineTime"> | FocusTimerTaskSnapshot) {
@@ -195,18 +191,16 @@ export function TodayFocusModal({
   function renderFocusActionRow(mode: FocusCreditedMode, pendingMeta: string, actionLabel = completeButtonLabel) {
     if (!displayTask) return null;
     const rowActionLabel = completingItemId === currentActiveItem?.id ? "Сохраняю..." : actionLabel;
+    const normalizedStatus = normalizedDailyPlanStatus(displayTask.status);
 
     return (
       <article className={`line-item focus-complete-plan-row ${statusClass(displayTask.status)}`}>
-        <button
-          type="button"
-          className={`status-cycle ${statusCycleClass(displayTask.status)}`}
+        <StatusCycleButton
+          status={normalizedStatus}
           disabled={!canMarkCompleted || completingItemId === currentActiveItem?.id}
-          onClick={() => currentActiveItem && onCompleteItem(currentActiveItem, mode)}
+          onActivate={() => currentActiveItem && onCompleteItem(currentActiveItem, mode)}
           aria-label={`${rowActionLabel}: ${displayTask.title}`}
-        >
-          <StatusCycleIcon status={normalizedDailyPlanStatus(displayTask.status)} />
-        </button>
+        />
         <div className="todo-main">
           <strong className="editable-title is-readonly">{displayTask.title}</strong>
           <p className="muted compact-meta">{timer.savedAt ? "Focus-время сохранено" : pendingMeta}</p>

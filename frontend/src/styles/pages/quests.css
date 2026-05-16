@@ -2,40 +2,156 @@
 
 /* Quests page and route styles migrated from legacy.css. */
 /* These selectors are page-owned after QuestsPage was split into components. */
-.quests-col { grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.1fr); }
-/* Quest create/edit uses modal-form-card (2 columns in modals.css). Avoid a stray 3-column rule here. */
-.step-edit { grid-template-columns: 1fr; }
-.step-edit-fields { display: grid; gap: 0.75rem; }
+.quests-col {
+  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.1fr);
+  align-items: stretch;
+}
+.quests-col > .quest-panel + .quest-panel { margin-top: 0; }
+
+.quest-panel {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.quest-panel-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem 1rem;
+  min-height: 3.45rem;
+  padding: 0 0 0.72rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.quest-panel-title {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 0.12rem;
+}
+
+.quest-panel-title .eyebrow,
+.quest-panel-title h2,
+.quest-panel-title p {
+  margin: 0;
+}
+
+.quest-panel-title h2 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quest-panel-inline-title {
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.quest-panel-head .btn {
+  min-width: 104px;
+}
+
+.quest-panel-body {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0.45rem;
+}
+
+.quest-list,
+.quest-steps-list {
+  margin-top: 0;
+}
+
+.quest-empty-state .empty-state {
+  padding: 0.28rem 0 0.1rem;
+}
+
+.quest-empty-state .empty-title {
+  margin-bottom: 0.12rem;
+  font-size: var(--fv-text-medium);
+}
+
+.quest-empty-state .muted {
+  max-width: 34rem;
+  line-height: 1.35;
+}
+
+.quest-description-line {
+  max-width: 62ch;
+  font-size: var(--fv-text-small);
+  line-height: 1.35;
+}
+
+.quest-steps-hint {
+  margin: 0;
+  padding: 0.15rem 0 0.5rem;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: var(--fv-text-small);
+  line-height: 1.35;
+}
+
+.step-edit {
+  display: block;
+  min-width: 0;
+  padding: 0.64rem 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.step-list > .step-edit:first-child,
+.step-list > .line-item:first-child {
+  border-top: 0;
+}
+
+.step-edit-fields {
+  display: grid;
+  gap: 0.55rem 0.75rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
 .step-list .line-item { align-items: start; }
 .step-edit-fields .wheel-field { width: 100%; }
 .step-edit-control-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: start;
   gap: 0.55rem 0.75rem;
-}
-
-.step-edit-control-row .item-tail {
-  margin: 0;
-  padding: 0;
 }
 
 .step-edit-options {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.45rem;
+  min-width: 0;
+  min-height: 38px;
 }
 
 .step-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
-  text-align: right;
+  gap: 0.45rem;
+  min-height: 38px;
 }
 
-.step-edit-control-row .option-chip,
-.step-edit-control-row .btn {
+.step-edit-title-input {
+  width: min(100%, 620px);
+}
+
+.step-edit-options .step-option-chip,
+.step-edit-actions .btn {
   min-height: 38px;
   height: 38px;
   padding: 0.42rem 0.72rem;
@@ -44,8 +160,33 @@
   line-height: 1;
 }
 
-.step-edit-control-row .option-chip {
+.step-edit-options .step-option-chip {
+  flex: 0 0 8.2rem;
   background: transparent;
+  white-space: nowrap;
+}
+
+.step-edit-options .step-option-chip--date { flex-basis: 8.8rem; }
+.step-edit-options .step-option-chip--deadline { flex-basis: 9.6rem; }
+.step-edit-options .step-option-chip--description { flex-basis: 7.8rem; }
+.step-edit-actions .btn { min-width: 7rem; }
+.step-edit-fields > .option-reveal:not(.is-open) { display: none; }
+
+@media (max-width: 820px) {
+  .quest-panel-head { grid-template-columns: 1fr; }
+  .quest-panel-head .btn { justify-self: start; }
+  .step-edit-control-row { grid-template-columns: 1fr; align-items: stretch; }
+  .step-edit-actions { justify-content: flex-start; text-align: left; }
+}
+
+@media (max-width: 520px) {
+  .step-edit-options .step-option-chip {
+    flex: 1 1 8rem;
+  }
+
+  .step-edit-actions .btn {
+    min-width: 6.5rem;
+  }
 }
 .quest-pace-strip { display: grid; border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
 .quest-pace-strip > div { display: grid; gap: 0.12rem; min-width: 0; }
@@ -59,10 +200,7 @@
 .quest-boost-row { grid-template-columns: minmax(0, 1fr) auto; }
 .quest-boost-row.due { border-left: 2px solid var(--danger); padding-left: 0.55rem; }
 .quest-boost-row.future { border-left: 2px solid var(--accent-2); padding-left: 0.55rem; }
-.quest-boost-note,
-.quest-steps-hint { margin: 0.65rem 0 0; font-size: var(--fv-text-small); }
-.step-list { margin-top: 0.55rem; }
-.step-edit-fields .input { max-width: 620px; }
+.quest-boost-note { margin: 0.65rem 0 0; font-size: var(--fv-text-small); }
 .quest-pace-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.45rem; }
 .quest-pace-strip strong { font-weight: 500; }
 .quest-pace-strip.pace-behind .pace-status strong { color: var(--danger); }
@@ -73,9 +211,6 @@
 .quest-pace-strip span { font-size: var(--fv-text-small); }
 .quest-pace-strip strong { font-size: var(--fv-text-quote); }
 .quest-pace-strip.pace-idle strong { color: var(--muted); }
-.quests-col { align-items: start; }
-.quests-col > .section-line { margin-top: 0 !important; align-self: start; }
-.quest-steps-title-row { align-items: start; min-height: 3rem; }
 .quest-steps-map { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 0.62rem; align-items: stretch; }
 .quest-steps-map .quest-step { min-height: 7.4rem; padding: 0.65rem !important; border: 1px solid var(--border-soft); border-radius: 14px; background: linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--accent) 4%), color-mix(in srgb, var(--surface), var(--bg) 8%)); display: grid !important; grid-template-columns: 1fr !important; align-content: space-between; gap: 0.58rem; }
 .quest-steps-map .quest-step::before { content: ""; width: 100%; height: 0.22rem; border-radius: 999px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent-2), transparent 12%)); opacity: 0.85; }
@@ -88,7 +223,6 @@
 .quest-steps-map .quest-step .item-tail { justify-content: flex-start; gap: 0.35rem; }
 .quest-steps-map .quest-step .item-tail span { display: none; }
 .quest-steps-map .quest-step .btn { min-height: 25px; font-size: var(--fv-text-small); padding: 0.22rem 0.42rem; }
-.quest-steps-title-row .btn { min-width: 104px; }
 .quest-route-board { margin-top: 0.75rem; overflow: hidden; }
 .quest-route-head { display: grid; align-items: center; }
 .quest-route-head .eyebrow { margin-bottom: 0.14rem; }
@@ -149,7 +283,6 @@
 .polished-route-board { border-radius: 18px !important; padding: 1rem !important; }
 .polished-route-board .quest-route-focus { align-items: center; }
 .route-step-actions .btn { min-width: 112px; }
-.quest-description-line { max-width: 62ch; margin: 0.2rem 0 0 !important; font-size: var(--fv-text-small); }
 .redesigned-route-board { display: grid; gap: 0.85rem !important; padding: 0.9rem !important; border-radius: 14px !important; background: linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--accent) 4%), color-mix(in srgb, var(--surface), var(--bg) 10%)) !important; }
 .redesigned-route-board .quest-route-head { display: grid !important; grid-template-columns: minmax(0, 0.7fr) minmax(120px, 0.3fr) auto; gap: 0.8rem; align-items: center; }
 .route-quest-description { display: block; max-width: 58ch; margin-top: 0.25rem; color: var(--muted); font-size: var(--fv-text-small); line-height: 1.35; }
@@ -173,6 +306,7 @@
 @media (max-width: 820px) {
 .route-step-preview-list { grid-template-columns: 1fr; max-height: 12rem; }
 }
+.quest-panel-body .quest-route-board { margin-top: 0; }
 .form-modal-backdrop .quest-form { --modal-width: 820px; }
 .form-modal-backdrop .quest-form .quest-title-field {
   grid-column: 1 !important;
@@ -505,15 +639,6 @@
 @media (max-width: 920px) {
   .redesigned-route-board .quest-route-head { grid-template-columns: 1fr !important; }
   .redesigned-route-board .quest-route-track { max-height: 14rem; }
-}
-
-/* Keep the archive toggle aligned with the steps view toggle on the opposite panel. */
-.quest-list-title-row { align-items: start; min-height: 3rem; }
-.quest-list-title-row .btn { min-width: 104px; justify-self: end; }
-@media (max-width: 820px) {
-  .quest-list-title-row .btn { justify-self: start; }
-  .step-edit-control-row { grid-template-columns: 1fr; align-items: stretch; }
-  .step-edit-actions { justify-content: flex-start; text-align: left; }
 }
 
 /* Quest flow responsive repair migrated from legacy.css. */

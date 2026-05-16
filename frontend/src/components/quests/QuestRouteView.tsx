@@ -7,12 +7,6 @@ import { ErrorLine } from "../Loader";
 import { addDays, computePace, groupQuestSteps, shortStepWord } from "../../utils/calendarSchedule";
 import { formatDate, formatTime, pct, todayISO } from "../../utils/format";
 
-function statusTone(status: QuestStepResponse["status"]) {
-  if (status === "COMPLETED") return "готово";
-  if (status === "SKIPPED") return "сорвано";
-  return "в пути";
-}
-
 interface QuestRouteViewProps {
   steps: QuestStepResponse[];
   quest: QuestResponse | null;
@@ -146,7 +140,7 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
         <>
           <div className={`quest-route-focus status-${selectedStep.status.toLowerCase()}`}>
             <div>
-              <span className="route-step-kicker">Шаг {selectedStep.stepNumber} · {statusTone(selectedStep.status)}</span>
+              <span className="route-step-kicker">№ {selectedStep.stepNumber}</span>
               <strong>{selectedStep.title}</strong>
               <small>{formatDate(selectedStep.scheduledDate)}{selectedStep.plannedTime ? ` · ${formatTime(selectedStep.plannedTime)}` : ""}</small>
             </div>
