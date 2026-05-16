@@ -48,7 +48,7 @@ button,
 .option-chip,
 .filter-row button,
 .calendar-filter-row button,
-.weekday-picker button { min-height: 34px; padding: 0.42rem 0.66rem; border-radius: 9px; font-size: 0.84rem; }
+.weekday-picker button { min-height: 34px; padding: 0.42rem 0.66rem; border-radius: 9px; font-size: var(--fv-text-small); }
 
 /* Dense control sizing migrated from legacy.css. */
 .day-switcher a,
@@ -56,14 +56,14 @@ button,
 .filter-row button,
 .avatar-picker button,
 .option-chip,
-.calendar-filter-row button { min-height: 30px; padding: 0.36rem 0.6rem; font-size: 0.8rem; border-radius: 8px; }
+.calendar-filter-row button { min-height: 30px; padding: 0.36rem 0.6rem; font-size: var(--fv-text-small); border-radius: 8px; }
 
 /* Final compact control sizing migrated from legacy.css. */
 .option-chip,
 .filter-row button,
 .calendar-filter-row button,
 .day-switcher a,
-.day-switcher button { min-height: 34px; padding: 0.37rem 0.62rem; font-size: 0.91rem; font-weight: 600; border-radius: 10px; }
+.day-switcher button { min-height: 34px; padding: 0.37rem 0.62rem; font-size: var(--fv-text-quote); font-weight: 600; border-radius: 10px; }
 
 /* Control typography migrated from legacy.css. */
 .top-nav a,

@@ -35,13 +35,13 @@ export function TodayPlanSummary({
     <div className="section-title-row plan-title-row compact-plan-title-row">
       <h2 className="inline-plan-title">
         Лист дня
-        <span>выполнено {counts.COMPLETED} · в плане {counts.PENDING} · не выполнено {counts.FAILED}</span>
         {qualityHint ? (
           <small className={`plan-quality-inline plan-quality-inline-${qualityHint.tone}`}>
             <b>{qualityHint.label}</b>
             <em>{qualityHint.text}</em>
           </small>
         ) : null}
+        <span>выполнено {counts.COMPLETED} · в плане {counts.PENDING} · не выполнено {counts.FAILED}</span>
         {isClosed ? <HpXpLine xp={xpEarned ?? 0} hp={hpDelta ?? 0} /> : null}
       </h2>
       <div className="plan-progress">

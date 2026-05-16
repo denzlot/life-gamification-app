@@ -17,7 +17,7 @@
 /* Metric line styles extracted from legacy.css. */
 .stat-line { display: grid; gap: 0.25rem; }
 .stat-line span { color: var(--muted); }
-.stat-line strong { font-family: var(--font-mono); font-size: 1.18rem; color: var(--text); }
+.stat-line strong { font-family: var(--font-mono); font-size: var(--fv-text-large); color: var(--text); }
 .stat-line small { color: var(--muted); }
 
 .focus-stats-breakdown {
@@ -32,18 +32,18 @@
 /* Focus statistics: compact visual breakdowns, no new chart library circus. */
 .stats-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 .stats-section-heading h2 { margin: 0.12rem 0 0; font-size: clamp(1.15rem, 2vw, 1.45rem); }
-.stats-subtle-pill { display: inline-flex; align-items: center; min-height: 1.8rem; padding: 0.25rem 0.62rem; border: 1px solid var(--border-soft); border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--surface), var(--bg) 14%); font-size: 0.78rem; white-space: nowrap; }
+.stats-subtle-pill { display: inline-flex; align-items: center; min-height: 1.8rem; padding: 0.25rem 0.62rem; border: 1px solid var(--border-soft); border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--surface), var(--bg) 14%); font-size: var(--fv-text-small); white-space: nowrap; }
 .stats-focus-panel { display: grid; gap: 1rem; }
 .focus-summary-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .focus-analytics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.95rem; }
 .focus-analytics-card { display: grid; gap: 0.8rem; min-width: 0; padding: 0.95rem; border: 1px solid var(--border-soft); border-radius: 14px; background: color-mix(in srgb, var(--surface), var(--bg) 10%); }
 .focus-card-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
-.focus-card-heading strong { color: var(--text); font-size: 0.94rem; }
-.focus-card-heading span { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+.focus-card-heading strong { color: var(--text); font-size: var(--fv-text-quote); }
+.focus-card-heading span { color: var(--muted); font-size: var(--fv-text-small); white-space: nowrap; }
 .focus-mini-bars { display: grid; gap: 0.72rem; }
 .focus-bar-row { display: grid; grid-template-columns: minmax(5.2rem, 0.85fr) minmax(0, 1fr) minmax(4.8rem, auto); align-items: center; gap: 0.7rem; }
 .focus-bar-row > span { color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.focus-bar-row > b { justify-self: end; color: var(--text); font-family: var(--font-mono); font-size: 0.82rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.focus-bar-row > b { justify-self: end; color: var(--text); font-family: var(--font-mono); font-size: var(--fv-text-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .focus-bar-track { width: 100%; height: 0.34rem; border-radius: 999px; background: color-mix(in srgb, var(--border), transparent 24%); overflow: hidden; }
 .focus-bar-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--accent), transparent 18%), color-mix(in srgb, var(--accent-2), transparent 34%)); transition: width 220ms ease; }
 @media (max-width: 900px) {

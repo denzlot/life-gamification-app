@@ -14,7 +14,7 @@
 .today-controls-row { justify-content: flex-start !important; }
 .filter-row button,
 .calendar-left-tools button,
-.quest-picker-button { border-radius: 999px !important; min-height: 31px !important; font-size: 0.75rem !important; }
+.quest-picker-button { border-radius: 999px !important; min-height: 31px !important; font-size: var(--fv-text-small) !important; }
 
 .toolbar-popover,
 .filter-panel.drawer-panel { background: color-mix(in srgb, var(--bg), var(--surface) 20%) !important;

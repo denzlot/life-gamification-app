@@ -4,7 +4,7 @@
   display: block;
   margin-top: 0.2rem;
   color: var(--muted-2);
-  font-size: 0.78rem;
+  font-size: var(--fv-text-small);
   line-height: 1.35;
 }
 
@@ -33,9 +33,9 @@
 .textarea { line-height: 1.38; }
 .form-grid { gap: 0.72rem; }
 
-.input { min-height: 40px; padding: 0.54rem 0.7rem; font-size: 0.98rem; border-radius: 10px; }
+.input { min-height: 40px; padding: 0.54rem 0.7rem; font-size: var(--fv-text-medium); border-radius: 10px; }
 .textarea { min-height: 41px !important; max-height: 116px !important; }
-.field { font-size: 0.94rem; }
+.field { font-size: var(--fv-text-quote); }
 @media (max-width: 720px) {
 .input { min-height: 37px; }
 }

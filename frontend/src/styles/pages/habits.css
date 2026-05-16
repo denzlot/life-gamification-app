@@ -16,5 +16,5 @@
 @media (max-width: 720px) {
   .schedule-detail-row.two-fields { grid-template-columns: 1fr; }
   .habit-designer-panel .weekday-picker { grid-template-columns: repeat(7, minmax(2rem, 1fr)); gap: 0.35rem; }
-  .weekday-picker button { min-height: 2.25rem; padding: 0.2rem; font-size: 0.82rem; }
+  .weekday-picker button { min-height: 2.25rem; padding: 0.2rem; font-size: var(--fv-text-small); }
 }

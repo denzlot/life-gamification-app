@@ -17,7 +17,7 @@
 
 .achievement-progress-panel h2 {
   margin: 0;
-  font-size: 1.06rem;
+  font-size: var(--fv-text-large);
 }
 
 .achievement-progress-meter {
@@ -61,7 +61,7 @@
 
 .achievement-overview span {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: var(--fv-text-small);
   font-weight: 760;
   text-transform: uppercase;
 }
@@ -69,7 +69,7 @@
 .achievement-overview strong {
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: var(--fv-text-medium);
 }
 
 .achievements-filter-panel {
@@ -199,7 +199,7 @@
 
 .achievement-category-label {
   color: var(--muted-2);
-  font-size: 0.66rem;
+  font-size: var(--fv-text-small);
   font-weight: 760;
   text-transform: uppercase;
 }
@@ -210,7 +210,7 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0.1rem 0.44rem;
-  font-size: 0.68rem;
+  font-size: var(--fv-text-small);
 }
 
 .achievement-state-chip.is-open {
@@ -238,7 +238,7 @@
 .achievement-card-meta span:not(.xp-token) {
   color: var(--muted);
   padding: 0.1rem 0;
-  font-size: 0.74rem;
+  font-size: var(--fv-text-small);
 }
 
 .achievement-mini-meter {

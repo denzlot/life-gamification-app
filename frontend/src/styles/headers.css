@@ -24,7 +24,7 @@
 @media (max-width: 720px) {
 
 .habit-designer-panel .weekday-picker { gap: 0.28rem; }
-.weekday-picker button { min-height: 31px; padding: 0.16rem; font-size: 0.74rem; }
+.weekday-picker button { min-height: 31px; padding: 0.16rem; font-size: var(--fv-text-small); }
 
 }
 
@@ -57,14 +57,14 @@
 .day-hero h1 { font-size: clamp(1.1rem, 1.35vw, 1.42rem) !important; letter-spacing: 0 !important; margin: 0 !important; }
 .section-title-row h2,
 .inline-plan-title { font-size: clamp(0.98rem, 1.08vw, 1.16rem) !important; }
-.day-status-row { justify-self: end; align-self: center; margin: 0 !important; font-size: 0.74rem; }
+.day-status-row { justify-self: end; align-self: center; margin: 0 !important; font-size: var(--fv-text-small); }
 .date-inline-switcher,
 .day-date-inline,
 .calendar-inline-switcher { grid-column: 1 / 2; max-width: none !important; margin: 0 !important; justify-content: flex-start !important; gap: 0.65rem !important; }
 .date-inline-switcher h1 { min-width: 0 !important; width: auto !important; }
 .date-inline-switcher .nav-text-button,
 .date-inline-switcher a.nav-text-button,
-.date-inline-switcher button.nav-text-button { font-size: 0.72rem !important; letter-spacing: 0.08em !important; color: var(--muted) !important; border-bottom: 1px solid transparent !important; }
+.date-inline-switcher button.nav-text-button { font-size: var(--fv-text-small) !important; letter-spacing: 0.08em !important; color: var(--muted) !important; border-bottom: 1px solid transparent !important; }
 .date-inline-switcher .nav-text-button:hover,
 .date-inline-switcher a.nav-text-button:hover,
 .date-inline-switcher button.nav-text-button:hover { border-bottom-color: color-mix(in srgb, var(--accent), transparent 30%) !important; }

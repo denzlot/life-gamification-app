@@ -70,7 +70,7 @@
   justify-content: space-between !important;
   gap: 1rem !important;
   padding-bottom: 0.15rem !important; }
-.form-modal-backdrop .modal-form-head strong { font-size: 1.08rem; }
+.form-modal-backdrop .modal-form-head strong { font-size: var(--fv-text-large); }
 .form-modal-backdrop .dialog-close { flex: 0 0 auto;
   width: 2rem;
   height: 2rem;
@@ -93,7 +93,7 @@
   gap: 0.12rem !important;
   padding: 0.58rem 0.68rem !important;
   text-align: left !important; }
-.compact-route-quest-list span { color: var(--muted); font-size: 0.68rem; }
+.compact-route-quest-list span { color: var(--muted); font-size: var(--fv-text-small); }
 
 @keyframes fv-modal-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fv-modal-card-in { from { opacity: 0; transform: translateY(18px) scale(0.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
@@ -156,7 +156,7 @@
 .modal-form-card .weekday-picker button { min-height: 1.85rem !important;
   height: auto !important;
   padding: 0.22rem 0.78rem !important;
-  font-size: 0.78rem !important;
+  font-size: var(--fv-text-small) !important;
   border-radius: 999px !important;
   min-width: 0 !important;
   width: auto !important;

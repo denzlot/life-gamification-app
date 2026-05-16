@@ -10,7 +10,7 @@
 .theme-switcher span:last-child { display: none; }
 }
 
-.theme-switcher { min-height: 31px; padding: 0.28rem 0.56rem; font-size: 0.76rem; border-radius: 999px; }
+.theme-switcher { min-height: 31px; padding: 0.28rem 0.56rem; font-size: var(--fv-text-small); border-radius: 999px; }
 
 .theme-switcher-icon { width: 1.18rem; height: 1.18rem; }
 

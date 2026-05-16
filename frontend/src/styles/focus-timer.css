@@ -55,7 +55,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: var(--fv-text-quote);
   font-weight: 800;
   color: var(--text);
   letter-spacing: -0.02em;
@@ -65,8 +65,8 @@
   gap: 0.06rem;
   min-width: 0;
   align-self: center; }
-.timer-copy strong { color: var(--text); font-size: 0.95rem; }
-.timer-copy small { color: var(--muted); font-size: 0.78rem; transition: color 300ms ease; }
+.timer-copy strong { color: var(--text); font-size: var(--fv-text-quote); }
+.timer-copy small { color: var(--muted); font-size: var(--fv-text-small); transition: color 300ms ease; }
 .timer-done-text { color: var(--good) !important; }
 .timer-presets { grid-column: 1 / -1;
   display: flex;
@@ -79,7 +79,7 @@
   background: transparent;
   color: var(--muted);
   padding: 0.28rem 0.64rem;
-  font-size: 0.76rem;
+  font-size: var(--fv-text-small);
   font-family: var(--font-mono);
   font-weight: 700;
   cursor: pointer;
@@ -100,7 +100,7 @@
   color: var(--text);
   font-family: var(--font-mono);
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: var(--fv-text-small);
   text-align: center;
   outline: none;
   transition: border-color 120ms ease; }

@@ -11,14 +11,14 @@
 
 .day-status-row { padding: 0.34rem 0.62rem; border-radius: 9px; letter-spacing: 0.1em; }
 .day-quality-pill { display: inline-flex; align-items: center; gap: 0.24rem; min-height: 1.28rem; padding: 0.1rem 0.36rem; border: 1px solid color-mix(in srgb, currentColor, transparent 48%); border-radius: 7px; line-height: 1; text-transform: none; letter-spacing: 0; background: color-mix(in srgb, currentColor, transparent 94%); }
-.day-quality-pill i { display: inline-grid; place-items: center; width: 0.68rem; height: 0.74rem; font-style: normal; font-size: 0.58rem; font-weight: 900; }
+.day-quality-pill i { display: inline-grid; place-items: center; width: 0.68rem; height: 0.74rem; font-style: normal; font-size: var(--fv-text-small); font-weight: 900; }
 .day-quality-pill.quality-good { color: var(--good); }
 .day-quality-pill.quality-normal { color: var(--accent); }
 .day-quality-pill.quality-bad { color: var(--danger); }
 .day-quality-pill.quality-empty { color: var(--muted-2); }
 .day-switcher { margin-top: 0.75rem; gap: 0.8rem; }
 .day-switcher a,
-.day-switcher button { font-size: 0.72rem; }
+.day-switcher button { font-size: var(--fv-text-small); }
 
 .date-inline-switcher { display: grid; grid-template-columns: auto minmax(0, auto) auto; align-items: center; gap: 0.7rem; width: 100%; }
 .date-inline-switcher h1 { margin: 0; text-align: center; }
@@ -31,7 +31,7 @@
 .center-jump-button:hover,
 .day-calendar-link:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent), transparent 38%); background: color-mix(in srgb, var(--accent), transparent 90%); }
 .day-status-row { justify-content: center; gap: 0.55rem !important; margin-top: 0.48rem !important; }
-.day-calendar-link { min-height: 28px; font-size: 0.78rem; padding: 0.28rem 0.52rem; }
+.day-calendar-link { min-height: 28px; font-size: var(--fv-text-small); padding: 0.28rem 0.52rem; }
 
 @media (max-width: 720px) {
 .date-inline-switcher { gap: 0.35rem; }
@@ -52,7 +52,7 @@
 .date-inline-switcher a.nav-text-button,
 .date-inline-switcher button.nav-text-button { min-width: 3.35rem !important; }
 .date-inline-switcher a.nav-text-button::first-letter,
-.date-inline-switcher button.nav-text-button::first-letter { font-size: 0.78rem; }
+.date-inline-switcher button.nav-text-button::first-letter { font-size: var(--fv-text-small); }
 }
 
 .date-inline-switcher .nav-text-button,
@@ -64,13 +64,13 @@
 @media (max-width: 640px) {
 .date-inline-switcher .nav-text-button,
 .date-inline-switcher a.nav-text-button,
-.date-inline-switcher button.nav-text-button { font-size: 0.78rem !important; letter-spacing: 0.08em !important; padding-inline: 0 !important; }
+.date-inline-switcher button.nav-text-button { font-size: var(--fv-text-small) !important; letter-spacing: 0.08em !important; padding-inline: 0 !important; }
 }
 
 .day-date-inline,
 .calendar-inline-switcher { max-width: none !important; margin-inline: 0 !important; justify-content: flex-start !important; }
 .date-inline-switcher { justify-content: flex-start !important; }
-.center-jump-button { margin: 0 !important; width: auto !important; font-size: 0.72rem !important; font-weight: 700 !important; min-height: 30px !important; height: 30px !important; padding: 0 0.75rem !important; border-radius: 8px !important; white-space: nowrap !important; display: inline-flex !important; align-items: center !important; position: static !important; grid-column: auto !important; grid-row: auto !important; }
+.center-jump-button { margin: 0 !important; width: auto !important; font-size: var(--fv-text-small) !important; font-weight: 700 !important; min-height: 30px !important; height: 30px !important; padding: 0 0.75rem !important; border-radius: 8px !important; white-space: nowrap !important; display: inline-flex !important; align-items: center !important; position: static !important; grid-column: auto !important; grid-row: auto !important; }
 
 .date-inline-switcher,
 .day-date-inline,

@@ -20,6 +20,7 @@ export function ProfilePage() {
   const [achLoading, setAchLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showChooser, setShowChooser] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(true);
   const [selectedCharacterId, setSelectedCharacterId] = useState(() => readSelectedCharacter());
   const [previewCharacterId, setPreviewCharacterId] = useState<typeof selectedCharacterId>(null);
   const [telegram, setTelegram] = useState<TelegramSettingsResponse | null>(null);
@@ -141,7 +142,7 @@ export function ProfilePage() {
       <section className="section-line clean-section profile-character-card">
         <div className="profile-character-body">
           <div className="profile-avatar-slot">
-            <Avatar stats={profile?.gameStats} compact characterId={character.id} />
+            <Avatar stats={profile?.gameStats} characterId={character.id} showQuote={false} />
           </div>
           <div className="profile-stats-slot">
             <div className="profile-character-head">
@@ -153,7 +154,7 @@ export function ProfilePage() {
               </div>
               <Button variant="ghost" onClick={toggleChooser}>{showChooser ? "Скрыть" : "Сменить"}</Button>
             </div>
-            <GameHud stats={profile?.gameStats} />
+            <GameHud stats={profile?.gameStats} layout="profile" />
           </div>
         </div>
 
@@ -175,37 +176,50 @@ export function ProfilePage() {
             <p className="eyebrow">открыто</p>
             <h2>Достижения</h2>
           </div>
-          <span className="metric">{achievements.length}</span>
+          <div className="profile-achievements-actions">
+            <span className="metric">{achievements.length}</span>
+            <Button
+              type="button"
+              variant="thin"
+              aria-expanded={showAchievements}
+              onClick={() => setShowAchievements((value) => !value)}
+            >
+              {showAchievements ? "Скрыть" : "Показать"}
+            </Button>
+          </div>
         </div>
-        {achLoading ? <Loader /> : null}
-        {!achLoading && achievements.length === 0 ? <EmptyState title="Достижений пока нет" text="Игровой цикл откроет первые достижения." /> : null}
-        <div className="achievement-list profile-achievement-list">
-          {achievements.map((achievement) => {
-            const categoryLabel = achievementCategoryLabels[achievement.category] ?? achievement.category;
 
-            return (
-              <article className="achievement-row unlocked" key={achievement.key}>
-                <div className="achievement-row-icon">
-                  <AchievementCategoryIcon category={achievement.category} />
-                </div>
-                <div className="achievement-row-body">
-                  <div className="achievement-row-title">
-                    <div>
-                      <span className="achievement-category-label">{categoryLabel}</span>
-                      <strong>{achievement.title}</strong>
+        <RevealSection open={showAchievements} className="profile-achievements-reveal">
+          {achLoading ? <Loader /> : null}
+          {!achLoading && achievements.length === 0 ? <EmptyState title="Достижений пока нет" text="Игровой цикл откроет первые достижения." /> : null}
+          <div className="achievement-list profile-achievement-list">
+            {achievements.map((achievement) => {
+              const categoryLabel = achievementCategoryLabels[achievement.category] ?? achievement.category;
+
+              return (
+                <article className="achievement-row unlocked" key={achievement.key}>
+                  <div className="achievement-row-icon">
+                    <AchievementCategoryIcon category={achievement.category} />
+                  </div>
+                  <div className="achievement-row-body">
+                    <div className="achievement-row-title">
+                      <div>
+                        <span className="achievement-category-label">{categoryLabel}</span>
+                        <strong>{achievement.title}</strong>
+                      </div>
+                      <span className="achievement-state-chip is-open">открыто</span>
                     </div>
-                    <span className="achievement-state-chip is-open">открыто</span>
+                    <p>{achievement.description}</p>
+                    <div className="achievement-card-meta">
+                      <span className="xp-token">+{achievement.xpReward} XP</span>
+                      <span>{achievement.unlockedAt ? formatDateTime(achievement.unlockedAt) : "открыто"}</span>
+                    </div>
                   </div>
-                  <p>{achievement.description}</p>
-                  <div className="achievement-card-meta">
-                    <span className="xp-token">+{achievement.xpReward} XP</span>
-                    <span>{achievement.unlockedAt ? formatDateTime(achievement.unlockedAt) : "открыто"}</span>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+                </article>
+              );
+            })}
+          </div>
+        </RevealSection>
       </section>
 
       <section className="section-line clean-section profile-telegram-panel">

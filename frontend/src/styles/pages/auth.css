@@ -17,10 +17,10 @@
 .auth-intro h1 { max-width: 12ch; margin-bottom: 0.55rem; }
 .auth-copy { max-width: 34rem; margin-bottom: 1rem; }
 .auth-feature-lines { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 1.1rem; }
-.auth-feature-lines span { border: 1px solid var(--border-soft); border-radius: 999px; padding: 0.34rem 0.62rem; color: var(--muted); font-size: 0.76rem; }
+.auth-feature-lines span { border: 1px solid var(--border-soft); border-radius: 999px; padding: 0.34rem 0.62rem; color: var(--muted); font-size: var(--fv-text-small); }
 .auth-form { display: grid; gap: 0.8rem; padding: 1rem 0; border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); border-radius: var(--line-radius); }
 .auth-form .btn { width: 100%; }
-.switch-auth { margin: 0.1rem 0 0; font-size: 0.86rem; }
+.switch-auth { margin: 0.1rem 0 0; font-size: var(--fv-text-small); }
 .switch-auth a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--accent); }
 @media (max-width: 980px) {
 .refined-auth-panel { grid-template-columns: 1fr; }
@@ -35,7 +35,7 @@
 .welcome-guide div { display: grid; gap: 0.15rem; padding: 0.75rem 0; border-top: 1px solid var(--border-soft); }
 .welcome-guide div:last-child { border-bottom: 1px solid var(--border-soft); }
 .welcome-guide strong { color: var(--text); font-family: var(--font-heading); }
-.welcome-guide span { color: var(--muted); font-size: 0.94rem; line-height: 1.4; }
+.welcome-guide span { color: var(--muted); font-size: var(--fv-text-quote); line-height: 1.4; }
 .welcome-actions { grid-column: 2; display: flex; gap: 0.85rem; align-items: center; flex-wrap: wrap; margin-top: 0.2rem; }
 .welcome-actions .btn { min-width: 150px; }
 @media (max-width: 980px) {
@@ -48,7 +48,7 @@
 .auth-screen { position: relative; overflow: hidden; }
 .auth-screen:not(.welcome-screen) .refined-auth-panel { width: min(100%, 1040px) !important; min-height: 560px; grid-template-columns: minmax(300px, 0.92fr) minmax(320px, 1fr) !important; gap: clamp(1.5rem, 4vw, 3rem) !important; padding: clamp(1.7rem, 4vw, 2.7rem) !important; border-radius: 28px !important; }
 .auth-screen:not(.welcome-screen) .auth-intro h1 { font-size: clamp(2rem, 4.4vw, 3.7rem) !important; line-height: 1.02; max-width: 10ch; }
-.auth-screen:not(.welcome-screen) .auth-copy { max-width: 34rem; font-size: 1.02rem; }
+.auth-screen:not(.welcome-screen) .auth-copy { max-width: 34rem; font-size: var(--fv-text-medium); }
 .auth-screen:not(.welcome-screen) .auth-form { align-self: center; display: grid; gap: 1rem; padding: 1.15rem; border: 1px solid color-mix(in srgb, var(--border), var(--text) 4%); border-radius: 22px; background: color-mix(in srgb, var(--surface), var(--bg) 7%); }
 .character-preview-screen::before { content: ""; position: absolute; inset: 4.2rem 3.5rem 3.2rem; border-radius: 32px; opacity: 0.24; filter: blur(0.2px); background: linear-gradient(90deg, color-mix(in srgb, var(--surface-2), transparent 20%) 0 18%, transparent 18% 20%, color-mix(in srgb, var(--surface), transparent 5%) 20% 100%), linear-gradient(180deg, transparent 0 14%, color-mix(in srgb, var(--accent), transparent 82%) 14% 15%, transparent 15% 100%), repeating-linear-gradient(180deg, transparent 0 4.1rem, color-mix(in srgb, var(--border), transparent 18%) 4.1rem 4.18rem); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border), transparent 20%); pointer-events: none; }
 .character-preview-screen .character-welcome-panel { position: relative; background: color-mix(in srgb, var(--surface), transparent 7%) !important; backdrop-filter: blur(12px); }
@@ -104,9 +104,9 @@
 .ghost-side-stats { display: flex; align-items: center; }
 .ghost-brand { gap: 0.6rem; color: color-mix(in srgb, var(--text), transparent 10%); font-family: var(--font-heading); }
 .ghost-brand-mark { width: 1.8rem; height: 1.8rem; border-radius: 999px; background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--accent), white 22%), transparent 38%), linear-gradient(135deg, color-mix(in srgb, var(--accent), transparent 8%), color-mix(in srgb, var(--surface-2), var(--accent) 18%)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 55%); }
-.ghost-nav-row { justify-content: center; gap: 1.4rem; flex-wrap: wrap; color: color-mix(in srgb, var(--muted), transparent 10%); font-family: var(--font-heading); font-size: 0.8rem; }
-.ghost-nav-row b { color: color-mix(in srgb, var(--text), transparent 4%); font-size: 0.92rem; }
-.ghost-menu-pill { justify-content: center; min-width: 3.9rem; min-height: 2rem; padding: 0.35rem 0.75rem; border: 1px solid color-mix(in srgb, var(--border), transparent 12%); border-radius: 999px; color: color-mix(in srgb, var(--muted), transparent 6%); font-size: 0.72rem; }
+.ghost-nav-row { justify-content: center; gap: 1.4rem; flex-wrap: wrap; color: color-mix(in srgb, var(--muted), transparent 10%); font-family: var(--font-heading); font-size: var(--fv-text-small); }
+.ghost-nav-row b { color: color-mix(in srgb, var(--text), transparent 4%); font-size: var(--fv-text-quote); }
+.ghost-menu-pill { justify-content: center; min-width: 3.9rem; min-height: 2rem; padding: 0.35rem 0.75rem; border: 1px solid color-mix(in srgb, var(--border), transparent 12%); border-radius: 999px; color: color-mix(in srgb, var(--muted), transparent 6%); font-size: var(--fv-text-small); }
 .ghost-main-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.92fr); gap: 1.1rem; padding: 1.2rem; }
 .ghost-page-card { border: 1px solid color-mix(in srgb, var(--border), transparent 14%); border-radius: 24px; background: color-mix(in srgb, var(--surface), transparent 8%); }
 .ghost-plan-card { padding: 1rem; }
@@ -220,7 +220,7 @@
 
 .auth-screen:not(.welcome-screen) .auth-copy {
   max-width: 30rem;
-  font-size: 1rem;
+  font-size: var(--fv-text-medium);
 }
 
 .auth-mission-preview {
@@ -246,7 +246,7 @@
   justify-content: space-between;
   gap: 0.8rem;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: var(--fv-text-small);
   text-transform: uppercase;
 }
 
@@ -282,7 +282,7 @@
 
 .auth-progress-dial span {
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: var(--fv-text-small);
   text-transform: uppercase;
 }
 
@@ -299,7 +299,7 @@
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   color: color-mix(in srgb, var(--text), var(--muted) 14%);
-  font-size: 0.84rem;
+  font-size: var(--fv-text-small);
 }
 
 .auth-route-stack span::after {

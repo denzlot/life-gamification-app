@@ -24,7 +24,7 @@
   gap: 0.35rem !important; }
 .create-drawer-form .weekday-picker button { min-height: 1.85rem !important;
   padding: 0.22rem 0.72rem !important;
-  font-size: 0.78rem !important;
+  font-size: var(--fv-text-small) !important;
   border-radius: 999px !important;
   min-width: auto !important;
   width: auto !important; }
@@ -73,7 +73,7 @@
 .create-drawer-section.entity-form-panel,
 .create-drawer-section { padding: 0.72rem 0.9rem !important; min-height: 0 !important; border-style: dashed !important; }
 .center-add-actions { justify-content: flex-start !important; padding: 0 !important; gap: 0.8rem !important; flex-wrap: wrap; }
-.create-action-hint { color: var(--muted); font-size: 0.78rem; line-height: 1.35; }
+.create-action-hint { color: var(--muted); font-size: var(--fv-text-small); line-height: 1.35; }
 
 /* Shared create form layout migrated from legacy.css. */
 .entity-form-panel,

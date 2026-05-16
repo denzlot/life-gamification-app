@@ -12,8 +12,8 @@
 
 .btn { letter-spacing: 0; }
 
-.btn { min-height: 37px; padding: 0.43rem 0.74rem; border-radius: 10px; font-size: 0.96rem; font-weight: 600; }
-.btn-thin { min-height: 32px; padding: 0.34rem 0.58rem; font-size: 0.86rem; border-radius: 9px; }
+.btn { min-height: 37px; padding: 0.43rem 0.74rem; border-radius: 10px; font-size: var(--fv-text-medium); font-weight: 600; }
+.btn-thin { min-height: 32px; padding: 0.34rem 0.58rem; font-size: var(--fv-text-small); border-radius: 9px; }
 @media (max-width: 720px) {
 .btn { min-height: 35px; padding: 0.38rem 0.62rem; }
 }

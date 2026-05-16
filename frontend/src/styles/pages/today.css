@@ -29,7 +29,7 @@
   margin-top: 0.12rem;
   color: var(--muted);
   font-family: var(--font-text);
-  font-size: 0.78rem;
+  font-size: var(--fv-text-small);
   font-weight: 500;
   line-height: 1.38;
 }
@@ -37,7 +37,7 @@
 .plan-quality-inline b {
   flex: 0 0 auto;
   color: var(--accent);
-  font-size: 0.68rem;
+  font-size: var(--fv-text-small);
   font-weight: 820;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -56,8 +56,6 @@
 .today-pre-avatar-slot .avatar-picture-wrap { min-height: 240px !important; height: 260px !important; }
 .today-pre-avatar-slot .avatar-img { width: min(92%, 242px) !important; max-height: 94% !important; transform: scale(1.3) translateY(30px); transform-origin: center bottom; }
 .today-pre-stats-slot { align-self: stretch; display: grid; align-content: center; border-left: 1px solid var(--border-soft); padding-left: 1rem; }
-.character-panel .avatar-picture-wrap { min-height: 320px !important; height: clamp(320px, 34vw, 405px) !important; }
-.character-panel .avatar-img { width: min(92%, 270px) !important; max-height: 95% !important; transform: scale(1.3) translateY(30px); transform-origin: center bottom; }
 .today-grid { align-items: stretch !important; }
 .today-main { display: grid !important; }
 .today-grid .plan-section { display: flex !important; flex-direction: column !important; }
@@ -139,9 +137,9 @@
 
 .focus-task-option {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.65rem;
   width: 100%;
   min-height: 3.25rem;
   padding: 0.72rem 0.78rem;
@@ -170,7 +168,6 @@
 
 .focus-task-option-main {
   display: grid;
-  gap: 0.18rem;
   min-width: 0;
 }
 
@@ -183,36 +180,15 @@
 }
 
 .focus-task-option-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.5rem;
+  justify-self: end;
+  max-width: min(12rem, 36vw);
+  overflow: hidden;
   color: var(--muted);
-  font-size: 0.78rem;
-}
-
-.focus-task-option-meta span + span::before {
-  content: "·";
-  margin-right: 0.5rem;
-  color: color-mix(in srgb, var(--muted), transparent 18%);
-}
-
-.focus-task-status {
-  padding: 0.24rem 0.5rem;
-  border: 1px solid var(--border-soft);
-  border-radius: 999px;
-  color: var(--muted);
-  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-size: var(--fv-text-small);
+  font-weight: 650;
+  text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.focus-task-status.status-completed {
-  border-color: color-mix(in srgb, var(--good), transparent 48%);
-  color: var(--good);
-}
-
-.focus-task-status.status-failed {
-  border-color: color-mix(in srgb, var(--danger), transparent 48%);
-  color: var(--danger);
 }
 
 .focus-duration-wheel {
@@ -284,12 +260,13 @@
   border: 1px solid color-mix(in srgb, var(--border), var(--accent) 14%);
   border-radius: 999px;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: var(--fv-text-small);
   text-transform: lowercase;
 }
 
 .focus-active-task-card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
   gap: 0.24rem;
   width: min(100%, 34rem);
   padding: 0.9rem 1rem;
@@ -301,12 +278,20 @@
 }
 
 .focus-active-task-card .eyebrow {
+  grid-column: 1 / -1;
   margin-bottom: 0.1rem;
 }
 
-.focus-active-task-card span {
+.focus-active-task-meta {
+  justify-self: end;
+  max-width: min(12rem, 34vw);
+  overflow: hidden;
   color: var(--muted);
-  font-size: 0.86rem;
+  font-family: var(--font-mono);
+  font-size: var(--fv-text-small);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .focus-session-card.status-completed .focus-time-left,
@@ -367,13 +352,13 @@
 .today-focus-widget-main {
   min-width: 0;
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: var(--fv-text-large);
 }
 
 .today-focus-widget-main span {
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.86rem;
+  font-size: var(--fv-text-medium);
 }
 
 .today-focus-widget-actions {
@@ -408,7 +393,6 @@
 }
 
 @media (max-width: 620px) {
-  .focus-task-option,
   .today-focus-widget,
   .focus-complete-plan-row {
     grid-template-columns: 1fr;
@@ -519,13 +503,13 @@
 
 .focus-plan-summary span {
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: var(--fv-text-small);
 }
 
 .focus-plan-summary strong {
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 0.98rem;
+  font-size: var(--fv-text-large);
 }
 
 .focus-credit-choice button {
@@ -540,12 +524,12 @@
 
 .focus-credit-choice span {
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: var(--fv-text-small);
 }
 
 .focus-credit-choice strong {
   font-family: var(--font-mono);
-  font-size: 0.95rem;
+  font-size: var(--fv-text-large);
   color: var(--text);
 }
 

@@ -1,26 +1,26 @@
 /* Quest picker modal/dropdown styles migrated from legacy.css. */
 
 .quest-picker-field { display: grid; gap: 0.34rem; }
-.quest-picker-label { color: var(--muted); font-size: 0.82rem; }
+.quest-picker-label { color: var(--muted); font-size: var(--fv-text-small); }
 .quest-picker-button { width: 100%; border: 1px solid var(--border); color: var(--text); display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; text-align: left; }
 .quest-picker-button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .quest-picker-button small { color: var(--muted); white-space: nowrap; }
 .quest-picker-button:hover { border-color: color-mix(in srgb, var(--accent), transparent 35%); }
 .quest-picker-backdrop { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 1rem; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(5px); }
 .quest-picker-dialog { width: min(520px, 100%); max-height: min(620px, calc(100vh - 2rem)); overflow: auto; border: 1px solid var(--border); border-radius: 14px; padding: 1rem; box-shadow: 0 24px 80px var(--shadow); }
-.dialog-close { font-size: 1.25rem; }
+.dialog-close { font-size: var(--fv-text-large); }
 .quest-picker-list { display: grid; gap: 0.45rem; margin-top: 0.85rem; }
 .quest-picker-list button { display: grid; gap: 0.18rem; width: 100%; border: 1px solid var(--border-soft); border-radius: 10px; padding: 0.68rem 0.75rem; color: var(--text); text-align: left; }
 .quest-picker-list button:hover,
 .quest-picker-list button.active { border-color: color-mix(in srgb, var(--accent), transparent 35%); background: color-mix(in srgb, var(--accent), transparent 88%); }
-.quest-picker-list button span { color: var(--muted); font-size: 0.78rem; }
+.quest-picker-list button span { color: var(--muted); font-size: var(--fv-text-small); }
 .clear-quest-button { margin-top: 0.8rem; }
 
 .quest-picker-button span { font-weight: 600; }
 
 .quest-picker-button { min-height: 39px; padding: 0.43rem 0.62rem; border-radius: 10px; }
-.quest-picker-button span { font-size: 0.94rem; }
-.quest-picker-button small { font-size: 0.74rem; }
+.quest-picker-button span { font-size: var(--fv-text-quote); }
+.quest-picker-button small { font-size: var(--fv-text-small); }
 
 .compact-quest-picker { max-width: 310px; }
 

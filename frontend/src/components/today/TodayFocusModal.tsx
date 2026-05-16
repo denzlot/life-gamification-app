@@ -12,7 +12,7 @@ import {
   type FocusTimerState,
   type FocusTimerTaskSnapshot
 } from "../../utils/focusTimerStorage";
-import { formatTime, itemStatusLabel, sourceLabel } from "../../utils/format";
+import { formatTime } from "../../utils/format";
 import { Button } from "../Button";
 import { Field, NumberWheelInput } from "../FormFields";
 import { FormModal } from "../FormModal";
@@ -97,12 +97,8 @@ function statusCycleClass(status?: DailyPlanItemStatus | string | null) {
   return `status-cycle-${normalizedDailyPlanStatus(status).toLowerCase()}`;
 }
 
-function taskMeta(task: Pick<DailyPlanItemResponse, "sourceType" | "status" | "plannedTime" | "deadlineTime"> | FocusTimerTaskSnapshot) {
-  return [
-    sourceLabel(task.sourceType).toLowerCase(),
-    itemStatusLabel(task.status),
-    itemTimeLabel(task)
-  ].filter(Boolean).join(" · ");
+function taskMeta(task: Pick<DailyPlanItemResponse, "plannedTime" | "deadlineTime"> | FocusTimerTaskSnapshot) {
+  return itemTimeLabel(task);
 }
 
 
@@ -158,6 +154,7 @@ export function TodayFocusModal({
   const activeTask = timer.task;
   const currentActiveItem = activeTask ? items.find((item) => item.id === activeTask.id) ?? null : null;
   const displayTask = currentActiveItem ?? activeTask;
+  const displayTaskMeta = displayTask ? taskMeta(displayTask) : "";
   const progress = progressPercent(timer, remainingSeconds);
   const progressStyle = { "--focus-progress": `${progress}%` } as CSSProperties;
   const roundedProgress = Math.round(progress);
@@ -271,12 +268,8 @@ export function TodayFocusModal({
                   >
                     <span className="focus-task-option-main">
                       <strong>{item.title}</strong>
-                      <span className="focus-task-option-meta">
-                        <span>{sourceLabel(item.sourceType).toLowerCase()}</span>
-                        {time ? <span>{time}</span> : null}
-                      </span>
                     </span>
-                    <span className={`focus-task-status ${statusClass(item.status)}`}>{itemStatusLabel(item.status)}</span>
+                    {time ? <span className="focus-task-option-meta">{time}</span> : null}
                   </button>
                 );
               })}
@@ -340,7 +333,7 @@ export function TodayFocusModal({
               <div className="focus-active-task-card">
                 <p className="eyebrow">выбрана задача</p>
                 <strong>{displayTask.title}</strong>
-                <span>{taskMeta(displayTask)}</span>
+                {displayTaskMeta ? <span className="focus-active-task-meta">{displayTaskMeta}</span> : null}
               </div>
             ) : null}
 

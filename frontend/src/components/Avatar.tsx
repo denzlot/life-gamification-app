@@ -8,12 +8,14 @@ export function Avatar({
   stats,
   compact = false,
   variantIndex = 1,
-  characterId: characterIdOverride
+  characterId: characterIdOverride,
+  showQuote = true
 }: {
   stats?: GameStats | null;
   compact?: boolean;
   variantIndex?: number;
   characterId?: CharacterId | null;
+  showQuote?: boolean;
 }) {
   const [hitTick, setHitTick] = useState(0);
   const mood = avatarMood(stats);
@@ -50,9 +52,11 @@ export function Avatar({
       <div className="avatar-picture-wrap" aria-label={`Аватар персонажа ${variantIndex}`}>
         {resolved.src ? <img src={resolved.src} alt={resolved.character.name} className="avatar-img" /> : null}
       </div>
-      <figcaption className="avatar-quote-bubble">
-        <span>«{quote}»</span>
-      </figcaption>
+      {showQuote ? (
+        <figcaption className="avatar-quote-bubble">
+          <span>«{quote}»</span>
+        </figcaption>
+      ) : null}
     </figure>
   );
 }
