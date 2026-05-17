@@ -4,7 +4,7 @@ import type { CreateQuestRequest, CreateQuestStepRequest, QuestResponse } from "
 import { Button } from "../Button";
 import { FormModal } from "../FormModal";
 import { OptionChip } from "../OptionChip";
-import { Field, NumberWheelInput, TextArea, TextInput, TimeWheelInput } from "../FormFields";
+import { DateWheelInput, Field, NumberInput, TextArea, TextInput, TimeWheelInput } from "../FormFields";
 import { ErrorLine } from "../Loader";
 import { ModalTwinTimeRow } from "../ModalTwinTimeRow";
 import { RevealSection } from "../RevealSection";
@@ -257,7 +257,7 @@ export function QuestFormModal({
               <div className="quest-manual-paired-reveals">
                 <RevealSection open={options.schedule} className="quest-form-schedule-reveal quest-manual-reveal quest-manual-reveal--schedule">
                   <Field label="Дата старта">
-                    <TextInput type="date" value={form.startDate} onChange={(event) => updateStartDate(event.target.value)} />
+                    <DateWheelInput value={form.startDate} onChange={updateStartDate} />
                   </Field>
                 </RevealSection>
 
@@ -271,10 +271,10 @@ export function QuestFormModal({
               <RevealSection open={options.steps} className="option-reveal--wide quest-manual-reveal quest-manual-reveal--steps">
                 <div className="form-grid mini-form-grid">
                   <Field label="Дней">
-                    <NumberWheelInput value={Number(form.durationDays)} min={1} max={365} suffix="дней" label="выбрать дни" onChange={updateDurationDays} />
+                    <NumberInput value={Number(form.durationDays)} min={1} max={365} suffix="дней" onChange={updateDurationDays} />
                   </Field>
                   <Field label="Шагов">
-                    <NumberWheelInput value={Number(form.totalSteps)} min={1} max={365} suffix="шагов" label="выбрать шаги" onChange={updateTotalSteps} />
+                    <NumberInput value={Number(form.totalSteps)} min={1} max={365} suffix="шагов" onChange={updateTotalSteps} />
                   </Field>
                   <Field label="Название шага">
                     <TextInput value={form.baseStepTitle} onChange={(event) => updateBaseStepTitle(event.target.value)} maxLength={150} required />
@@ -378,7 +378,7 @@ export function QuestFormModal({
 
             <RevealSection open={Boolean(!editing && options.schedule)} className="option-reveal--wide quest-form-schedule-reveal">
               <Field label="Дата старта">
-                <TextInput type="date" value={form.startDate} onChange={(event) => updateStartDate(event.target.value)} />
+                <DateWheelInput value={form.startDate} onChange={updateStartDate} />
               </Field>
             </RevealSection>
 
@@ -406,10 +406,10 @@ export function QuestFormModal({
             <RevealSection open={Boolean(!editing && options.steps)} className="option-reveal--wide">
               <div className="form-grid mini-form-grid">
                 <Field label="Дней">
-                  <NumberWheelInput value={Number(form.durationDays)} min={1} max={365} suffix="дней" label="выбрать дни" onChange={updateDurationDays} />
+                  <NumberInput value={Number(form.durationDays)} min={1} max={365} suffix="дней" onChange={updateDurationDays} />
                 </Field>
                 <Field label="Шагов">
-                  <NumberWheelInput value={Number(form.totalSteps)} min={1} max={365} suffix="шагов" label="выбрать шаги" onChange={updateTotalSteps} />
+                  <NumberInput value={Number(form.totalSteps)} min={1} max={365} suffix="шагов" onChange={updateTotalSteps} />
                 </Field>
                 <Field label="Название шага">
                   <TextInput

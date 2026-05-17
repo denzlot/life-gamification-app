@@ -399,7 +399,7 @@
   interpolate-size: allow-keywords;
 }
 .option-reveal.is-open {
-  grid-template-rows: 1fr;
+  grid-template-rows: auto;
   pointer-events: auto;
 }
 .option-reveal--wide { grid-column: 1 / -1; }

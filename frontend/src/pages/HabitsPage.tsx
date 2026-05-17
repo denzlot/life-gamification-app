@@ -5,7 +5,7 @@ import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
 import { FormModal } from "../components/FormModal";
 import { OptionChip } from "../components/OptionChip";
-import { Field, NumberWheelInput, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
+import { DateWheelInput, Field, NumberInput, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { ErrorLine, Loader } from "../components/Loader";
 import { ModalTwinTimeRow } from "../components/ModalTwinTimeRow";
 import { RevealSection } from "../components/RevealSection";
@@ -198,7 +198,7 @@ export function HabitsPage() {
             {form.scheduleType === "MONTHLY" ? (
               <div className="schedule-detail-row">
                 <Field label="День месяца" hint="Если такого дня нет, появится в последний день месяца.">
-                  <NumberWheelInput value={form.monthlyDay ?? 1} min={1} max={31} suffix="день" label="выбрать день месяца" onChange={(monthlyDay) => setForm({ ...form, monthlyDay })} />
+                  <NumberInput value={form.monthlyDay ?? 1} min={1} max={31} suffix="день" onChange={(monthlyDay) => setForm({ ...form, monthlyDay })} />
                 </Field>
               </div>
             ) : null}
@@ -206,10 +206,10 @@ export function HabitsPage() {
             {form.scheduleType === "INTERVAL" ? (
               <div className="schedule-detail-row two-fields">
                 <Field label="Каждые">
-                  <NumberWheelInput value={form.intervalDays ?? 2} min={1} max={365} suffix="дн." label="выбрать интервал" onChange={(intervalDays) => setForm({ ...form, intervalDays })} />
+                  <NumberInput value={form.intervalDays ?? 2} min={1} max={365} suffix="дн." onChange={(intervalDays) => setForm({ ...form, intervalDays })} />
                 </Field>
                 <Field label="Старт">
-                  <TextInput type="date" value={form.intervalStartDate ?? todayISO()} onChange={(event) => setForm({ ...form, intervalStartDate: event.target.value || todayISO() })} />
+                  <DateWheelInput value={form.intervalStartDate ?? todayISO()} onChange={(value) => setForm({ ...form, intervalStartDate: value || todayISO() })} />
                 </Field>
               </div>
             ) : null}

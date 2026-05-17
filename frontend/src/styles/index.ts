@@ -8,6 +8,7 @@ import "./forms.css";
 
 // Legacy loads before migrated component/page files so extracted selectors become the new source of truth.
 import "./legacy.css";
+import "@ncdai/react-wheel-picker/style.css";
 import "./wheels.css";
 import "./modals.css";
 import "./creation-panels.css";

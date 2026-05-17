@@ -112,7 +112,7 @@
 
 /* Today focus session: task picker, active timer modal, and compact page widget. */
 .focus-modal-card {
-  --modal-width: 720px;
+  --modal-width: 600px;
 }
 
 .focus-modal-card > .focus-filter-row,
@@ -192,7 +192,7 @@
 }
 
 .focus-duration-wheel {
-  max-width: 20rem;
+  max-width: 16.75rem;
 }
 
 .focus-session-panel {

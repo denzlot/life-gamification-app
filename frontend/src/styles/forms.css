@@ -26,7 +26,7 @@
 .clean-field > span { color: color-mix(in srgb, var(--muted), var(--text) 10%); }
 .mini-form-grid { grid-column: 1 / -1; }
 .clean-field > span { display: inline-flex; min-height: 1.15rem; align-items: center; }
-.textarea { resize: vertical; overflow: auto; }
+.textarea { resize: none; overflow: auto; }
 .field:has(.textarea) { grid-column: 1 / -1; }
 
 .field { gap: 0.32rem; }
@@ -34,10 +34,18 @@
 .form-grid { gap: 0.72rem; }
 
 .input { min-height: 40px; padding: 0.54rem 0.7rem; font-size: var(--fv-text-medium); border-radius: 10px; }
-.textarea { min-height: 41px !important; max-height: 116px !important; }
+.textarea { min-height: 64px !important; max-height: 150px !important; }
 .field { font-size: var(--fv-text-quote); }
 @media (max-width: 720px) {
 .input { min-height: 37px; }
 }
 .input { transition: border-color 150ms ease, box-shadow 200ms ease, background 150ms ease !important; }
-.input:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent), transparent 82%) !important; border-color: color-mix(in srgb, var(--accent), transparent 28%) !important; }
+.input:focus,
+.input:focus-visible { background: color-mix(in srgb, var(--surface), var(--accent) 4%); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent), transparent 78%) !important; border-color: color-mix(in srgb, var(--accent), transparent 20%) !important; }
+.input[type="number"] { appearance: textfield; }
+.input[type="number"]::-webkit-outer-spin-button,
+.input[type="number"]::-webkit-inner-spin-button { appearance: none; margin: 0; }
+.number-input-shell { position: relative; width: 100%; min-width: 0; }
+.number-input-shell .number-text-input { padding-right: 0.7rem; font-variant-numeric: tabular-nums; }
+.number-input-shell.has-suffix .number-text-input { padding-right: 4.1rem; }
+.number-input-suffix { position: absolute; top: 50%; right: 0.68rem; max-width: 3.2rem; overflow: hidden; color: var(--muted); font-size: var(--fv-text-small); text-overflow: ellipsis; white-space: nowrap; transform: translateY(-50%); pointer-events: none; }

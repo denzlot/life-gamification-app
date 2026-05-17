@@ -14,7 +14,7 @@ import {
 } from "../../utils/focusTimerStorage";
 import { formatTime } from "../../utils/format";
 import { Button } from "../Button";
-import { Field, NumberWheelInput } from "../FormFields";
+import { DurationWheelInput, Field } from "../FormFields";
 import { FormModal } from "../FormModal";
 import { StatusCycleButton } from "../StatusCycleButton";
 
@@ -272,14 +272,13 @@ export function TodayFocusModal({
             <p className="focus-modal-empty muted">В daily plan пока нет доступных задач для фокуса.</p>
           )}
 
-          <Field label="Время фокус-сессии" hint="Выбери длительность в минутах, без пресетов.">
+          <Field label="Время фокус-сессии" hint="Выбери часы и минуты или введи длительность вручную.">
             <div className="focus-duration-wheel">
-              <NumberWheelInput
+              <DurationWheelInput
                 value={durationMinutesDraft}
                 min={1}
                 max={MAX_FOCUS_DURATION_MINUTES}
-                suffix="мин"
-                label="выбрать минуты"
+                label="выбрать длительность"
                 placeholder="30 мин"
                 onChange={(value) => setDurationMinutesDraft(clampFocusDurationMinutes(value))}
               />

@@ -307,7 +307,7 @@
 .route-step-preview-list { grid-template-columns: 1fr; max-height: 12rem; }
 }
 .quest-panel-body .quest-route-board { margin-top: 0; }
-.form-modal-backdrop .quest-form { --modal-width: 820px; }
+.form-modal-backdrop .quest-form { --modal-width: 680px; }
 .form-modal-backdrop .quest-form .quest-title-field {
   grid-column: 1 !important;
   width: min(100%, 28rem);
@@ -339,9 +339,9 @@
 
 .form-modal-backdrop .quest-form .quest-compact-textarea-field .textarea,
 .form-modal-backdrop .quest-form .mini-form-grid .textarea {
-  min-height: 40px !important;
-  height: 40px;
-  max-height: 86px !important;
+  min-height: 68px !important;
+  height: 68px;
+  max-height: 132px !important;
 }
 
 .form-modal-backdrop .quest-form .quest-form-description-reveal .field {
@@ -361,8 +361,8 @@
 }
 
 .form-modal-backdrop .quest-form--manual {
-  --modal-width: 980px;
-  max-height: min(90vh, 900px) !important;
+  --modal-width: 860px;
+  max-height: min(88vh, 840px) !important;
   overflow-y: auto !important;
   overscroll-behavior: contain;
   align-content: start !important;

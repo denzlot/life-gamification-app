@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { api } from "../../api/http";
 import type { QuestResponse, QuestStepResponse, UpdateQuestStepRequest } from "../../api/types";
 import { Button } from "../Button";
-import { Field, TextArea, TextInput, TimeWheelInput } from "../FormFields";
+import { DateWheelInput, Field, TextArea, TextInput, TimeWheelInput } from "../FormFields";
 import { ErrorLine } from "../Loader";
 import { addDays, computePace, groupQuestSteps, shortStepWord } from "../../utils/calendarSchedule";
 import { formatDate, formatTime, pct, todayISO } from "../../utils/format";
@@ -165,7 +165,7 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
               <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} />
               {!selectedStepCompleted ? (
                 <div className="route-step-edit-grid">
-                  <Field label="Дата"><TextInput type="date" value={form.scheduledDate} onChange={(event) => setForm({ ...form, scheduledDate: event.target.value || selectedStep.scheduledDate })} /></Field>
+                  <Field label="Дата"><DateWheelInput value={form.scheduledDate} onChange={(value) => setForm({ ...form, scheduledDate: value || selectedStep.scheduledDate })} /></Field>
                   <Field label="Время"><TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} /></Field>
                   <Field label="Дедлайн"><TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field>
                 </div>

@@ -2,7 +2,7 @@ import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type { CreateTaskRequest } from "../../api/types";
 import { formatTime } from "../../utils/format";
 import { Button } from "../Button";
-import { Field, TextArea, TextInput, TimeWheelInput } from "../FormFields";
+import { DateWheelInput, Field, TextArea, TextInput, TimeWheelInput } from "../FormFields";
 import { FormModal } from "../FormModal";
 import { ErrorLine } from "../Loader";
 import { OptionChip } from "../OptionChip";
@@ -57,7 +57,7 @@ export function TodayTaskCreateModal({
           <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} placeholder="Например: подготовить отчёт" />
         </Field>
         <Field label="Дата задачи">
-          <TextInput type="date" value={taskForm.deadlineDate || today} onChange={(event) => setTaskForm({ ...taskForm, deadlineDate: event.target.value || today })} />
+          <DateWheelInput value={taskForm.deadlineDate || today} onChange={(value) => setTaskForm({ ...taskForm, deadlineDate: value || today })} />
         </Field>
         <div className="optional-toolbar">
           <OptionChip active={taskOptions.time || Boolean(taskForm.plannedTime)} onClick={() => setTaskOptions((state) => ({ ...state, time: !state.time }))}>

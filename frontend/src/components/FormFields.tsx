@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -31,5 +32,62 @@ export function SelectInput(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select className={cx("input", "select", className)} {...rest} />;
 }
 
-// Preserve the old import path while keeping wheel-specific logic out of this generic fields file.
-export { NumberWheelInput, TimeWheelInput } from "./WheelInputs";
+type NumberInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type" | "inputMode" | "pattern" | "min" | "max"> & {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  suffix?: string;
+};
+
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+export function NumberInput({ value, onChange, min = 0, max = 9999, suffix, className, onBlur, onKeyDown, ...rest }: NumberInputProps) {
+  const [draft, setDraft] = useState(() => String(clampNumber(Math.round(value || min), min, max)));
+
+  useEffect(() => {
+    setDraft(String(clampNumber(Math.round(value || min), min, max)));
+  }, [max, min, value]);
+
+  function commit(raw = draft) {
+    const parsed = Number.parseInt(raw, 10);
+    const next = clampNumber(Number.isFinite(parsed) ? parsed : min, min, max);
+    setDraft(String(next));
+    onChange(next);
+  }
+
+  return (
+    <div className={cx("number-input-shell", suffix && "has-suffix", className)}>
+      <input
+        className="input number-text-input"
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={draft}
+        onChange={(event) => {
+          const nextDraft = event.target.value.replace(/\D/g, "");
+          setDraft(nextDraft);
+          if (nextDraft !== "") onChange(clampNumber(Number.parseInt(nextDraft, 10), min, max));
+        }}
+        onBlur={(event) => {
+          commit(event.currentTarget.value);
+          onBlur?.(event);
+        }}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (!event.defaultPrevented && event.key === "Enter") {
+            event.preventDefault();
+            commit(event.currentTarget.value);
+            event.currentTarget.blur();
+          }
+        }}
+        {...rest}
+      />
+      {suffix ? <span className="number-input-suffix">{suffix}</span> : null}
+    </div>
+  );
+}
+
+export { DateWheelInput, DurationWheelInput, TimeWheelInput } from "./WheelInputs";

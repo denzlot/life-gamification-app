@@ -116,8 +116,8 @@ body { font-size: 15.2px; }
 :root[data-theme="rpg"] { --hp-great: #d7b15d; --hp-normal: #a89462; --hp-tired: #b47b37; --hp-exhausted: #9f5b3c; --hp-critical: #b44949; --hp-ink: #21180d; }
 :root[data-theme="vampire"] { --hp-great: #d6a75b; --hp-normal: #b73446; --hp-tired: #9d5361; --hp-exhausted: #8f2e42; --hp-critical: #ef5365; --hp-ink: #1b121b; }
 body { background: linear-gradient(135deg, color-mix(in srgb, var(--bg), var(--accent) 3%), var(--bg) 42%), linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg), #000 16%)) !important; }
-:root { --modal-width: 740px;
-  --modal-radius: 20px; }
+:root { --modal-width: 640px;
+  --modal-radius: 18px; }
 
 /* Form control font inheritance migrated from legacy.css. */
 button,
