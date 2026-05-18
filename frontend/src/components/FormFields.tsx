@@ -90,4 +90,4 @@ export function NumberInput({ value, onChange, min = 0, max = 9999, suffix, clas
   );
 }
 
-export { DateWheelInput, DurationWheelInput, TimeWheelInput } from "./WheelInputs";
+export { DateWheelInput, DurationWheelInput, QuestPlanWheelInput, TimeWheelInput } from "./WheelInputs";

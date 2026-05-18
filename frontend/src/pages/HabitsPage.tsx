@@ -3,12 +3,11 @@ import { api } from "../api/http";
 import type { CreateHabitRequest, HabitResponse } from "../api/types";
 import { Button } from "../components/Button";
 import { EmptyState } from "../components/EmptyState";
-import { FormModal } from "../components/FormModal";
 import { OptionChip } from "../components/OptionChip";
 import { DateWheelInput, Field, NumberInput, TextArea, TextInput, TimeWheelInput } from "../components/FormFields";
 import { ErrorLine, Loader } from "../components/Loader";
-import { ModalTwinTimeRow } from "../components/ModalTwinTimeRow";
-import { RevealSection } from "../components/RevealSection";
+import { Modal } from "../components/Modal";
+import { ModalOptionalFields } from "../components/ModalOptionalFields";
 import { useToast } from "../context/ToastContext";
 import { useAsync } from "../hooks/useAsync";
 import { formatDate, formatTime, todayISO } from "../utils/format";
@@ -158,85 +157,119 @@ export function HabitsPage() {
         </div>
 
         {formOpen ? (
-          <FormModal onClose={resetForm}>
-            <form className="form-grid unified-form compact-create-form create-drawer-form modal-form-card" onSubmit={submit} role="dialog" aria-modal="true" aria-label={editing ? "Редактирование привычки" : "Новая привычка"} onMouseDown={(event) => event.stopPropagation()}>
-              <div className="modal-form-head">
-                <div><p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новая привычка"}</p><strong>{editing ? "Изменить привычку" : "Добавить привычку"}</strong></div>
-                <button type="button" className="dialog-close" onClick={resetForm} aria-label="Закрыть">×</button>
-              </div>
-            <Field label="Название">
-              <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} placeholder="Например: выпить витамины" />
-            </Field>
-
-            <div className="schedule-mode-toolbar optional-toolbar" aria-label="Режим расписания">
-              {scheduleModes.map((mode) => (
-                <OptionChip
-                  key={mode.value}
-                  active={(form.scheduleType ?? "WEEKLY") === mode.value}
-                  onClick={() => setForm({ ...form, scheduleType: mode.value })}
-                >
-                  {mode.label}
-                </OptionChip>
-              ))}
-            </div>
-
-            {(form.scheduleType ?? "WEEKLY") === "WEEKLY" ? (
-              <div className="weekday-picker" aria-label="Дни привычки">
-                {allDays.map((day) => (
-                  <button
-                    type="button"
-                    key={day}
-                    className={form.scheduleDays?.includes(day) ? "active" : ""}
-                    onClick={() => setForm({ ...form, scheduleDays: toggleDay(form.scheduleDays, day) })}
+          <Modal title={editing ? "Изменить привычку" : "Добавить привычку"} eyebrow={editing ? "редактирование" : "новая привычка"} onClose={resetForm}>
+            <form className="modal-form" onSubmit={submit}>
+              <div className="optional-toolbar schedule-mode-toolbar" aria-label="Режим расписания">
+                {scheduleModes.map((mode) => (
+                  <OptionChip
+                    key={mode.value}
+                    active={(form.scheduleType ?? "WEEKLY") === mode.value}
+                    onClick={() => setForm({ ...form, scheduleType: mode.value })}
                   >
-                    {dayLabels[day]}
-                  </button>
+                    {mode.label}
+                  </OptionChip>
                 ))}
               </div>
-            ) : null}
 
-            {form.scheduleType === "MONTHLY" ? (
-              <div className="schedule-detail-row">
-                <Field label="День месяца" hint="Если такого дня нет, появится в последний день месяца.">
-                  <NumberInput value={form.monthlyDay ?? 1} min={1} max={31} suffix="день" onChange={(monthlyDay) => setForm({ ...form, monthlyDay })} />
+              <div className="optional-toolbar">
+                <OptionChip active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>{form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}</OptionChip>
+                <OptionChip active={options.deadline || Boolean(form.deadlineTime)} onClick={() => setOptions((state) => ({ ...state, deadline: !state.deadline }))}>{form.deadlineTime ? `Дедлайн: ${formatTime(form.deadlineTime)}` : "Дедлайн"}</OptionChip>
+                <OptionChip active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionChip>
+              </div>
+
+              <div className="modal-form-grid">
+                <Field label="Название" className="modal-field">
+                  <TextInput value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required maxLength={160} placeholder="Например: выпить витамины" />
                 </Field>
               </div>
-            ) : null}
 
-            {form.scheduleType === "INTERVAL" ? (
-              <div className="schedule-detail-row two-fields">
-                <Field label="Каждые">
-                  <NumberInput value={form.intervalDays ?? 2} min={1} max={365} suffix="дн." onChange={(intervalDays) => setForm({ ...form, intervalDays })} />
-                </Field>
-                <Field label="Старт">
-                  <DateWheelInput value={form.intervalStartDate ?? todayISO()} onChange={(value) => setForm({ ...form, intervalStartDate: value || todayISO() })} />
-                </Field>
+              {(form.scheduleType ?? "WEEKLY") === "WEEKLY" ? (
+                <div className="weekday-picker modal-weekday-picker" aria-label="Дни привычки">
+                  {allDays.map((day) => (
+                    <button
+                      type="button"
+                      key={day}
+                      className={form.scheduleDays?.includes(day) ? "active" : ""}
+                      onClick={() => setForm({ ...form, scheduleDays: toggleDay(form.scheduleDays, day) })}
+                    >
+                      {dayLabels[day]}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              <ModalOptionalFields
+                items={[
+                  {
+                    id: "monthly-day",
+                    open: form.scheduleType === "MONTHLY",
+                    children: (
+                      <Field label="День месяца" hint="Если такого дня нет, появится в последний день месяца." className="modal-field">
+                        <NumberInput value={form.monthlyDay ?? 1} min={1} max={31} suffix="день" onChange={(monthlyDay) => setForm({ ...form, monthlyDay })} />
+                      </Field>
+                    )
+                  },
+                  {
+                    id: "interval-days",
+                    open: form.scheduleType === "INTERVAL",
+                    children: (
+                      <Field label="Каждые" className="modal-field">
+                        <NumberInput value={form.intervalDays ?? 2} min={1} max={365} suffix="дн." onChange={(intervalDays) => setForm({ ...form, intervalDays })} />
+                      </Field>
+                    )
+                  },
+                  {
+                    id: "interval-start",
+                    open: form.scheduleType === "INTERVAL",
+                    children: (
+                      <Field label="Старт" className="modal-field">
+                        <DateWheelInput value={form.intervalStartDate ?? todayISO()} onChange={(value) => setForm({ ...form, intervalStartDate: value || todayISO() })} />
+                      </Field>
+                    )
+                  }
+                ]}
+              />
+
+              <ModalOptionalFields
+                items={[
+                  {
+                    id: "time",
+                    open: options.time,
+                    children: (
+                      <Field label="Плановое время" className="modal-field">
+                        <TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} />
+                      </Field>
+                    )
+                  },
+                  {
+                    id: "deadline",
+                    open: options.deadline,
+                    children: (
+                      <Field label="Дедлайн" className="modal-field">
+                        <TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" />
+                      </Field>
+                    )
+                  },
+                  {
+                    id: "description",
+                    open: options.description,
+                    wide: true,
+                    children: (
+                      <Field label="Описание" className="modal-field modal-field--wide">
+                        <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+                      </Field>
+                    )
+                  }
+                ]}
+              />
+
+              <ErrorLine error={formError} />
+              <div className="modal-actions">
+                <Button disabled={busy}>{busy ? "Сохраняем" : editing ? "Сохранить" : "Создать"}</Button>
+                {editing ? <Button type="button" variant="ghost" onClick={resetForm}>Отмена</Button> : null}
               </div>
-            ) : null}
-
-            <div className="optional-toolbar">
-              <OptionChip active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>{form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}</OptionChip>
-              <OptionChip active={options.deadline || Boolean(form.deadlineTime)} onClick={() => setOptions((state) => ({ ...state, deadline: !state.deadline }))}>{form.deadlineTime ? `Дедлайн: ${formatTime(form.deadlineTime)}` : "Дедлайн"}</OptionChip>
-              <OptionChip active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionChip>
-            </div>
-
-            <ModalTwinTimeRow
-              timeOpen={options.time}
-              deadlineOpen={options.deadline}
-              timeField={<Field label="Плановое время"><TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} /></Field>}
-              deadlineField={<Field label="Дедлайн"><TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field>}
-            />
-            <RevealSection open={options.description} className="option-reveal--wide">
-              <Field label="Описание"><TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Field>
-            </RevealSection>
-
-            <ErrorLine error={formError} />
-            <div className="form-actions">
-              <Button disabled={busy}>{busy ? "Сохраняем" : editing ? "Сохранить" : "Создать"}</Button>
-              {editing ? <Button type="button" variant="ghost" onClick={resetForm}>Отмена</Button> : null}
-            </div>
             </form>
-          </FormModal>
+          </Modal>
         ) : null}
       </section>
 

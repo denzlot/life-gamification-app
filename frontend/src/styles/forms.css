@@ -39,9 +39,10 @@
 @media (max-width: 720px) {
 .input { min-height: 37px; }
 }
-.input { transition: border-color 150ms ease, box-shadow 200ms ease, background 150ms ease !important; }
+.input { transition: border-color 150ms ease, box-shadow 180ms ease, background 150ms ease; }
 .input:focus,
-.input:focus-visible { background: color-mix(in srgb, var(--surface), var(--accent) 4%); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent), transparent 78%) !important; border-color: color-mix(in srgb, var(--accent), transparent 20%) !important; }
+.input:focus-visible { background: color-mix(in srgb, var(--surface), var(--accent) 3%); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent), transparent 42%), 0 0 0 4px color-mix(in srgb, var(--accent), transparent 88%); border-color: color-mix(in srgb, var(--accent), transparent 26%); }
+.input:focus:not(:focus-visible) { background: color-mix(in srgb, var(--surface), var(--accent) 2%); box-shadow: none; border-color: color-mix(in srgb, var(--accent), transparent 38%); }
 .input[type="number"] { appearance: textfield; }
 .input[type="number"]::-webkit-outer-spin-button,
 .input[type="number"]::-webkit-inner-spin-button { appearance: none; margin: 0; }

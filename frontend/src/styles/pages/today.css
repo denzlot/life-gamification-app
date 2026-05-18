@@ -112,7 +112,7 @@
 
 /* Today focus session: task picker, active timer modal, and compact page widget. */
 .focus-modal-card {
-  --modal-width: 600px;
+  width: 100%;
 }
 
 .focus-modal-card > .focus-filter-row,
@@ -294,8 +294,7 @@
   white-space: nowrap;
 }
 
-.focus-session-card.status-completed .focus-time-left,
-.focus-session-card.status-completed .modal-form-head strong {
+.focus-session-card.status-completed .focus-time-left {
   color: var(--good);
 }
 
@@ -412,13 +411,9 @@
 }
 
 /* Focus UX: quieter active/completed states without changing the project visual language. */
-.focus-session-card.modal-form-card {
+.focus-session-card {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--bg) 14%), color-mix(in srgb, var(--surface-2), var(--bg) 24%));
-}
-
-.focus-session-card .modal-form-head {
-  border-bottom-color: color-mix(in srgb, var(--border), transparent 25%);
 }
 
 .focus-session-card .focus-session-panel {
@@ -455,8 +450,7 @@
   letter-spacing: -0.07em;
 }
 
-.focus-session-card.is-overtime .focus-time-left,
-.focus-session-card.is-overtime .modal-form-head strong {
+.focus-session-card.is-overtime .focus-time-left {
   color: color-mix(in srgb, var(--accent-2), var(--text) 26%);
 }
 

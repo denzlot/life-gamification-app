@@ -47,7 +47,7 @@ function viewportSize() {
   };
 }
 
-function getPopoverPlacement(trigger: HTMLElement, preferredWidth: number): PopoverPlacement {
+function getPopoverPlacement(trigger: HTMLElement, preferredWidth: number, matchTriggerWidth: boolean): PopoverPlacement {
   const viewport = viewportSize();
   const margin = 14;
   const gap = 8;
@@ -65,7 +65,7 @@ function getPopoverPlacement(trigger: HTMLElement, preferredWidth: number): Popo
   }
 
   const rect = trigger.getBoundingClientRect();
-  const width = Math.min(preferredWidth, viewport.width - margin * 2);
+  const width = Math.min(matchTriggerWidth ? rect.width : preferredWidth, viewport.width - margin * 2);
   const maxHeight = Math.min(420, viewport.height - margin * 2);
   const left = clampNumber(rect.left + viewport.offsetLeft, viewport.offsetLeft + margin, viewport.offsetLeft + viewport.width - width - margin);
   const belowTop = rect.bottom + viewport.offsetTop + gap;
@@ -78,13 +78,13 @@ function getPopoverPlacement(trigger: HTMLElement, preferredWidth: number): Popo
   return { isSheet: false, style: { left: `${left}px`, top: `${top}px`, width: `${width}px`, maxHeight: `${maxHeight}px` } };
 }
 
-function useWheelPopover(open: boolean, triggerRef: RefObject<HTMLElement>, preferredWidth: number, onClose: () => void) {
+function useWheelPopover(open: boolean, triggerRef: RefObject<HTMLElement>, preferredWidth: number, matchTriggerWidth: boolean, onClose: () => void) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [placement, setPlacement] = useState<PopoverPlacement>({ isSheet: false, style: {} });
 
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return;
-    function update() { if (triggerRef.current) setPlacement(getPopoverPlacement(triggerRef.current, preferredWidth)); }
+    function update() { if (triggerRef.current) setPlacement(getPopoverPlacement(triggerRef.current, preferredWidth, matchTriggerWidth)); }
     update();
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
@@ -96,7 +96,7 @@ function useWheelPopover(open: boolean, triggerRef: RefObject<HTMLElement>, pref
       window.visualViewport?.removeEventListener("resize", update);
       window.visualViewport?.removeEventListener("scroll", update);
     };
-  }, [open, preferredWidth, triggerRef]);
+  }, [matchTriggerWidth, open, preferredWidth, triggerRef]);
 
   useEffect(() => {
     if (!open) return;
@@ -117,16 +117,17 @@ function useWheelPopover(open: boolean, triggerRef: RefObject<HTMLElement>, pref
   return { panelRef, placement };
 }
 
-function WheelPopover({ open, triggerRef, preferredWidth, label, className, onClose, children }: {
+function WheelPopover({ open, triggerRef, preferredWidth, matchTriggerWidth = true, label, className, onClose, children }: {
   open: boolean;
   triggerRef: RefObject<HTMLElement>;
   preferredWidth: number;
+  matchTriggerWidth?: boolean;
   label: string;
   className?: string;
   onClose: () => void;
   children: ReactNode;
 }) {
-  const { panelRef, placement } = useWheelPopover(open, triggerRef, preferredWidth, onClose);
+  const { panelRef, placement } = useWheelPopover(open, triggerRef, preferredWidth, matchTriggerWidth, onClose);
   if (!open || typeof document === "undefined") return null;
   return createPortal(
     <div className={`wheel-portal ${placement.isSheet ? "is-sheet" : "is-popover"}`}>
@@ -137,10 +138,6 @@ function WheelPopover({ open, triggerRef, preferredWidth, label, className, onCl
     </div>,
     document.body
   );
-}
-
-function compactPopoverLabel(label: string) {
-  return label.replace(/^выбрать\s+/i, "");
 }
 
 function pickerProps() {
@@ -531,6 +528,12 @@ function formatManualDuration(value: number) {
   return `${pad(parts.hour)}:${pad(parts.minute)}`;
 }
 
+function parseManualTime(value: string) {
+  const numbers = value.replace(/\D/g, "").slice(0, 4);
+  if (numbers.length <= 2) return numbers;
+  return `${numbers.slice(0, 2)}:${numbers.slice(2)}`;
+}
+
 // Central wheel inputs for time, date, and focus duration.
 // The picker API mirrors the reusable wheel-picker anatomy used across the app.
 export function TimeWheelInput({ value, onChange, placeholder = "Выбрать время", allowClear = true, label = "выбрать время" }: {
@@ -543,7 +546,6 @@ export function TimeWheelInput({ value, onChange, placeholder = "Выбрать 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(() => parseTime(value));
-  const popoverLabel = compactPopoverLabel(label);
   const hours = useMemo<WheelPickerOption<number>[]>(() => Array.from({ length: 24 }, (_, index) => ({ value: index, label: pad(index) })), []);
   const minutes = useMemo<WheelPickerOption<number>[]>(() => Array.from({ length: 60 }, (_, index) => ({ value: index, label: pad(index) })), []);
 
@@ -552,6 +554,7 @@ export function TimeWheelInput({ value, onChange, placeholder = "Выбрать 
   function updateDraftFromTimeInput(nextValue: string) { setDraft(parseTime(nextValue)); }
   function apply() { onChange(`${pad(draft.hour)}:${pad(draft.minute)}`); setOpen(false); }
   function clear() { onChange(null); setOpen(false); }
+  const manualTimeValue = `${pad(draft.hour)}:${pad(draft.minute)}`;
 
   return (
     <div className="wheel-field">
@@ -559,11 +562,10 @@ export function TimeWheelInput({ value, onChange, placeholder = "Выбрать 
         {value ? formatTime(value) : placeholder}
       </button>
       <WheelPopover open={open} triggerRef={triggerRef} preferredWidth={244} label={label} className="wheel-panel--picker time-wheel" onClose={() => setOpen(false)}>
-        <div className="wheel-panel-head">
-          <p className="eyebrow">{popoverLabel}</p>
+        <div className="wheel-panel-head wheel-panel-head--manual">
           <label className="wheel-manual-label">
             <span>Вручную</span>
-            <input className="input wheel-manual-input" type="time" step={60} value={`${pad(draft.hour)}:${pad(draft.minute)}`} aria-label="Ввести время вручную" onInput={(event) => updateDraftFromTimeInput(event.currentTarget.value)} onChange={(event) => updateDraftFromTimeInput(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); } }} />
+            <input className="input wheel-manual-input wheel-manual-time-input" type="text" inputMode="numeric" value={manualTimeValue} aria-label="Ввести время вручную" onChange={(event) => updateDraftFromTimeInput(parseManualTime(event.target.value))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); } }} />
           </label>
         </div>
         <WheelPickerWrapper className="wheel-picker-wrapper time-wheel-picker">
@@ -589,7 +591,6 @@ export function DurationWheelInput({ value, onChange, min = 1, max = 180, label 
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(() => durationParts(value, min, max));
   const [manualValue, setManualValue] = useState(() => formatManualDuration(clampNumber(value, min, max)));
-  const popoverLabel = compactPopoverLabel(label);
   const maxHour = Math.ceil(max / 60);
   const hours = useMemo<WheelPickerOption<number>[]>(() => Array.from({ length: maxHour + 1 }, (_, index) => ({ value: index, label: pad(index) })), [maxHour]);
   const minutes = useMemo<WheelPickerOption<number>[]>(() => Array.from({ length: 60 }, (_, index) => ({ value: index, label: pad(index) })), []);
@@ -626,8 +627,7 @@ export function DurationWheelInput({ value, onChange, min = 1, max = 180, label 
         {value ? formatDuration(value) : placeholder}
       </button>
       <WheelPopover open={open} triggerRef={triggerRef} preferredWidth={244} label={label} className="wheel-panel--picker duration-wheel" onClose={() => setOpen(false)}>
-        <div className="wheel-panel-head">
-          <p className="eyebrow">{popoverLabel}</p>
+        <div className="wheel-panel-head wheel-panel-head--manual">
           <label className="wheel-manual-label">
             <span>Вручную</span>
             <input className="input wheel-manual-input" type="text" inputMode="numeric" value={manualValue} aria-label="Ввести длительность вручную" onChange={(event) => setManualValue(event.target.value.replace(/[^\d:]/g, ""))} onBlur={resolveManualValue} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); apply(); } }} />
@@ -644,6 +644,65 @@ export function DurationWheelInput({ value, onChange, min = 1, max = 180, label 
   );
 }
 
+export function QuestPlanWheelInput({ days, steps, onChange, min = 1, max = 365, label = "выбрать длительность и шаги" }: {
+  days: number;
+  steps: number;
+  onChange: (value: { days: number; steps: number }) => void;
+  min?: number;
+  max?: number;
+  label?: string;
+}) {
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(() => ({
+    days: clampNumber(Math.round(days || min), min, max),
+    steps: clampNumber(Math.round(steps || min), min, max)
+  }));
+  const options = useMemo<WheelPickerOption<number>[]>(
+    () => Array.from({ length: max - min + 1 }, (_, index) => {
+      const value = min + index;
+      return { value, label: String(value) };
+    }),
+    [max, min]
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    setDraft({
+      days: clampNumber(Math.round(days || min), min, max),
+      steps: clampNumber(Math.round(steps || min), min, max)
+    });
+  }, [days, max, min, open, steps]);
+
+  function apply() {
+    onChange(draft);
+    setOpen(false);
+  }
+
+  return (
+    <div className="wheel-field">
+      <button ref={triggerRef} type="button" className="input wheel-trigger filled" aria-haspopup="dialog" aria-expanded={open} aria-label={label} onClick={() => setOpen((state) => !state)}>
+        {`${days} дн. / ${steps} ${steps === 1 ? "шаг" : "шагов"}`}
+      </button>
+      <WheelPopover open={open} triggerRef={triggerRef} preferredWidth={244} label={label} className="wheel-panel--picker quest-plan-wheel" onClose={() => setOpen(false)}>
+        <div className="quest-plan-wheel-labels" aria-hidden="true">
+          <span>дни</span>
+          <span>шаги</span>
+        </div>
+        <WheelPickerWrapper className="wheel-picker-wrapper quest-plan-wheel-picker">
+          <div className="quest-plan-wheel-column">
+            <AppWheelPicker options={options} value={draft.days} onValueChange={(nextDays) => setDraft((state) => ({ ...state, days: nextDays }))} infinite />
+          </div>
+          <div className="quest-plan-wheel-column">
+            <AppWheelPicker options={options} value={draft.steps} onValueChange={(nextSteps) => setDraft((state) => ({ ...state, steps: nextSteps }))} infinite />
+          </div>
+        </WheelPickerWrapper>
+        <div className="wheel-actions single-action"><button type="button" className="btn btn-primary" onClick={apply}>Применить</button></div>
+      </WheelPopover>
+    </div>
+  );
+}
+
 export function DateWheelInput({ value, onChange, placeholder = "Выбрать дату", label = "выбрать дату" }: {
   value?: string | null;
   onChange: (value: string) => void;
@@ -654,7 +713,6 @@ export function DateWheelInput({ value, onChange, placeholder = "Выбрать 
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(() => parseDate(value));
   const [manualValue, setManualValue] = useState(() => formatManualDate(parseDate(value)));
-  const popoverLabel = compactPopoverLabel(label);
   const minDate = todayParts();
   const days = useMemo<WheelPickerOption<number>[]>(() => dayOptions(draft.year, draft.month, minDate), [draft.day, draft.month, draft.year, minDate.day, minDate.month, minDate.year]);
   const months = useMemo<WheelPickerOption<number>[]>(() => monthOptions(draft.year, minDate), [draft.year, minDate.month, minDate.year]);
@@ -689,8 +747,7 @@ export function DateWheelInput({ value, onChange, placeholder = "Выбрать 
         {displayValue}
       </button>
       <WheelPopover open={open} triggerRef={triggerRef} preferredWidth={300} label={label} className="wheel-panel--picker date-wheel" onClose={() => setOpen(false)}>
-        <div className="wheel-panel-head">
-          <p className="eyebrow">{popoverLabel}</p>
+        <div className="wheel-panel-head wheel-panel-head--manual">
           <label className="wheel-manual-label">
             <span>Вручную</span>
             <input className="input wheel-manual-input wheel-manual-date-input" type="text" inputMode="numeric" value={manualValue} aria-label="Ввести дату вручную" onChange={(event) => {

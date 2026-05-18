@@ -1,13 +1,12 @@
-import type { Dispatch, FormEvent, SetStateAction } from "react";
+import type { Dispatch, DragEvent, FormEvent, SetStateAction } from "react";
 import { useMemo, useState } from "react";
 import type { CreateQuestRequest, CreateQuestStepRequest, QuestResponse } from "../../api/types";
 import { Button } from "../Button";
-import { FormModal } from "../FormModal";
 import { OptionChip } from "../OptionChip";
-import { DateWheelInput, Field, NumberInput, TextArea, TextInput, TimeWheelInput } from "../FormFields";
+import { DateWheelInput, Field, QuestPlanWheelInput, TextArea, TextInput, TimeWheelInput } from "../FormFields";
 import { ErrorLine } from "../Loader";
-import { ModalTwinTimeRow } from "../ModalTwinTimeRow";
-import { RevealSection } from "../RevealSection";
+import { Modal } from "../Modal";
+import { ModalOptionalFields } from "../ModalOptionalFields";
 import { addDays } from "../../utils/calendarSchedule";
 import { formatDate, formatTime, todayISO } from "../../utils/format";
 
@@ -31,13 +30,6 @@ interface QuestFormModalProps {
   onCancel: () => void;
 }
 
-function stepWord(count: number) {
-  const abs = Math.abs(count);
-  if (abs % 10 === 1 && abs % 100 !== 11) return "шаг";
-  if ([2, 3, 4].includes(abs % 10) && ![12, 13, 14].includes(abs % 100)) return "шага";
-  return "шагов";
-}
-
 function generatedStepTitle(baseTitle: string, index: number) {
   const safeBase = baseTitle.trim() || "Шаг";
   return index === 0 ? safeBase : `${safeBase} ${index + 1}`;
@@ -53,15 +45,15 @@ function monthLabel(date: string) {
   return months[Math.max(0, Math.min(11, Number(date.slice(5, 7)) - 1))] ?? "";
 }
 
-function buildManualSteps(form: CreateQuestRequest, preserveDates = true): CreateQuestStepRequest[] {
+function buildManualSteps(form: CreateQuestRequest, preserveDates = true, preserveTitles = true): CreateQuestStepRequest[] {
   const totalSteps = Math.max(1, Math.min(365, Number(form.totalSteps) || 1));
   const existing = form.steps ?? [];
 
   return Array.from({ length: totalSteps }, (_, index) => {
     const current = existing[index];
     return {
-      title: generatedStepTitle(form.baseStepTitle, index),
-      description: form.baseStepDescription?.trim() || null,
+      title: preserveTitles ? current?.title ?? generatedStepTitle(form.baseStepTitle, index) : generatedStepTitle(form.baseStepTitle, index),
+      description: null,
       baselineScheduledDate: preserveDates ? current?.baselineScheduledDate ?? null : null,
       plannedTime: current?.plannedTime ?? null,
       deadlineTime: current?.deadlineTime ?? null
@@ -114,6 +106,8 @@ export function QuestFormModal({
   const planError = manualPlanError(form, range);
   const selectedManualStep = selectedStepIndex === null ? null : manualSteps[Math.min(selectedStepIndex, manualSteps.length - 1)] ?? null;
   const assignedCount = manualSteps.filter((step) => step.baselineScheduledDate).length;
+  const [draggingStepIndex, setDraggingStepIndex] = useState<number | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
 
   function patchManualStep(index: number, patch: Partial<CreateQuestStepRequest>) {
     setForm((current) => {
@@ -132,6 +126,10 @@ export function QuestFormModal({
     if (planMode === "MANUAL") {
       setOptions((state) => ({ ...state, schedule: false, steps: false, time: false, deadline: false, description: false }));
     }
+  }
+
+  function togglePlanMode() {
+    switchPlanMode(form.planMode === "MANUAL" ? "AUTO" : "MANUAL");
   }
 
   function updateTotalSteps(value: number) {
@@ -156,6 +154,11 @@ export function QuestFormModal({
     });
   }
 
+  function updatePlanSize(value: { days: number; steps: number }) {
+    updateDurationDays(value.days);
+    updateTotalSteps(value.steps);
+  }
+
   function updateStartDate(value: string | null) {
     const startDate = value || todayISO();
     setForm((current) => {
@@ -178,70 +181,109 @@ export function QuestFormModal({
   function updateBaseStepTitle(value: string) {
     setForm((current) => {
       const next = { ...current, baseStepTitle: value };
-      return { ...next, steps: current.planMode === "MANUAL" ? buildManualSteps(next) : current.steps };
+      return { ...next, steps: current.planMode === "MANUAL" ? buildManualSteps(next, true, false) : current.steps };
     });
   }
 
-  function updateBaseStepDescription(value: string) {
-    setForm((current) => {
-      const next = { ...current, baseStepDescription: value };
-      return { ...next, steps: current.planMode === "MANUAL" ? buildManualSteps(next) : current.steps };
-    });
+  function updateSelectedStepTitle(value: string) {
+    if (selectedStepIndex === null) return;
+    patchManualStep(Math.min(selectedStepIndex, manualSteps.length - 1), { title: value });
   }
 
   function assignSelectedStep(date: string) {
     if (selectedStepIndex === null) return;
-    patchManualStep(Math.min(selectedStepIndex, manualSteps.length - 1), { baselineScheduledDate: date });
+    assignStepToDate(Math.min(selectedStepIndex, manualSteps.length - 1), date);
+  }
+
+  function assignStepToDate(index: number, date: string) {
+    if (manualSteps.length === 0) return;
+    const safeIndex = Math.max(0, Math.min(index, manualSteps.length - 1));
+    patchManualStep(safeIndex, { baselineScheduledDate: date });
+    setSelectedStepIndex(safeIndex);
+  }
+
+  function handleStepDragStart(event: DragEvent<HTMLButtonElement>, index: number) {
+    setDraggingStepIndex(index);
+    setSelectedStepIndex(index);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(index));
+    const rect = event.currentTarget.getBoundingClientRect();
+    event.dataTransfer.setDragImage(event.currentTarget, rect.width / 2, rect.height / 2);
+  }
+
+  function handleManualPlanDragOver(event: DragEvent<HTMLElement>) {
+    if (draggingStepIndex === null) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }
+
+  function handleDayDragOver(event: DragEvent<HTMLButtonElement>, date: string) {
+    if (draggingStepIndex === null) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverDate(date);
+  }
+
+  function handleDayDrop(event: DragEvent<HTMLButtonElement>, date: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    const rawIndex = event.dataTransfer.getData("text/plain");
+    const parsedIndex = rawIndex === "" ? Number.NaN : Number(rawIndex);
+    const nextIndex = Number.isInteger(parsedIndex) ? parsedIndex : draggingStepIndex;
+    if (nextIndex !== null) assignStepToDate(nextIndex, date);
+    setDraggingStepIndex(null);
+    setDragOverDate(null);
+  }
+
+  function clearDragState() {
+    setDraggingStepIndex(null);
+    setDragOverDate(null);
   }
 
   function fillManualPlanAutomatically() {
     setForm((current) => ({ ...current, steps: distributeManualSteps(current) }));
   }
 
-  return (
-    <FormModal onClose={onCancel}>
-      <form
-        className={`form-grid unified-form quest-form compact-create-form create-drawer-form modal-form-card ${isManualMode ? "quest-form--manual" : ""}`}
-        onSubmit={onSubmit}
-        role="dialog"
-        aria-modal="true"
-        aria-label={editing ? "Редактирование квеста" : "Новый квест"}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <div className="modal-form-head">
-          <div>
-            <p className="eyebrow form-eyebrow">{editing ? "редактирование" : "новый квест"}</p>
-            <strong>{editing ? "Изменить квест" : "Добавить квест"}</strong>
-          </div>
-          <button type="button" className="dialog-close" onClick={onCancel} aria-label="Закрыть">×</button>
-        </div>
-
-        <Field label="Название" className="quest-title-field">
-          <TextInput
-            value={form.title}
-            onChange={(event) => setForm({ ...form, title: event.target.value })}
-            maxLength={160}
-            required
-            placeholder="Например: изучить Java за 30 дней"
-          />
+  const topFields = (
+    <div className="modal-form-grid quest-top-grid">
+      <Field label="Название" className="modal-field">
+        <TextInput
+          value={form.title}
+          onChange={(event) => setForm({ ...form, title: event.target.value })}
+          maxLength={160}
+          required
+          placeholder="Например: изучить Java за 30 дней"
+        />
+      </Field>
+      {!editing ? (
+        <Field label="Дата старта" className="modal-field">
+          <DateWheelInput value={form.startDate} onChange={updateStartDate} />
         </Field>
+      ) : null}
+    </div>
+  );
 
-        {!editing ? (
-          <div className="quest-plan-mode-row" role="group" aria-label="Режим планирования">
-            <OptionChip active={(form.planMode ?? "AUTO") === "AUTO"} onClick={() => switchPlanMode("AUTO")}>Автоплан</OptionChip>
-            <OptionChip active={form.planMode === "MANUAL"} onClick={() => switchPlanMode("MANUAL")}>Ручной план</OptionChip>
-          </div>
-        ) : null}
-
+  return (
+    <Modal
+      title={editing ? "Изменить квест" : "Добавить квест"}
+      eyebrow={editing ? "редактирование" : "новый квест"}
+      headerSlot={!editing ? (
+        <button
+          type="button"
+          className="option-chip quest-plan-mode-toggle"
+          aria-label="Переключить режим планирования"
+          onClick={togglePlanMode}
+        >
+          {form.planMode === "MANUAL" ? "Ручной план" : "Автоплан"}
+        </button>
+      ) : null}
+      className="quest-modal"
+      onClose={onCancel}
+    >
+      <form className={`modal-form quest-form-v2 ${isManualMode ? "quest-form-v2--manual" : ""}`} onSubmit={onSubmit}>
         {isManualMode ? (
           <>
             <div className="optional-toolbar quest-manual-toolbar">
-              <OptionChip active={options.schedule} onClick={() => setOptions((state) => ({ ...state, schedule: !state.schedule }))}>
-                {`Старт: ${formatDate(form.startDate)}`}
-              </OptionChip>
-              <OptionChip active={options.steps} onClick={() => setOptions((state) => ({ ...state, steps: !state.steps }))}>
-                {`${form.totalSteps} ${stepWord(Number(form.totalSteps))} / ${form.durationDays} дн.`}
-              </OptionChip>
               <OptionChip active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>
                 {form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}
               </OptionChip>
@@ -253,59 +295,78 @@ export function QuestFormModal({
               </OptionChip>
             </div>
 
-            <div className="quest-manual-controls">
-              <div className="quest-manual-paired-reveals">
-                <RevealSection open={options.schedule} className="quest-form-schedule-reveal quest-manual-reveal quest-manual-reveal--schedule">
-                  <Field label="Дата старта">
-                    <DateWheelInput value={form.startDate} onChange={updateStartDate} />
-                  </Field>
-                </RevealSection>
+            {topFields}
 
-                <RevealSection open={options.description} className="quest-form-description-reveal quest-manual-reveal quest-manual-reveal--description">
-                  <Field label="Описание квеста" className="quest-compact-textarea-field">
-                    <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
-                  </Field>
-                </RevealSection>
-              </div>
+            <ModalOptionalFields
+              items={[
+                {
+                  id: "steps",
+                  open: true,
+                  wide: true,
+                  children: (
+                    <div className="quest-step-settings-row">
+                      <Field label="План" className="modal-field">
+                        <QuestPlanWheelInput days={Number(form.durationDays)} steps={Number(form.totalSteps)} onChange={updatePlanSize} />
+                      </Field>
+                      <Field label="Название шага" className="modal-field">
+                        <TextInput value={form.baseStepTitle} onChange={(event) => updateBaseStepTitle(event.target.value)} maxLength={150} required />
+                      </Field>
+                    </div>
+                  )
+                },
+                {
+                  id: "time",
+                  open: options.time,
+                  children: (
+                    <Field label="Плановое время" className="modal-field">
+                      <TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} />
+                    </Field>
+                  )
+                },
+                {
+                  id: "deadline",
+                  open: options.deadline,
+                  children: (
+                    <Field label="Дедлайн" className="modal-field">
+                      <TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" />
+                    </Field>
+                  )
+                },
+                {
+                  id: "description",
+                  open: options.description,
+                  wide: true,
+                  children: (
+                    <Field label="Описание квеста" className="modal-field modal-field--wide">
+                      <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+                    </Field>
+                  )
+                }
+              ]}
+            />
 
-              <RevealSection open={options.steps} className="option-reveal--wide quest-manual-reveal quest-manual-reveal--steps">
-                <div className="form-grid mini-form-grid">
-                  <Field label="Дней">
-                    <NumberInput value={Number(form.durationDays)} min={1} max={365} suffix="дней" onChange={updateDurationDays} />
-                  </Field>
-                  <Field label="Шагов">
-                    <NumberInput value={Number(form.totalSteps)} min={1} max={365} suffix="шагов" onChange={updateTotalSteps} />
-                  </Field>
-                  <Field label="Название шага">
-                    <TextInput value={form.baseStepTitle} onChange={(event) => updateBaseStepTitle(event.target.value)} maxLength={150} required />
-                  </Field>
-                  <Field label="Описание шага" className="quest-compact-textarea-field">
-                    <TextArea value={form.baseStepDescription ?? ""} onChange={(event) => updateBaseStepDescription(event.target.value)} />
-                  </Field>
-                </div>
-              </RevealSection>
-
-              <ModalTwinTimeRow
-                timeOpen={options.time}
-                deadlineOpen={options.deadline}
-                timeField={(
-                  <Field label="Плановое время">
-                    <TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} />
-                  </Field>
-                )}
-                deadlineField={(
-                  <Field label="Дедлайн">
-                    <TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" />
-                  </Field>
-                )}
-              />
-            </div>
-
-            <section className="quest-manual-plan" aria-label="Ручной план шагов">
+            <section
+              className={`quest-manual-plan ${draggingStepIndex !== null ? "is-dragging" : ""}`}
+              aria-label="Ручной план шагов"
+              onDragOver={handleManualPlanDragOver}
+              onDrop={clearDragState}
+            >
             <div className="quest-manual-plan-head">
               <div>
                 <p className="eyebrow">ручной план</p>
                 <strong>{assignedCount}/{manualSteps.length} назначено</strong>
+              </div>
+              <div className="quest-manual-selected">
+                <TextInput
+                  className="quest-manual-step-title-input"
+                  value={selectedStepIndex === null ? "Шаг не выбран" : selectedManualStep?.title ?? ""}
+                  disabled={selectedStepIndex === null}
+                  maxLength={150}
+                  aria-label="Название выбранного шага"
+                  onChange={(event) => updateSelectedStepTitle(event.target.value)}
+                  onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }}
+                />
+                <small>{selectedManualStep?.baselineScheduledDate ? formatDate(selectedManualStep.baselineScheduledDate) : selectedStepIndex === null ? "Выбери шаг" : "Дата не выбрана"}</small>
               </div>
               <Button type="button" variant="thin" onClick={fillManualPlanAutomatically}>Заполнить</Button>
             </div>
@@ -318,8 +379,11 @@ export function QuestFormModal({
                   <button
                     type="button"
                     key={date}
-                    className={`quest-manual-day ${selected ? "selected" : ""} ${assigned > 0 ? "has-steps" : ""}`}
+                    className={`quest-manual-day ${selected ? "selected" : ""} ${assigned > 0 ? "has-steps" : ""} ${draggingStepIndex !== null ? "drop-ready" : ""} ${dragOverDate === date ? "drop-target" : ""}`}
                     onClick={() => assignSelectedStep(date)}
+                    onDragOver={(event) => handleDayDragOver(event, date)}
+                    onDragLeave={() => setDragOverDate((current) => current === date ? null : current)}
+                    onDrop={(event) => handleDayDrop(event, date)}
                   >
                     <span>{Number(date.slice(8, 10))}</span>
                     <small>{monthLabel(date)}</small>
@@ -336,18 +400,17 @@ export function QuestFormModal({
                     type="button"
                     role="listitem"
                     key={index}
-                    className={`quest-route-node quest-manual-step ${selectedStepIndex === index ? "selected" : ""} ${step.baselineScheduledDate ? "assigned" : "unassigned"}`}
+                    className={`quest-route-node quest-manual-step ${selectedStepIndex === index ? "selected" : ""} ${step.baselineScheduledDate ? "assigned" : "unassigned"} ${draggingStepIndex === index ? "is-dragging" : ""}`}
                     title={step.title}
+                    draggable
+                    aria-grabbed={draggingStepIndex === index}
                     onClick={() => setSelectedStepIndex((current) => current === index ? null : index)}
+                    onDragStart={(event) => handleStepDragStart(event, index)}
+                    onDragEnd={clearDragState}
                   >
                     <span>{index + 1}</span>
                   </button>
                 ))}
-              </div>
-              <div className="quest-manual-selected">
-                <strong>{selectedStepIndex === null ? "Шаг не выбран" : `${selectedStepIndex + 1}. ${selectedManualStep?.title}`}</strong>
-                <small>{selectedManualStep?.baselineScheduledDate ? formatDate(selectedManualStep.baselineScheduledDate) : selectedStepIndex === null ? "Нажми шаг, затем дату" : "Дата не выбрана"}</small>
-                <span>Дата назначается кликом по календарю</span>
               </div>
             </div>
             </section>
@@ -355,11 +418,6 @@ export function QuestFormModal({
         ) : (
           <>
             <div className="optional-toolbar">
-              {!editing ? (
-                <OptionChip active={options.schedule} onClick={() => setOptions((state) => ({ ...state, schedule: !state.schedule }))}>
-                  {`Старт: ${formatDate(form.startDate)}`}
-                </OptionChip>
-              ) : null}
               <OptionChip active={options.time || Boolean(form.plannedTime)} onClick={() => setOptions((state) => ({ ...state, time: !state.time }))}>
                 {form.plannedTime ? `Время: ${formatTime(form.plannedTime)}` : "Время"}
               </OptionChip>
@@ -369,70 +427,71 @@ export function QuestFormModal({
               <OptionChip active={options.description || Boolean(form.description)} onClick={() => setOptions((state) => ({ ...state, description: !state.description }))}>
                 Описание
               </OptionChip>
-              {!editing ? (
-                <OptionChip active={options.steps} onClick={() => setOptions((state) => ({ ...state, steps: !state.steps }))}>
-                  {`${form.totalSteps} ${stepWord(Number(form.totalSteps))} / ${form.durationDays} дн.`}
-                </OptionChip>
-              ) : null}
             </div>
 
-            <RevealSection open={Boolean(!editing && options.schedule)} className="option-reveal--wide quest-form-schedule-reveal">
-              <Field label="Дата старта">
-                <DateWheelInput value={form.startDate} onChange={updateStartDate} />
-              </Field>
-            </RevealSection>
+            {topFields}
 
-            <RevealSection open={options.description} className="option-reveal--wide quest-form-description-reveal">
-              <Field label="Описание квеста" className="quest-compact-textarea-field">
-                <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
-              </Field>
-            </RevealSection>
-
-            <ModalTwinTimeRow
-              timeOpen={options.time}
-              deadlineOpen={options.deadline}
-              timeField={(
-                <Field label="Плановое время">
-                  <TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} />
-                </Field>
-              )}
-              deadlineField={(
-                <Field label="Дедлайн">
-                  <TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" />
-                </Field>
-              )}
+            <ModalOptionalFields
+              items={[
+                {
+                  id: "steps",
+                  open: Boolean(!editing),
+                  wide: true,
+                  children: (
+                    <div className="quest-step-settings-row">
+                      <Field label="План" className="modal-field">
+                        <QuestPlanWheelInput days={Number(form.durationDays)} steps={Number(form.totalSteps)} onChange={updatePlanSize} />
+                      </Field>
+                      <Field label="Название шага" className="modal-field">
+                        <TextInput
+                          value={form.baseStepTitle}
+                          onChange={(event) => updateBaseStepTitle(event.target.value)}
+                          maxLength={150}
+                          required={!editing}
+                        />
+                      </Field>
+                    </div>
+                  )
+                },
+                {
+                  id: "time",
+                  open: options.time,
+                  children: (
+                    <Field label="Плановое время" className="modal-field">
+                      <TimeWheelInput value={form.plannedTime ?? null} onChange={(value) => setForm({ ...form, plannedTime: value })} />
+                    </Field>
+                  )
+                },
+                {
+                  id: "deadline",
+                  open: options.deadline,
+                  children: (
+                    <Field label="Дедлайн" className="modal-field">
+                      <TimeWheelInput value={form.deadlineTime ?? null} onChange={(value) => setForm({ ...form, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" />
+                    </Field>
+                  )
+                },
+                {
+                  id: "description",
+                  open: options.description,
+                  wide: true,
+                  children: (
+                    <Field label="Описание квеста" className="modal-field modal-field--wide">
+                      <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+                    </Field>
+                  )
+                }
+              ]}
             />
-
-            <RevealSection open={Boolean(!editing && options.steps)} className="option-reveal--wide">
-              <div className="form-grid mini-form-grid">
-                <Field label="Дней">
-                  <NumberInput value={Number(form.durationDays)} min={1} max={365} suffix="дней" onChange={updateDurationDays} />
-                </Field>
-                <Field label="Шагов">
-                  <NumberInput value={Number(form.totalSteps)} min={1} max={365} suffix="шагов" onChange={updateTotalSteps} />
-                </Field>
-                <Field label="Название шага">
-                  <TextInput
-                    value={form.baseStepTitle}
-                    onChange={(event) => updateBaseStepTitle(event.target.value)}
-                    maxLength={150}
-                    required={Boolean(!editing && options.steps)}
-                  />
-                </Field>
-                <Field label="Описание шага" className="quest-compact-textarea-field">
-                  <TextArea value={form.baseStepDescription ?? ""} onChange={(event) => updateBaseStepDescription(event.target.value)} />
-                </Field>
-              </div>
-            </RevealSection>
           </>
         )}
 
         <ErrorLine error={formError || planError} />
-        <div className="form-actions">
+        <div className="modal-actions">
           <Button disabled={busy || Boolean(planError)}>{busy ? "Сохраняем" : editing ? "Сохранить" : "Создать"}</Button>
           {editing ? <Button type="button" variant="ghost" onClick={onCancel}>Отмена</Button> : null}
         </div>
       </form>
-    </FormModal>
+    </Modal>
   );
 }

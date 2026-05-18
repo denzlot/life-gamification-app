@@ -1,132 +1,3 @@
-/* Modal, modal wheel, and compact modal weekday overrides migrated from legacy.css.
-   These keep the existing !important guards until each modal is visually verified. */
-
-/* Active frontend maintenance layer: modal portal, calendar overlays, timer, and workload. */
-
-.form-modal-backdrop { position: fixed !important;
-  inset: 0 !important;
-  z-index: 1000 !important;
-  display: block !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  overflow: auto !important;
-  background:
-    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--accent), transparent 88%), transparent 24rem),
-    color-mix(in srgb, var(--bg), transparent 10%) !important;
-  backdrop-filter: blur(18px) saturate(1.08) !important;
-  animation: fv-modal-backdrop-in 160ms ease-out both !important; }
-/* Top-aligned so modal height changes (reveal sections) don’t re-center the card and cause vertical jitter. */
-.form-modal-positioner { min-height: 100%;
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  padding: clamp(0.85rem, 3vh, 1.8rem) clamp(0.75rem, 2.2vw, 1.4rem); }
-.form-modal-shell { width: min(700px, calc(100vw - 1.5rem));
-  display: grid;
-  justify-items: center;
-  align-self: start; }
-.form-modal-backdrop .modal-form-card { position: relative !important; z-index: 1 !important; width: min(var(--modal-width), 100%) !important; max-width: min(var(--modal-width), 100%) !important; max-height: min(84vh, 780px) !important; margin: 0 !important; padding: clamp(0.78rem, 1.8vw, 1.05rem) !important; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; align-items: start !important; gap: 0.68rem 0.78rem !important; border: 1px solid color-mix(in srgb, var(--border), var(--accent) 24%) !important; border-radius: var(--modal-radius) !important; background: radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--accent), transparent 86%), transparent 16rem),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 4%), color-mix(in srgb, var(--surface), var(--bg) 10%)) !important; box-shadow: 0 28px 90px color-mix(in srgb, var(--shadow), #000 26%), inset 0 1px 0 color-mix(in srgb, var(--text), transparent 92%) !important; animation: fv-modal-card-in 220ms cubic-bezier(0.18, 0.9, 0.2, 1.08) both !important; }
-
-.form-modal-backdrop .modal-form-head,
-.form-modal-backdrop .optional-toolbar,
-.form-modal-backdrop .form-actions,
-.form-modal-backdrop .error-line,
-.form-modal-backdrop .weekday-picker,
-.form-modal-backdrop .mini-form-grid,
-.form-modal-backdrop .field:has(.textarea) { grid-column: 1 / -1 !important; }
-.form-modal-backdrop .optional-toolbar { margin-bottom: 0.25rem !important; }
-.form-modal-backdrop .form-actions { margin-top: 0.38rem !important; }
-.form-modal-backdrop .input { min-height: 36px; padding: 0.42rem 0.58rem; border-radius: 9px; font-size: var(--fv-text-quote); }
-
-/* Time + deadline: keep columns stable and animate only reveal height.
-   Width animation caused modal height overshoot when switching these chips. */
-.form-modal-backdrop .modal-twin-row {
-  grid-column: 1 / -1 !important;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 15rem));
-  align-items: start;
-  gap: 0.62rem 0.72rem;
-}
-/* Collapsed row: cancel one parent row-gap so toolbar ↔ next block spacing matches a single gap (matches modal-form-card row gap). */
-.form-modal-backdrop .modal-twin-row--empty {
-  gap: 0;
-  margin-bottom: -0.68rem;
-}
-.form-modal-backdrop .modal-twin-row > .option-reveal {
-  box-sizing: border-box;
-  min-width: 0;
-}
-.form-modal-backdrop .modal-twin-row > .option-reveal:not(.is-open) {
-  overflow: hidden;
-  pointer-events: none;
-}
-.form-modal-backdrop .modal-twin-row > .option-reveal:first-child { grid-column: 1; }
-.form-modal-backdrop .modal-twin-row > .option-reveal:nth-child(2) { grid-column: 2; }
-.form-modal-backdrop .modal-twin-row--deadline-only > .option-reveal:nth-child(2) { grid-column: 1; }
-.form-modal-backdrop .modal-form-head { display: flex !important;
-  align-items: flex-start !important;
-  justify-content: space-between !important;
-  gap: 0.72rem !important;
-  padding-bottom: 0.05rem !important; }
-.form-modal-backdrop .modal-form-head strong { font-size: var(--fv-text-medium); }
-.form-modal-backdrop .dialog-close { flex: 0 0 auto;
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border), var(--text) 6%);
-  background: color-mix(in srgb, var(--surface-2), transparent 8%);
-  color: var(--muted); }
-.form-modal-backdrop .dialog-close:hover { color: var(--text);
-  border-color: color-mix(in srgb, var(--accent), transparent 38%); }
-
-.form-modal-backdrop .wheel-field { width: 100%; }
-.form-modal-backdrop .mini-form-grid { display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 0.62rem 0.72rem !important; }
-
-.compact-route-quest-list { display: grid !important; gap: 0.42rem !important; margin-top: 0.65rem !important; }
-.compact-route-quest-list button { width: 100% !important;
-  min-height: 3.1rem !important;
-  display: grid !important;
-  gap: 0.12rem !important;
-  padding: 0.58rem 0.68rem !important;
-  text-align: left !important; }
-.compact-route-quest-list span { color: var(--muted); font-size: var(--fv-text-small); }
-
-@keyframes fv-modal-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fv-modal-card-in { from { opacity: 0; transform: translateY(18px) scale(0.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes fv-slide-right-pop { from { opacity: 0; transform: translateX(-8px) scale(0.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
-@media (max-width: 900px) {
-.form-modal-backdrop .modal-form-card,
-.form-modal-backdrop .mini-form-grid { grid-template-columns: 1fr !important; }
-.form-modal-backdrop .modal-twin-row { grid-template-columns: 1fr; }
-.form-modal-backdrop .modal-twin-row > .option-reveal:first-child,
-.form-modal-backdrop .modal-twin-row > .option-reveal:nth-child(2),
-.form-modal-backdrop .modal-twin-row--deadline-only > .option-reveal:nth-child(2) { grid-column: 1; }
-}
-
-@media (max-width: 620px) {
-.form-modal-positioner { padding: 0.75rem; place-items: end center; }
-.form-modal-shell { width: 100%; }
-.form-modal-backdrop .modal-form-card { width: 100% !important;
-    max-width: 100% !important;
-    max-height: 90vh !important;
-    border-radius: 22px 22px 0 0 !important; }
-}
-@media (prefers-reduced-motion: reduce) {
-.form-modal-backdrop,
-.form-modal-backdrop .modal-form-card,
-.toolbar-popover,
-.calendar-cell,
-.btn { animation: none !important;
-    transition-duration: 1ms !important; }
-.form-modal-backdrop .modal-twin-row > .option-reveal {
-  transition: none;
-}
-}
 /* Final UI repair layer: navigation, creation panels, timer, and modal wheels. */
 
 .create-drawer-section,
@@ -143,26 +14,346 @@
   margin: 0 !important; }
 .center-add-actions .btn,
 .create-drawer-section .center-add-actions .btn { min-width: 0 !important; }
-/* === WEEKDAY PICKER: compact pills in modal === */
-.form-modal-backdrop .weekday-picker,
-.modal-form-card .weekday-picker { display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 0.32rem !important;
-  grid-template-columns: none !important;
-  width: auto !important;
-  max-width: 100% !important;
-  justify-content: flex-start !important;
-  padding: 0.1rem 0 !important; }
-.form-modal-backdrop .weekday-picker button,
-.modal-form-card .weekday-picker button { min-height: 1.85rem !important;
-  height: auto !important;
-  padding: 0.22rem 0.78rem !important;
-  font-size: var(--fv-text-small) !important;
-  border-radius: 999px !important;
-  min-width: 0 !important;
-  width: auto !important;
-  flex: 0 0 auto !important; }
+/* Flow modal v2: compact shared shell for newly migrated dialogs. */
+.flow-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent), transparent 88%), transparent 19rem),
+    color-mix(in srgb, var(--bg), transparent 12%);
+  backdrop-filter: blur(14px) saturate(1.04);
+  animation: flow-modal-backdrop-in 150ms ease-out both;
+}
 
-/* Modal head alignment migrated from legacy.css. */
-.modal-form-head { justify-content: space-between; }
-.modal-form-head strong { color: var(--text); }
+.flow-modal-positioner {
+  min-height: 100%;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  padding: clamp(0.85rem, 3vh, 1.65rem) clamp(0.75rem, 2.2vw, 1.25rem);
+}
+
+.flow-modal {
+  --flow-modal-field-width: 14.75rem;
+  --flow-modal-field-gap: 0.8rem;
+  width: min(100%, calc(var(--flow-modal-field-width) * 2 + var(--flow-modal-field-gap) + 2.2rem));
+  max-height: min(88vh, 760px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border), var(--accent) 16%);
+  border-radius: 16px;
+  color: var(--text);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface), var(--text) 3%), color-mix(in srgb, var(--surface), var(--bg) 9%));
+  box-shadow: 0 24px 74px color-mix(in srgb, var(--shadow), #000 22%), inset 0 1px 0 color-mix(in srgb, var(--text), transparent 93%);
+  outline: none;
+  animation: flow-modal-in 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.flow-modal--sm { width: min(100%, 28rem); }
+.flow-modal--lg { width: min(100%, 46rem); }
+
+.flow-modal-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.9rem 1.1rem 0.72rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border), transparent 32%);
+}
+
+.flow-modal-title {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.flow-modal-title .eyebrow {
+  margin: 0;
+}
+
+.flow-modal-title h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fv-text-large);
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.flow-modal-header-slot {
+  justify-self: center;
+  min-width: 0;
+}
+
+.flow-modal-close {
+  position: relative;
+  justify-self: end;
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--border), var(--text) 8%);
+  border-radius: 999px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-2), transparent 8%);
+  font-size: 0;
+  line-height: 1;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease, transform 120ms ease;
+}
+
+.flow-modal-close::before {
+  content: "×";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.24rem;
+  line-height: 1;
+  transform: translateY(-0.02rem);
+}
+
+.flow-modal-close:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent), transparent 34%);
+  background: color-mix(in srgb, var(--surface-2), var(--accent) 7%);
+  transform: translateY(-1px);
+}
+
+.flow-modal-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent), transparent 34%), 0 0 0 4px color-mix(in srgb, var(--accent), transparent 88%);
+}
+
+.flow-modal-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 1rem 1.1rem 1.1rem;
+}
+
+.modal-form {
+  display: grid;
+  gap: 0.78rem;
+}
+
+.modal-form-grid,
+.modal-optional-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, var(--flow-modal-field-width)));
+  align-items: start;
+  justify-content: start;
+  gap: var(--flow-modal-field-gap);
+}
+
+.modal-form-grid--wide {
+  width: calc(var(--flow-modal-field-width) * 2 + var(--flow-modal-field-gap));
+  max-width: 100%;
+}
+
+.modal-form-grid > .fixed-date-field {
+  grid-column: auto;
+}
+
+.modal-field {
+  width: var(--flow-modal-field-width);
+  max-width: 100%;
+  gap: 0.28rem;
+}
+
+.modal-field > span {
+  font-size: var(--fv-text-small);
+}
+
+.flow-modal .input,
+.flow-modal .fixed-date-chip {
+  min-height: 38px;
+  border-radius: 9px;
+  font-size: var(--fv-text-quote);
+  background: transparent;
+  border-color: var(--border);
+}
+
+.flow-modal .input:focus,
+.flow-modal .input:focus-visible {
+  background: transparent;
+}
+
+.flow-modal .input:focus:not(:focus-visible) {
+  background: transparent;
+}
+
+.flow-modal .fixed-date-chip {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.48rem 0.64rem;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.flow-modal .optional-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.38rem;
+  padding: 0.06rem 0 0;
+}
+
+.flow-modal .optional-toolbar .option-chip {
+  min-height: 31px;
+  padding: 0.31rem 0.64rem;
+  border-radius: 999px;
+  font-size: var(--fv-text-small);
+  outline: none;
+}
+
+.flow-modal .optional-toolbar .option-chip:focus-visible {
+  border-color: color-mix(in srgb, var(--accent), transparent 30%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent), transparent 40%), 0 0 0 4px color-mix(in srgb, var(--accent), transparent 88%);
+}
+
+.modal-optional-fields {
+  padding-top: 0.05rem;
+}
+
+.modal-optional-field {
+  min-width: 0;
+  animation: flow-modal-field-in 170ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.modal-optional-field--wide {
+  grid-column: span 2;
+}
+
+.modal-optional-field--wide .modal-field,
+.modal-field--wide {
+  width: calc(var(--flow-modal-field-width) * 2 + var(--flow-modal-field-gap));
+}
+
+.flow-modal .textarea {
+  min-height: 70px;
+}
+
+.flow-modal .modal-weekday-picker {
+  width: calc(var(--flow-modal-field-width) * 2 + var(--flow-modal-field-gap));
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  justify-content: start;
+  gap: 0.36rem;
+  padding: 0.03rem 0;
+}
+
+.flow-modal .modal-weekday-picker button {
+  min-width: 0;
+  min-height: 2rem;
+  width: 100%;
+  border-radius: 9px;
+  font-size: var(--fv-text-small);
+}
+
+.flow-modal .error-line {
+  margin: 0;
+  padding: 0.48rem 0 0.48rem 0.72rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding-top: 0.08rem;
+}
+
+.modal-actions .btn {
+  min-width: 7rem;
+}
+
+@keyframes flow-modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes flow-modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes flow-modal-field-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fv-slide-right-pop {
+  from { opacity: 0; transform: translateX(-8px) scale(0.985); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@media (max-width: 680px) {
+  .flow-modal {
+    --flow-modal-field-width: 100%;
+    width: min(100%, 27rem);
+  }
+
+  .modal-form-grid,
+  .modal-optional-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-field,
+  .modal-field--wide,
+  .modal-optional-field--wide .modal-field,
+  .modal-form-grid--wide,
+  .flow-modal .modal-weekday-picker {
+    width: 100%;
+  }
+
+  .modal-optional-field--wide {
+    grid-column: auto;
+  }
+
+  .flow-modal .modal-weekday-picker {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.28rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .flow-modal-positioner {
+    align-items: end;
+    padding: 0.7rem;
+  }
+
+  .flow-modal {
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .flow-modal-header {
+    padding: 0.82rem 0.86rem 0.62rem;
+  }
+
+  .flow-modal-body {
+    padding: 0.78rem 0.86rem 0.9rem;
+  }
+
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-modal-backdrop,
+  .flow-modal,
+  .modal-optional-field {
+    animation: none;
+  }
+}

@@ -15,7 +15,7 @@ import {
 import { formatTime } from "../../utils/format";
 import { Button } from "../Button";
 import { DurationWheelInput, Field } from "../FormFields";
-import { FormModal } from "../FormModal";
+import { Modal } from "../Modal";
 import { StatusCycleButton } from "../StatusCycleButton";
 
 interface TodayFocusModalProps {
@@ -187,6 +187,20 @@ export function TodayFocusModal({
       : timer.status === "paused"
         ? "пауза"
         : `${roundedProgress}%`;
+  const modalEyebrow = timer.status === "idle"
+    ? "фокус"
+    : isOvertime
+      ? "дополнительное время"
+      : isPausedBeforePlan
+        ? "фокус на паузе"
+        : "фокус-сессия";
+  const modalTitle = timer.status === "idle"
+    ? "Выбери задачу для сессии"
+    : isOvertime
+      ? "Плановое время истекло"
+      : isPausedBeforePlan
+        ? "Пауза"
+        : "Активный фокус";
 
   function renderFocusActionRow(mode: FocusCreditedMode, pendingMeta: string, actionLabel = completeButtonLabel) {
     if (!displayTask) return null;
@@ -218,21 +232,12 @@ export function TodayFocusModal({
   }
 
   return (
-    <FormModal onClose={onClose}>
+    <Modal title={modalTitle} eyebrow={modalEyebrow} size="lg" className="focus-modal" onClose={onClose}>
       {timer.status === "idle" ? (
         <form
-          className="form-grid focus-modal-card modal-form-card"
+          className="modal-form focus-modal-card"
           onSubmit={handleSubmit}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Фокус"
-          onMouseDown={(event) => event.stopPropagation()}
         >
-          <div className="modal-form-head">
-            <div><p className="eyebrow">фокус</p><strong>Выбери задачу для сессии</strong></div>
-            <button type="button" className="dialog-close" onClick={onClose} aria-label="Закрыть">×</button>
-          </div>
-
           <div className="filter-row focus-filter-row" aria-label="Фильтр focus-задач">
             {focusTypeFilters.map((filter) => (
               <button
@@ -285,27 +290,15 @@ export function TodayFocusModal({
             </div>
           </Field>
 
-          <div className="form-actions">
+          <div className="modal-actions">
             <Button type="submit" disabled={selectedItemId === null}>Запуск</Button>
             <Button type="button" variant="ghost" onClick={onClose}>Закрыть</Button>
           </div>
         </form>
       ) : (
         <div
-          className={`focus-modal-card focus-session-card modal-form-card status-${timer.status} ${isOvertime ? "is-overtime" : ""}`}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Фокус"
-          onMouseDown={(event) => event.stopPropagation()}
+          className={`modal-form focus-modal-card focus-session-card status-${timer.status} ${isOvertime ? "is-overtime" : ""}`}
         >
-          <div className="modal-form-head">
-            <div>
-              <p className="eyebrow">{isOvertime ? "дополнительное время" : isPausedBeforePlan ? "фокус на паузе" : "фокус-сессия"}</p>
-              <strong>{isOvertime ? "Плановое время истекло" : isPausedBeforePlan ? "Пауза" : "Активный фокус"}</strong>
-            </div>
-            <button type="button" className="dialog-close" onClick={onClose} aria-label="Закрыть">×</button>
-          </div>
-
           <div className="focus-session-panel">
             <div
               className="focus-progress-ring"
@@ -389,7 +382,7 @@ export function TodayFocusModal({
             ) : null}
           </div>
 
-          <div className="form-actions">
+          <div className="modal-actions">
             {timer.status === "running" || (timer.status === "completed" && !timer.savedAt) ? <Button type="button" variant="thin" onClick={onPause}>Пауза</Button> : null}
             {timer.status === "paused" && !timer.savedAt ? <Button type="button" variant="thin" onClick={onResume}>Продолжить</Button> : null}
             <Button type="button" variant="ghost" onClick={requestReset}>Сбросить</Button>
@@ -397,6 +390,6 @@ export function TodayFocusModal({
           </div>
         </div>
       )}
-    </FormModal>
+    </Modal>
   );
 }

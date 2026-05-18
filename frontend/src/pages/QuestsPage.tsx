@@ -139,7 +139,7 @@ export function QuestsPage() {
           durationDays: Number(form.durationDays),
           totalSteps: Number(form.totalSteps),
           baseStepTitle: form.baseStepTitle.trim(),
-          baseStepDescription: form.baseStepDescription?.trim() || null,
+          baseStepDescription: null,
           steps: manualSteps
         });
         setSelectedId(created.id);

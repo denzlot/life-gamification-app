@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Button } from "./Button";
+import { useState } from "react";
+import { Modal } from "./Modal";
 
 const faq = [
   { tag: "старт", title: "С чего начать?", text: "Создайте задачу, привычку или квест, затем откройте Today. Для стрика достаточно выполнить хотя бы один пункт дня." },
@@ -17,43 +17,25 @@ const faq = [
 export function GlobalFaq() {
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [open]);
-
   return (
     <>
       <button type="button" className="faq-float-button" onClick={() => setOpen(true)} aria-label="Открыть FAQ">FAQ</button>
       {open ? (
-        <div className="faq-modal-backdrop" role="presentation" onMouseDown={() => setOpen(false)}>
-          <section className="faq-modal" role="dialog" aria-modal="true" aria-labelledby="faq-title" onMouseDown={(event) => event.stopPropagation()}>
-            <header className="faq-modal-head">
-              <div>
-                <p className="eyebrow">помощь</p>
-                <h2 id="faq-title">Короткий справочник</h2>
-              </div>
-              <Button variant="ghost" onClick={() => setOpen(false)}>Закрыть</Button>
-            </header>
-            <div className="faq-lead">
-              <strong>Главное правило простое:</strong>
-              <span>регулярность важнее фарма, а один честный пункт уже сохраняет день.</span>
-            </div>
-            <div className="faq-list">
-              {faq.map((item) => (
-                <article key={item.title}>
-                  <span>{item.tag}</span>
-                  <h3>{item.title}</h3>
-                  <p>{item.text}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-        </div>
+        <Modal title="Короткий справочник" eyebrow="помощь" size="lg" className="faq-modal" onClose={() => setOpen(false)}>
+          <div className="faq-lead">
+            <strong>Главное правило простое:</strong>
+            <span>регулярность важнее фарма, а один честный пункт уже сохраняет день.</span>
+          </div>
+          <div className="faq-list">
+            {faq.map((item) => (
+              <article key={item.title}>
+                <span>{item.tag}</span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </Modal>
       ) : null}
     </>
   );

@@ -1,12 +1,11 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type { CreateTaskRequest } from "../../api/types";
 import { Button } from "../Button";
-import { FormModal } from "../FormModal";
 import { OptionChip } from "../OptionChip";
 import { Field, TextArea, TextInput, TimeWheelInput } from "../FormFields";
 import { ErrorLine } from "../Loader";
-import { ModalTwinTimeRow } from "../ModalTwinTimeRow";
-import { RevealSection } from "../RevealSection";
+import { Modal } from "../Modal";
+import { ModalOptionalFields } from "../ModalOptionalFields";
 import { formatDate, formatTime } from "../../utils/format";
 
 interface TaskOptions {
@@ -49,37 +48,60 @@ export function DayTaskCreatePanel({
         <Button type="button" variant="ghost" onClick={() => setTaskDrawerOpen((value) => !value)}>{taskDrawerOpen ? "Скрыть" : "Добавить задачу"}</Button>
       </div>
       {taskDrawerOpen ? (
-        <FormModal onClose={() => setTaskDrawerOpen(false)}>
-          <form className="form-grid task-drawer unified-form compact-create-form modal-form-card day-task-create-form" onSubmit={onSubmit} role="dialog" aria-modal="true" aria-label="Создание задачи" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="modal-form-head">
-              <div><p className="eyebrow">новая задача</p><strong>{isFuture ? "Задача на выбранный день" : "Добавить задачу"}</strong></div>
-              <button type="button" className="dialog-close" onClick={() => setTaskDrawerOpen(false)} aria-label="Закрыть">×</button>
-            </div>
-            <Field label="Название">
-              <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} placeholder="Например: созвон с дизайнером" />
-            </Field>
-            <label className="field clean-field fixed-date-field">
-              <span>Дата задачи</span>
-              <div className="fixed-date-chip" aria-label={`Дата задачи: ${formatDate(date)}`}>{formatDate(date)}</div>
-            </label>
+        <Modal title={isFuture ? "Задача на выбранный день" : "Добавить задачу"} eyebrow="новая задача" onClose={() => setTaskDrawerOpen(false)}>
+          <form className="modal-form" onSubmit={onSubmit}>
             <div className="optional-toolbar">
               <OptionChip active={taskOptions.time || Boolean(taskForm.plannedTime)} onClick={() => setTaskOptions((state) => ({ ...state, time: !state.time }))}>{taskForm.plannedTime ? `Время: ${formatTime(taskForm.plannedTime)}` : "Время"}</OptionChip>
               <OptionChip active={taskOptions.deadline || Boolean(taskForm.deadlineTime)} onClick={() => setTaskOptions((state) => ({ ...state, deadline: !state.deadline }))}>{taskForm.deadlineTime ? `Дедлайн: ${formatTime(taskForm.deadlineTime)}` : "Дедлайн"}</OptionChip>
               <OptionChip active={taskOptions.description || Boolean(taskForm.description)} onClick={() => setTaskOptions((state) => ({ ...state, description: !state.description }))}>Описание</OptionChip>
             </div>
-            <ModalTwinTimeRow
-              timeOpen={taskOptions.time}
-              deadlineOpen={taskOptions.deadline}
-              timeField={<Field label="Плановое время"><TimeWheelInput value={taskForm.plannedTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, plannedTime: value })} /></Field>}
-              deadlineField={<Field label="Дедлайн"><TimeWheelInput value={taskForm.deadlineTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" /></Field>}
+
+            <div className="modal-form-grid">
+              <Field label="Название" className="modal-field">
+                <TextInput value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required maxLength={160} placeholder="Например: созвон с дизайнером" />
+              </Field>
+              <label className="field clean-field modal-field fixed-date-field">
+                <span>Дата задачи</span>
+                <div className="fixed-date-chip" aria-label={`Дата задачи: ${formatDate(date)}`}>{formatDate(date)}</div>
+              </label>
+            </div>
+
+            <ModalOptionalFields
+              items={[
+                {
+                  id: "time",
+                  open: taskOptions.time,
+                  children: (
+                    <Field label="Плановое время" className="modal-field">
+                      <TimeWheelInput value={taskForm.plannedTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, plannedTime: value })} />
+                    </Field>
+                  )
+                },
+                {
+                  id: "deadline",
+                  open: taskOptions.deadline,
+                  children: (
+                    <Field label="Дедлайн" className="modal-field">
+                      <TimeWheelInput value={taskForm.deadlineTime ?? null} onChange={(value) => setTaskForm({ ...taskForm, deadlineTime: value })} label="выбрать дедлайн" placeholder="Выбрать дедлайн" />
+                    </Field>
+                  )
+                },
+                {
+                  id: "description",
+                  open: taskOptions.description,
+                  wide: true,
+                  children: (
+                    <Field label="Описание" className="modal-field modal-field--wide">
+                      <TextArea value={taskForm.description ?? ""} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} />
+                    </Field>
+                  )
+                }
+              ]}
             />
-            <RevealSection open={taskOptions.description} className="option-reveal--wide">
-              <Field label="Описание"><TextArea value={taskForm.description ?? ""} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></Field>
-            </RevealSection>
             <ErrorLine error={taskError} />
-            <div className="form-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
+            <div className="modal-actions"><Button disabled={busy || !taskForm.title.trim()}>{busy ? "Сохраняем" : "Создать"}</Button></div>
           </form>
-        </FormModal>
+        </Modal>
       ) : null}
     </section>
   );
