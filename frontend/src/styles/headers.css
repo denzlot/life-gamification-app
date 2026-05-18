@@ -55,6 +55,22 @@
 .page-header h1,
 .centered-title-header h1,
 .day-hero h1 { font-size: clamp(1.1rem, 1.35vw, 1.42rem) !important; letter-spacing: 0 !important; margin: 0 !important; }
+.page-header > .create-inline-actions {
+  grid-column: 1 / -1;
+  align-self: start;
+  margin-top: 0.45rem !important;
+}
+.page-header > .create-inline-actions .create-action-hint {
+  max-width: 36rem;
+}
+.page-header > .create-inline-actions .btn-primary {
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-2), var(--bg) 18%);
+  border-color: color-mix(in srgb, var(--border), var(--accent) 12%);
+}
+.page-header > .create-inline-actions .btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--surface-2), var(--accent) 7%);
+}
 .section-title-row h2,
 .inline-plan-title { font-size: clamp(0.98rem, 1.08vw, 1.16rem) !important; }
 .day-status-row { justify-self: end; align-self: center; margin: 0 !important; font-size: var(--fv-text-small); }

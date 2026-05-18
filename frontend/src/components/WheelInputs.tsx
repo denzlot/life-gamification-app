@@ -65,15 +65,12 @@ function getPopoverPlacement(trigger: HTMLElement, preferredWidth: number, match
   }
 
   const rect = trigger.getBoundingClientRect();
+  const desiredHeight = preferredWidth >= 280 ? 284 : 270;
   const width = Math.min(matchTriggerWidth ? rect.width : preferredWidth, viewport.width - margin * 2);
-  const maxHeight = Math.min(420, viewport.height - margin * 2);
   const left = clampNumber(rect.left + viewport.offsetLeft, viewport.offsetLeft + margin, viewport.offsetLeft + viewport.width - width - margin);
   const belowTop = rect.bottom + viewport.offsetTop + gap;
-  const aboveTop = rect.top + viewport.offsetTop - maxHeight - gap;
-  const belowSpace = viewport.offsetTop + viewport.height - rect.bottom - margin;
-  const top = belowSpace >= 260 || aboveTop < viewport.offsetTop + margin
-    ? Math.min(belowTop, viewport.offsetTop + viewport.height - maxHeight - margin)
-    : Math.max(viewport.offsetTop + margin, aboveTop);
+  const maxHeight = Math.min(desiredHeight, viewport.height - margin * 2);
+  const top = belowTop;
 
   return { isSheet: false, style: { left: `${left}px`, top: `${top}px`, width: `${width}px`, maxHeight: `${maxHeight}px` } };
 }
@@ -561,7 +558,7 @@ export function TimeWheelInput({ value, onChange, placeholder = "Выбрать 
       <button ref={triggerRef} type="button" className={`input wheel-trigger ${value ? "filled" : ""}`} aria-haspopup="dialog" aria-expanded={open} aria-label={label} onClick={() => setOpen((state) => !state)}>
         {value ? formatTime(value) : placeholder}
       </button>
-      <WheelPopover open={open} triggerRef={triggerRef} preferredWidth={244} label={label} className="wheel-panel--picker time-wheel" onClose={() => setOpen(false)}>
+      <WheelPopover open={open} triggerRef={triggerRef} preferredWidth={206} label={label} className="wheel-panel--picker time-wheel" onClose={() => setOpen(false)}>
         <div className="wheel-panel-head wheel-panel-head--manual">
           <label className="wheel-manual-label">
             <span>Вручную</span>
@@ -626,7 +623,7 @@ export function DurationWheelInput({ value, onChange, min = 1, max = 180, label 
       <button ref={triggerRef} type="button" className={`input wheel-trigger ${value ? "filled" : ""}`} aria-haspopup="dialog" aria-expanded={open} aria-label={label} onClick={() => setOpen((state) => !state)}>
         {value ? formatDuration(value) : placeholder}
       </button>
-      <WheelPopover open={open} triggerRef={triggerRef} preferredWidth={244} label={label} className="wheel-panel--picker duration-wheel" onClose={() => setOpen(false)}>
+      <WheelPopover open={open} triggerRef={triggerRef} preferredWidth={206} label={label} className="wheel-panel--picker duration-wheel" onClose={() => setOpen(false)}>
         <div className="wheel-panel-head wheel-panel-head--manual">
           <label className="wheel-manual-label">
             <span>Вручную</span>

@@ -7,7 +7,7 @@
 
 .wheel-portal { position: fixed; inset: 0; z-index: 1300; pointer-events: none; }
 .wheel-scrim { position: fixed; inset: 0; pointer-events: auto; background: color-mix(in srgb, var(--bg), transparent 38%); backdrop-filter: blur(5px); }
-.wheel-panel { box-sizing: border-box; position: fixed; pointer-events: auto; display: grid; gap: 0.5rem; overflow: hidden auto; padding: 0.58rem; border: 1px solid color-mix(in srgb, var(--border), var(--accent) 14%); border-radius: 13px; color: var(--text); background: linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 3%), color-mix(in srgb, var(--surface), var(--bg) 12%)); box-shadow: 0 22px 58px color-mix(in srgb, var(--shadow), #000 18%); animation: wheel-panel-in 150ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.wheel-panel { box-sizing: border-box; position: fixed; pointer-events: auto; display: grid; gap: 0.5rem; overflow: hidden; padding: 0.58rem; border: 1px solid color-mix(in srgb, var(--border), var(--accent) 14%); border-radius: 13px; color: var(--text); background: linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--text) 3%), color-mix(in srgb, var(--surface), var(--bg) 12%)); box-shadow: 0 22px 58px color-mix(in srgb, var(--shadow), #000 18%); animation: wheel-panel-in 150ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 .wheel-panel--sheet { border-radius: 20px; }
 .wheel-panel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.42rem; min-width: 0; }
 .wheel-panel-head--manual { display: flex; justify-content: flex-end; }
@@ -23,7 +23,7 @@
 .wheel-picker-wrapper[data-rwp-wrapper] { position: relative; width: 100%; height: 146px; min-height: 146px; padding: 0.2rem; border: 1px solid var(--border-soft); border-radius: 12px; background: linear-gradient(180deg, color-mix(in srgb, var(--surface-2), transparent 16%), transparent 28%, transparent 72%, color-mix(in srgb, var(--surface-2), transparent 28%)), color-mix(in srgb, var(--surface), var(--bg) 8%); }
 .wheel-picker-wrapper[data-rwp-wrapper]::before { content: ""; position: absolute; left: 0.22rem; right: 0.22rem; top: 50%; height: 28px; border-radius: 7px; background: color-mix(in srgb, var(--text), transparent 90%); transform: translateY(-50%); pointer-events: none; }
 .time-wheel-picker[data-rwp-wrapper],
-.duration-wheel-picker[data-rwp-wrapper] { display: grid; grid-template-columns: minmax(0, 1fr) 0.56rem minmax(0, 1fr); gap: 0.06rem; }
+.duration-wheel-picker[data-rwp-wrapper] { display: grid; grid-template-columns: minmax(0, 1fr) 0.28rem minmax(0, 1fr); gap: 0; padding-inline: 0.12rem; }
 .quest-plan-wheel-picker[data-rwp-wrapper] { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.16rem; }
 .date-wheel-picker[data-rwp-wrapper] { display: grid; grid-template-columns: minmax(0, 0.74fr) minmax(0, 0.94fr) minmax(0, 1.18fr); gap: 0.06rem; }
 
@@ -53,12 +53,14 @@
 .wheel-picker-wrapper [data-rwp-highlight-item] { color: var(--text); font-size: var(--fv-text-medium); font-weight: 700; }
 .wheel-picker-wrapper [data-disabled] { cursor: not-allowed; opacity: 0.36; }
 
-.time-wheel-divider { position: relative; z-index: 3; align-self: center; justify-self: center; color: var(--muted); font-family: var(--font-heading); font-size: var(--fv-text-medium); font-weight: 700; line-height: 28px; pointer-events: none; }
+.time-wheel-divider { position: relative; z-index: 3; align-self: center; justify-self: center; color: var(--muted); font-family: var(--font-heading); font-size: var(--fv-text-medium); font-weight: 700; line-height: 28px; pointer-events: none; transform: translateX(-0.01rem); }
 
 .wheel-actions { display: flex; justify-content: flex-end; gap: 0.45rem; padding-top: 0.02rem; }
 .wheel-actions.single-action { justify-content: stretch; }
 .wheel-actions.single-action .btn { width: 100%; }
 .wheel-actions .btn { min-height: 32px; padding-inline: 0.74rem; }
+.time-wheel .wheel-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.36rem; }
+.time-wheel .wheel-actions .btn { min-width: 0; padding-inline: 0.35rem; }
 
 :root[data-theme="light"] .wheel-panel { background: linear-gradient(180deg, #ffffff, #f4f7fa); border-color: #aebdcb; }
 :root[data-theme="light"] .wheel-picker-wrapper[data-rwp-wrapper] { background: linear-gradient(180deg, #eef3f8, transparent 28%, transparent 72%, #eef3f8), #ffffff; border-color: #d8e0e8; }

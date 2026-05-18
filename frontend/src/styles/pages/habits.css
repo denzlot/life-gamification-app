@@ -1,8 +1,6 @@
 /* habits page styles will be moved here during staged cleanup. */
 
 /* Habits controls extracted from legacy.css. */
-.status-active strong { color: color-mix(in srgb, var(--good), var(--text) 45%); }
-.status-paused { opacity: 0.72; }
 .weekday-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.45rem; padding: 0.25rem 0 0.15rem; }
 .weekday-picker button { min-height: 2.55rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255, 255, 255, 0.018); color: var(--muted); transition: border-color 140ms ease, color 140ms ease, background 140ms ease; }
 .weekday-picker button:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent), transparent 45%); }
@@ -17,4 +15,100 @@
   .schedule-detail-row.two-fields { grid-template-columns: 1fr; }
   .habit-designer-panel .weekday-picker { grid-template-columns: repeat(7, minmax(2rem, 1fr)); gap: 0.35rem; }
   .weekday-picker button { min-height: 2.25rem; padding: 0.2rem; font-size: var(--fv-text-small); }
+}
+
+.habit-list {
+  margin-top: 0.15rem;
+}
+
+.habit-list-row {
+  grid-template-columns: minmax(0, 1fr) max-content auto;
+  align-items: start;
+  gap: 0.55rem 0.75rem;
+  padding: 0.52rem 0;
+}
+
+.habit-title-line {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.habit-row-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.18rem 0.42rem;
+}
+
+.habit-row-meta {
+  align-self: start;
+  min-width: 0;
+  max-width: min(22rem, 36vw);
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 0.34rem 0.55rem;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: var(--fv-text-small);
+  line-height: 1.25;
+  text-align: right;
+}
+
+.habit-row-meta span {
+  white-space: nowrap;
+}
+
+.habit-row-actions {
+  align-self: start;
+  gap: 0.22rem;
+}
+
+.habit-pause-action.is-paused {
+  border-color: color-mix(in srgb, var(--text), transparent 8%);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text), transparent 36%);
+}
+
+.habit-row-main .description-toggle {
+  grid-column: 2;
+  grid-row: 1;
+  margin-top: 0.12rem;
+}
+
+.habit-row-main .item-description {
+  grid-column: 1 / -1;
+  margin-top: 0.28rem;
+}
+
+@media (max-width: 900px) {
+  .habit-list-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .habit-row-meta {
+    grid-column: 1;
+    grid-row: 2;
+    justify-content: flex-start;
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .habit-row-actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: start;
+  }
+}
+
+@media (max-width: 620px) {
+  .habit-list-row {
+    grid-template-columns: 1fr;
+  }
+
+  .habit-row-meta,
+  .habit-row-actions {
+    grid-column: 1;
+    grid-row: auto;
+    justify-content: flex-start;
+  }
 }

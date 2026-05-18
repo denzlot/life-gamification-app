@@ -167,9 +167,8 @@
 }
 
 :root[data-theme="cosmos"] .btn-primary,
-:root[data-theme="cosmos"] .center-add-panel .center-add-actions .btn,
-:root[data-theme="cosmos"] .create-drawer-section .center-add-actions .btn,
-:root[data-theme="cosmos"] .compact-create-form .form-actions .btn,
+:root[data-theme="cosmos"] .center-add-panel .create-inline-actions .btn,
+:root[data-theme="cosmos"] .create-drawer-section .create-inline-actions .btn,
 :root[data-theme="cosmos"] .create-drawer-form .form-actions .btn,
 :root[data-theme="cosmos"] .task-drawer .form-actions .btn,
 :root[data-theme="cosmos"] .drawer-panel .form-actions .btn {
@@ -180,8 +179,8 @@
 }
 
 :root[data-theme="cosmos"] .btn-primary:hover:not(:disabled),
-:root[data-theme="cosmos"] .center-add-panel .center-add-actions .btn:hover:not(:disabled),
-:root[data-theme="cosmos"] .create-drawer-section .center-add-actions .btn:hover:not(:disabled) {
+:root[data-theme="cosmos"] .center-add-panel .create-inline-actions .btn:hover:not(:disabled),
+:root[data-theme="cosmos"] .create-drawer-section .create-inline-actions .btn:hover:not(:disabled) {
   background: linear-gradient(180deg, #27729d, #174a78) !important;
 }
 

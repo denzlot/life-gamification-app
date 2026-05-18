@@ -39,7 +39,7 @@ export function QuestListPanel({
         <div className="quest-panel-title">
           <p className="eyebrow">список квестов</p>
         </div>
-        <Button type="button" variant="ghost" onClick={onToggleArchived}>{showArchived ? "Показать активные" : "Архив"}</Button>
+        <Button type="button" variant="thin" className="quest-action-btn" onClick={onToggleArchived}>{showArchived ? "Показать активные" : "Архив"}</Button>
       </div>
 
       <div className="quest-panel-body">
@@ -70,13 +70,13 @@ export function QuestListPanel({
                 </div>
                 <div className="item-tail wide-tail">
                   <span>{quest.totalSteps} шагов</span>
-                  <Button variant="thin" onClick={(event) => { event.stopPropagation(); onEdit(quest); }}>Изменить</Button>
+                  <Button variant="thin" className="quest-action-btn" onClick={(event) => { event.stopPropagation(); onEdit(quest); }}>Изменить</Button>
                   {quest.status === "COMPLETED" ? null : quest.status === "ARCHIVED" ? (
-                    <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); onRestore(quest); }}>Вернуть</Button>
+                    <Button variant="thin" className="quest-action-btn" disabled={busy} onClick={(event) => { event.stopPropagation(); onRestore(quest); }}>Вернуть</Button>
                   ) : (
-                    <Button variant="thin" disabled={busy} onClick={(event) => { event.stopPropagation(); onArchive(quest); }}>В архив</Button>
+                    <Button variant="thin" className="quest-action-btn" disabled={busy} onClick={(event) => { event.stopPropagation(); onArchive(quest); }}>В архив</Button>
                   )}
-                  <Button variant="danger" disabled={busy} onClick={(event) => { event.stopPropagation(); onRemove(quest); }}>Удалить</Button>
+                  <Button variant="thin" className="quest-action-btn quest-action-btn--danger" disabled={busy} onClick={(event) => { event.stopPropagation(); onRemove(quest); }}>Удалить</Button>
                 </div>
               </article>
             );

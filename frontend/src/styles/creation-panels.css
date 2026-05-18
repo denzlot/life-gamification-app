@@ -3,11 +3,14 @@
 
 .center-add-panel { max-width: 760px; margin: 0 auto 0.95rem; padding: 0.4rem 0 0.85rem !important; border-top: 0 !important; border-bottom: 0 !important; text-align: center; }
 .center-add-panel::after { display: none !important; }
-.center-add-actions .btn { min-width: 164px; }
-.center-add-panel .center-add-actions .btn,
-.create-drawer-section .center-add-actions .btn { color: var(--text); background: color-mix(in srgb, var(--surface-2), var(--text) 7%); border-color: color-mix(in srgb, var(--border), var(--text) 7%); }
-.center-add-panel .center-add-actions .btn:hover:not(:disabled),
-.create-drawer-section .center-add-actions .btn:hover:not(:disabled) { background: color-mix(in srgb, var(--surface-2), var(--text) 12%); }
+.create-inline-actions .btn {
+  width: auto;
+  min-width: 136px;
+}
+.center-add-panel .create-inline-actions .btn,
+.create-drawer-section .create-inline-actions .btn { color: var(--text); background: color-mix(in srgb, var(--surface-2), var(--text) 7%); border-color: color-mix(in srgb, var(--border), var(--text) 7%); }
+.center-add-panel .create-inline-actions .btn:hover:not(:disabled),
+.create-drawer-section .create-inline-actions .btn:hover:not(:disabled) { background: color-mix(in srgb, var(--surface-2), var(--text) 12%); }
 
 .centered-task-form,
 .create-drawer-form { margin: 0.82rem auto 0; max-width: 760px; text-align: left; }
@@ -29,15 +32,13 @@
   min-width: auto !important;
   width: auto !important; }
 
-.center-add-panel .center-add-actions .btn,
-.create-drawer-section .center-add-actions .btn,
-.compact-create-form .form-actions .btn,
+.center-add-panel .create-inline-actions .btn,
+.create-drawer-section .create-inline-actions .btn,
 .create-drawer-form .form-actions .btn,
 .task-drawer .form-actions .btn,
 .drawer-panel .form-actions .btn { color: var(--text) !important; background: color-mix(in srgb, var(--surface-2), var(--text) 7%) !important; border-color: color-mix(in srgb, var(--border), var(--text) 7%) !important; box-shadow: none !important; }
-.center-add-panel .center-add-actions .btn:hover:not(:disabled),
-.create-drawer-section .center-add-actions .btn:hover:not(:disabled),
-.compact-create-form .form-actions .btn:hover:not(:disabled),
+.center-add-panel .create-inline-actions .btn:hover:not(:disabled),
+.create-drawer-section .create-inline-actions .btn:hover:not(:disabled),
 .create-drawer-form .form-actions .btn:hover:not(:disabled),
 .task-drawer .form-actions .btn:hover:not(:disabled),
 .drawer-panel .form-actions .btn:hover:not(:disabled) { background: color-mix(in srgb, var(--surface-2), var(--text) 12%) !important; }
@@ -62,17 +63,17 @@
 
 .center-open-day-panel { border-top: 0 !important; padding-top: 0.2rem !important; }
 
-.center-add-actions,
+.create-inline-actions,
 .center-add-panel,
 .center-open-day-panel,
 .start-day-line { text-align: left !important; justify-content: flex-start !important; justify-items: start !important; }
 
 .create-drawer-section.entity-form-panel { display: grid !important; gap: 0 !important; }
-.center-add-actions { display: flex !important; align-items: center !important; margin: 0 !important; }
+.create-inline-actions { display: flex !important; align-items: center !important; margin: 0 !important; }
 
 .create-drawer-section.entity-form-panel,
 .create-drawer-section { padding: 0.72rem 0.9rem !important; min-height: 0 !important; border-style: dashed !important; }
-.center-add-actions { justify-content: flex-start !important; padding: 0 !important; gap: 0.8rem !important; flex-wrap: wrap; }
+.create-inline-actions { justify-content: flex-start !important; padding: 0 !important; gap: 0.65rem !important; flex-wrap: wrap; }
 .create-action-hint { color: var(--muted); font-size: var(--fv-text-small); line-height: 1.35; }
 
 /* Shared create form layout migrated from legacy.css. */

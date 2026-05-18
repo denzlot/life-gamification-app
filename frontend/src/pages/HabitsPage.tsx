@@ -54,7 +54,7 @@ function toggleDay(days: number[] | undefined, day: number) {
 }
 
 export function HabitsPage() {
-  const { data: habits, loading, error, reload } = useAsync(() => api.habits.list(), []);
+  const { data: habits, setData: setHabits, loading, error, reload } = useAsync(() => api.habits.list(), []);
   const { notify } = useToast();
   const [form, setForm] = useState<CreateHabitRequest>(emptyForm);
   const [editing, setEditing] = useState<HabitResponse | null>(null);
@@ -62,6 +62,7 @@ export function HabitsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [options, setOptions] = useState({ time: false, deadline: false, description: false });
   const [formOpen, setFormOpen] = useState(false);
+  const [openDescriptionId, setOpenDescriptionId] = useState<number | null>(null);
 
   function edit(habit: HabitResponse) {
     setEditing(habit);
@@ -129,9 +130,9 @@ export function HabitsPage() {
   }
 
   async function toggle(habit: HabitResponse) {
-    await api.habits.toggleActive(habit.id);
+    const updated = await api.habits.toggleActive(habit.id);
+    setHabits((current) => current ? current.map((entry) => entry.id === habit.id ? updated : entry) : current);
     notify({ tone: "info", title: habit.active ? "Привычка на паузе" : "Привычка активна" });
-    await reload();
   }
 
   async function remove(habit: HabitResponse) {
@@ -146,18 +147,16 @@ export function HabitsPage() {
       <header className="page-header centered-title-header">
         <p className="eyebrow">привычки</p>
         <h1>Автоматические ритуалы</h1>
-      </header>
-
-      <section className="section-line entity-form-panel habit-designer-panel clean-section create-drawer-section">
-        <div className="center-add-actions">
+        <div className="create-inline-actions">
           <Button type="button" onClick={openNewHabitForm} aria-expanded={formOpen}>
             {formOpen && !editing ? "Скрыть привычку" : "Добавить привычку"}
           </Button>
           <span className="create-action-hint">Автоматически появится в днях по выбранному расписанию.</span>
         </div>
+      </header>
 
-        {formOpen ? (
-          <Modal title={editing ? "Изменить привычку" : "Добавить привычку"} eyebrow={editing ? "редактирование" : "новая привычка"} onClose={resetForm}>
+      {formOpen ? (
+        <Modal title={editing ? "Изменить привычку" : "Добавить привычку"} eyebrow={editing ? "редактирование" : "новая привычка"} onClose={resetForm}>
             <form className="modal-form" onSubmit={submit}>
               <div className="optional-toolbar schedule-mode-toolbar" aria-label="Режим расписания">
                 {scheduleModes.map((mode) => (
@@ -269,31 +268,42 @@ export function HabitsPage() {
                 {editing ? <Button type="button" variant="ghost" onClick={resetForm}>Отмена</Button> : null}
               </div>
             </form>
-          </Modal>
-        ) : null}
-      </section>
+        </Modal>
+      ) : null}
 
       <section className="section-line clean-section">
         <div className="section-title-row"><h2>{habits?.filter((habit) => habit.active).length ?? 0} активных</h2></div>
         {loading ? <Loader /> : <ErrorLine error={error} />}
         {!loading && habits?.length === 0 ? <EmptyState title="Привычек пока нет" text="Создай привычку и открой день." /> : null}
-        <div className="line-list typed-list clean-list">
+        <div className="line-list clean-list habit-list">
           {habits?.map((habit) => (
-            <article className={`line-item status-row ${habit.active ? "status-active" : "status-paused"}`} key={habit.id}>
+            <article className="line-item habit-list-row" key={habit.id}>
               <div className="habit-row-main">
-                <div className="item-title-line">
+                <div className="item-title-line habit-title-line">
                   <strong>{habit.title}</strong>
-                  <span className="item-type-badge">привычка</span>
                 </div>
-                <p className="muted compact-meta">
-                  {formatSchedule(habit)}{habit.plannedTime ? ` · ${formatTime(habit.plannedTime)}` : ""}{habit.deadlineTime ? ` · дедлайн ${formatTime(habit.deadlineTime)}` : ""}
-                </p>
+                {habit.description ? (
+                  <button
+                    type="button"
+                    className={`description-toggle ${openDescriptionId === habit.id ? "open" : ""}`}
+                    onClick={() => setOpenDescriptionId((current) => current === habit.id ? null : habit.id)}
+                    aria-expanded={openDescriptionId === habit.id}
+                    aria-label={openDescriptionId === habit.id ? "Скрыть описание" : "Показать описание"}
+                  >
+                    ›
+                  </button>
+                ) : null}
+                {openDescriptionId === habit.id && habit.description ? <p className="item-description">{habit.description}</p> : null}
               </div>
-              <div className="item-tail wide-tail">
-                <small>{habit.active ? "активна" : "пауза"}</small>
-                <Button variant="thin" onClick={() => edit(habit)}>Изменить</Button>
-                <Button variant="thin" onClick={() => toggle(habit)}>{habit.active ? "Пауза" : "Активировать"}</Button>
-                <Button variant="danger" onClick={() => remove(habit)}>Удалить</Button>
+              <div className="habit-row-meta">
+                <span>{formatSchedule(habit)}</span>
+                {habit.plannedTime ? <span>{formatTime(habit.plannedTime)}</span> : null}
+                {habit.deadlineTime ? <span>дедлайн {formatTime(habit.deadlineTime)}</span> : null}
+              </div>
+              <div className="item-tail wide-tail habit-row-actions">
+                <Button variant="thin" className="quest-action-btn" onClick={() => edit(habit)}>Изменить</Button>
+                <Button variant="thin" className={`quest-action-btn habit-pause-action ${habit.active ? "" : "is-paused"}`} onClick={() => toggle(habit)}>Пауза</Button>
+                <Button variant="thin" className="quest-action-btn quest-action-btn--danger" onClick={() => remove(habit)}>Удалить</Button>
               </div>
             </article>
           ))}

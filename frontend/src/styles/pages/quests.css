@@ -65,8 +65,7 @@
   padding-top: 0.45rem;
 }
 
-.quest-list,
-.quest-steps-list {
+.quest-list {
   margin-top: 0;
 }
 
@@ -98,102 +97,15 @@
   line-height: 1.35;
 }
 
-.step-edit {
-  display: block;
-  min-width: 0;
-  padding: 0.64rem 0;
-  border-top: 1px solid var(--border-soft);
-}
-
-.step-list > .step-edit:first-child,
-.step-list > .line-item:first-child {
-  border-top: 0;
-}
-
-.step-edit-fields {
-  display: grid;
-  gap: 0.55rem 0.75rem;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-}
-
-.step-list .line-item { align-items: start; }
-.step-edit-fields .wheel-field { width: 100%; }
-.step-edit-control-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0.55rem 0.75rem;
-}
-
-.step-edit-options {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: flex-start;
-  gap: 0.45rem;
-  min-width: 0;
-  min-height: 38px;
-}
-
-.step-edit-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 38px;
-}
-
-.step-edit-title-input {
-  width: min(100%, 620px);
-}
-
-.step-edit-options .step-option-chip,
-.step-edit-actions .btn {
-  min-height: 38px;
-  height: 38px;
-  padding: 0.42rem 0.72rem;
-  border-radius: 12px;
-  font-size: var(--fv-text-small);
-  line-height: 1;
-}
-
-.step-edit-options .step-option-chip {
-  flex: 0 0 8.2rem;
-  background: transparent;
-  white-space: nowrap;
-}
-
-.step-edit-options .step-option-chip--date { flex-basis: 8.8rem; }
-.step-edit-options .step-option-chip--deadline { flex-basis: 9.6rem; }
-.step-edit-options .step-option-chip--description { flex-basis: 7.8rem; }
-.step-edit-actions .btn { min-width: 7rem; }
-.step-edit-fields > .option-reveal:not(.is-open) { display: none; }
-
 @media (max-width: 820px) {
   .quest-panel-head { grid-template-columns: 1fr; }
   .quest-panel-head .btn { justify-self: start; }
-  .step-edit-control-row { grid-template-columns: 1fr; align-items: stretch; }
-  .step-edit-actions { justify-content: flex-start; text-align: left; }
-}
-
-@media (max-width: 520px) {
-  .step-edit-options .step-option-chip {
-    flex: 1 1 8rem;
-  }
-
-  .step-edit-actions .btn {
-    min-width: 6.5rem;
-  }
 }
 .quest-pace-strip { display: grid; border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
 .quest-pace-strip > div { display: grid; gap: 0.12rem; min-width: 0; }
 .quest-pace-strip span { color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
 .quest-pace-strip strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.quest-pace-strip.pace-behind strong:first-of-type,
-.quest-behind-day .quest-step-line { color: var(--danger); }
+.quest-pace-strip.pace-behind strong:first-of-type { color: var(--danger); }
 .quest-pace-strip.pace-ahead strong:first-of-type { color: var(--good); }
 .quest-boost-panel { padding: 0.85rem; }
 .quest-boost-list { margin-top: 0.55rem; }
@@ -211,18 +123,6 @@
 .quest-pace-strip span { font-size: var(--fv-text-small); }
 .quest-pace-strip strong { font-size: var(--fv-text-quote); }
 .quest-pace-strip.pace-idle strong { color: var(--muted); }
-.quest-steps-map { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 0.62rem; align-items: stretch; }
-.quest-steps-map .quest-step { min-height: 7.4rem; padding: 0.65rem !important; border: 1px solid var(--border-soft); border-radius: 14px; background: linear-gradient(180deg, color-mix(in srgb, var(--surface), var(--accent) 4%), color-mix(in srgb, var(--surface), var(--bg) 8%)); display: grid !important; grid-template-columns: 1fr !important; align-content: space-between; gap: 0.58rem; }
-.quest-steps-map .quest-step::before { content: ""; width: 100%; height: 0.22rem; border-radius: 999px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent-2), transparent 12%)); opacity: 0.85; }
-.quest-steps-map .quest-step.status-completed::before { background: linear-gradient(90deg, var(--good), color-mix(in srgb, var(--good), white 18%)); }
-.quest-steps-map .quest-step.status-skipped::before { background: linear-gradient(90deg, var(--danger), color-mix(in srgb, var(--danger), white 16%)); }
-.quest-steps-map .quest-step .item-title-line { grid-template-columns: 1fr; gap: 0.25rem; }
-.quest-steps-map .quest-step .item-title-line strong { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.quest-steps-map .quest-step .item-type-badge { justify-self: start; }
-.quest-steps-map .quest-step .muted { font-size: var(--fv-text-small); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.quest-steps-map .quest-step .item-tail { justify-content: flex-start; gap: 0.35rem; }
-.quest-steps-map .quest-step .item-tail span { display: none; }
-.quest-steps-map .quest-step .btn { min-height: 25px; font-size: var(--fv-text-small); padding: 0.22rem 0.42rem; }
 .quest-route-board { margin-top: 0.75rem; overflow: hidden; }
 .quest-route-head { display: grid; align-items: center; }
 .quest-route-head .eyebrow { margin-bottom: 0.14rem; }
@@ -275,7 +175,7 @@
 .route-step-edit { display: grid; gap: 0.65rem; margin-top: 0.7rem; padding: 0.72rem; border: 1px solid var(--border-soft); }
 .route-step-edit-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.72fr) minmax(0, 0.72fr); gap: 0.55rem; }
 .route-step-edit .textarea { min-height: 82px; }
-.route-edit-actions { justify-content: flex-start !important; }
+.route-edit-actions { justify-content: flex-start; }
 @media (max-width: 980px) {
 .route-step-edit-grid { grid-template-columns: 1fr !important; }
 .polished-route-board .quest-route-head { grid-template-columns: 1fr !important; }
@@ -602,6 +502,83 @@
 .redesigned-route-board .route-step-actions .btn {
   min-height: 2.25rem;
   min-width: 128px;
+}
+
+.quest-action-btn {
+  width: auto;
+  min-width: 0;
+  height: 2.05rem;
+  min-height: 2.05rem;
+  padding: 0.28rem 0.52rem;
+  border-radius: 10px;
+  background: transparent;
+  border-color: var(--border);
+  color: var(--muted);
+  box-shadow: none;
+  font-size: var(--fv-text-small);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.quest-action-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--surface), var(--text) 2%);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.quest-action-btn--danger {
+  color: color-mix(in srgb, var(--danger), var(--text) 14%);
+  border-color: color-mix(in srgb, var(--danger), transparent 52%);
+}
+
+.quest-action-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger), transparent 92%);
+  color: var(--danger);
+}
+
+.quest-panel-head .quest-action-btn,
+.quest-list .quest-action-btn,
+.route-step-actions .quest-action-btn,
+.route-edit-actions .quest-action-btn,
+.redesigned-route-board .route-step-actions .quest-action-btn {
+  width: auto;
+  min-width: 0;
+  min-height: 2.05rem;
+}
+
+.route-step-edit .input,
+:root[data-theme="light"] .route-step-edit .input,
+:root[data-theme="dark"] .route-step-edit .input,
+:root[data-theme="rpg"] .route-step-edit .input,
+:root[data-theme="vampire"] .route-step-edit .input,
+:root[data-theme="cosmos"] .route-step-edit .input {
+  background: transparent;
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.route-step-edit .input:focus,
+.route-step-edit .input:focus-visible,
+.route-step-edit .input:focus:not(:focus-visible),
+:root[data-theme="light"] .route-step-edit .input:focus,
+:root[data-theme="light"] .route-step-edit .input:focus-visible,
+:root[data-theme="light"] .route-step-edit .input:focus:not(:focus-visible),
+:root[data-theme="dark"] .route-step-edit .input:focus,
+:root[data-theme="dark"] .route-step-edit .input:focus-visible,
+:root[data-theme="dark"] .route-step-edit .input:focus:not(:focus-visible),
+:root[data-theme="rpg"] .route-step-edit .input:focus,
+:root[data-theme="rpg"] .route-step-edit .input:focus-visible,
+:root[data-theme="rpg"] .route-step-edit .input:focus:not(:focus-visible),
+:root[data-theme="vampire"] .route-step-edit .input:focus,
+:root[data-theme="vampire"] .route-step-edit .input:focus-visible,
+:root[data-theme="vampire"] .route-step-edit .input:focus:not(:focus-visible),
+:root[data-theme="cosmos"] .route-step-edit .input:focus,
+:root[data-theme="cosmos"] .route-step-edit .input:focus-visible,
+:root[data-theme="cosmos"] .route-step-edit .input:focus:not(:focus-visible) {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--border), var(--text) 18%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border), var(--text) 14%);
 }
 
 .quest-steps-panel .quest-panel-body {

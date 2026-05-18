@@ -238,7 +238,6 @@
 .status-row,
 .typed-list .line-item:not(.plan-item) { grid-template-columns: minmax(0, 1fr) max-content !important; }
 .status-row .item-tail,
-.quest-step .item-tail,
 .typed-list .line-item .item-tail { align-self: center; }
 .item-title-side { display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 0.45rem; min-width: 0; }
 .item-focus-spent { flex: 0 0 auto; color: var(--accent); font-family: var(--font-mono); font-size: var(--fv-text-medium); font-weight: 800; white-space: nowrap; }
@@ -287,19 +286,15 @@
 
 /* Completed/failed text decoration migrated from legacy.css. */
 .plan-item.status-completed strong,
-.quest-step.status-completed strong,
 .action-completed strong { text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, var(--good), transparent 20%); }
 
 .plan-item.status-failed strong,
-.quest-step.status-skipped strong,
 .action-failed strong { text-decoration: line-through; text-decoration-thickness: 1px; }
 
 /* Completed/failed text color migrated from legacy.css. */
 .plan-item.status-completed strong,
-.quest-step.status-completed strong,
 .action-completed strong { color: color-mix(in srgb, var(--good), var(--text) 15%); }
 .plan-item.status-failed strong,
-.quest-step.status-skipped strong,
 .action-failed strong { color: color-mix(in srgb, var(--danger), var(--text) 20%); }
 
 /* Shared radius repair migrated from legacy.css. */
@@ -357,7 +352,6 @@
 /* Row main min-width repair migrated from legacy.css. */
 .todo-main,
 .quest-row-main,
-.quest-step-main,
 .habit-row-main { min-width: 0; width: 100%; }
 
 /* Compact plan title row migrated from legacy.css. */

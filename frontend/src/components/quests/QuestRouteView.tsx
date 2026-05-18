@@ -148,13 +148,14 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
               {selectedStep.status === "PENDING" ? (
                 <Button
                   variant="thin"
+                  className="quest-action-btn"
                   disabled={busyId === selectedStep.id}
                   onClick={() => shiftStep(selectedStep, selectedStep.scheduledDate === today ? addDays(today, 1) : today)}
                 >
                   {selectedStep.scheduledDate === today ? "Отложить на завтра" : "На сегодня"}
                 </Button>
               ) : null}
-              <Button type="button" variant="thin" onClick={() => setEditingStepId((current) => current === selectedStep.id ? null : selectedStep.id)}>
+              <Button type="button" variant="thin" className="quest-action-btn" onClick={() => setEditingStepId((current) => current === selectedStep.id ? null : selectedStep.id)}>
                 {editingStepId === selectedStep.id ? "Скрыть" : "Изменить шаг"}
               </Button>
             </div>
@@ -173,8 +174,8 @@ export function QuestRouteView({ steps, quest, onSaved }: QuestRouteViewProps) {
               <TextArea value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} rows={3} placeholder="Описание шага" />
               <ErrorLine error={error} />
               <div className="form-actions route-edit-actions">
-                <Button disabled={busyId === selectedStep.id || !form.title.trim()}>Сохранить</Button>
-                <Button type="button" variant="ghost" onClick={() => setEditingStepId(null)}>Отмена</Button>
+                <Button variant="thin" className="quest-action-btn" disabled={busyId === selectedStep.id || !form.title.trim()}>Сохранить</Button>
+                <Button type="button" variant="thin" className="quest-action-btn" onClick={() => setEditingStepId(null)}>Отмена</Button>
               </div>
             </form>
           ) : (

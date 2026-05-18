@@ -40,7 +40,6 @@ export function QuestsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [options, setOptions] = useState(emptyQuestOptions);
   const [formOpen, setFormOpen] = useState(false);
-  const [stepsView, setStepsView] = useState<"list" | "route">("list");
 
   const visibleQuests = useMemo(
     () => (quests ?? []).filter((quest) => showArchived ? quest.status === "ARCHIVED" : quest.status !== "ARCHIVED"),
@@ -222,30 +221,27 @@ export function QuestsPage() {
       <header className="page-header centered-title-header">
         <p className="eyebrow">квесты</p>
         <h1>Длинные цели</h1>
-      </header>
-
-      <section className="section-line entity-form-panel clean-section create-drawer-section">
-        <div className="center-add-actions">
+        <div className="create-inline-actions">
           <Button type="button" onClick={openNewQuestForm} aria-expanded={formOpen}>
             {formOpen && !editing ? "Скрыть квест" : "Добавить квест"}
           </Button>
           <span className="create-action-hint">Квест разложится на шаги и появится в календарном маршруте.</span>
         </div>
+      </header>
 
-        {formOpen ? (
-          <QuestFormModal
-            form={form}
-            setForm={setForm}
-            editing={editing}
-            options={options}
-            setOptions={setOptions}
-            formError={formError}
-            busy={busy}
-            onSubmit={submit}
-            onCancel={cancelEdit}
-          />
-        ) : null}
-      </section>
+      {formOpen ? (
+        <QuestFormModal
+          form={form}
+          setForm={setForm}
+          editing={editing}
+          options={options}
+          setOptions={setOptions}
+          formError={formError}
+          busy={busy}
+          onSubmit={submit}
+          onCancel={cancelEdit}
+        />
+      ) : null}
 
       <div className="two-col quests-col">
         <QuestListPanel
@@ -267,8 +263,6 @@ export function QuestsPage() {
           selected={selected}
           steps={steps}
           stepsLoading={stepsLoading}
-          stepsView={stepsView}
-          onToggleStepsView={() => setStepsView((view) => view === "list" ? "route" : "list")}
           onSaved={reloadSteps}
         />
       </div>

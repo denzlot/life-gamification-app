@@ -8,12 +8,10 @@
   padding-left: 0 !important;
   padding-right: 0 !important;
   justify-self: stretch !important; }
-.center-add-actions { justify-content: flex-start !important;
+.create-inline-actions { justify-content: flex-start !important;
   justify-items: start !important;
   text-align: left !important;
   margin: 0 !important; }
-.center-add-actions .btn,
-.create-drawer-section .center-add-actions .btn { min-width: 0 !important; }
 /* Flow modal v2: compact shared shell for newly migrated dialogs. */
 .flow-modal-backdrop {
   position: fixed;
